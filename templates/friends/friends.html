@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/friends.css') }}">
 {% endblock %}
 
-
 {% block header %}
 <header>
     <nav class="navbar">
@@ -29,58 +28,58 @@
                 </div>
 
                 <!-- Колокольчик -->
-<div class="dropdown-bell">
-                        <button id="bellToggle" class="dropdown-bell-btn" type="button" title="Заявки в друзья">
-                            <i class="bi bi-bell-fill" style="font-size: 1.25rem; color: #4b5563;"></i>
-                            {% if current_user.received_requests %}
-                            <span class="bell-badge">{{ current_user.received_requests|length }}</span>
-                            {% endif %}
-                        </button>
-                        <div class="dropdown-bell-content" id="bellDropdown">
-                            <div class="dropdown-header">
-                                <span class="dropdown-title">Заявки в друзья</span>
-                                <button class="dropdown-close" id="bellClose">&times;</button>
-                            </div>
-                            {% if current_user.received_requests %}
-                                {% for req in current_user.received_requests %}
-                                    <div class="notification-item unread">
-                                        <div class="notification-content">
-                                            <img src="/static/images/{{ req.sender.avatar }}"
-                                                 class="notification-avatar"
-                                                 onerror="this.src='/static/images/default_avatar.svg'">
-                                            <div class="notification-text">
-                                                <div class="notification-username">{{ req.sender.username }}</div>
-                                                <div>Хочет добавить вас в друзья</div>
-                                                <div class="notification-meta">
-                                                    <span class="notification-time">
-                                                        {{ req.timestamp.strftime('%d.%m.%Y %H:%M') }}
-                                                    </span>
-                                                    <div class="notification-actions">
-                                                        <form method="POST" action="{{ url_for('handle_friend_request') }}">
-                                                            <input type="hidden" name="request_id" value="{{ req.id }}">
-                                                            <button name="action" value="accept"
-                                                                    class="notification-btn notification-btn-accept">
-                                                                <i class="bi bi-check-lg"></i> Принять
-                                                            </button>
-                                                            <button name="action" value="reject"
-                                                                    class="notification-btn notification-btn-reject">
-                                                                <i class="bi bi-x-lg"></i> Отклонить
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                <div class="dropdown-bell">
+                    <button id="bellToggle" class="dropdown-bell-btn" type="button" title="Заявки в друзья">
+                        <i class="bi bi-bell-fill" style="font-size: 1.25rem; color: #4b5563;"></i>
+                        {% if current_user.received_requests %}
+                        <span class="bell-badge">{{ current_user.received_requests|length }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="dropdown-bell-content" id="bellDropdown">
+                        <div class="dropdown-header">
+                            <span class="dropdown-title">Заявки в друзья</span>
+                            <button class="dropdown-close" id="bellClose">&times;</button>
+                        </div>
+                        {% if current_user.received_requests %}
+                            {% for req in current_user.received_requests %}
+                                <div class="notification-item unread">
+                                    <div class="notification-content">
+                                        <img src="/static/images/{{ req.sender.avatar }}"
+                                             class="notification-avatar"
+                                             onerror="this.src='/static/images/default_avatar.svg'">
+                                        <div class="notification-text">
+                                            <div class="notification-username">{{ req.sender.username }}</div>
+                                            <div>Хочет добавить вас в друзья</div>
+                                            <div class="notification-meta">
+                                                <span class="notification-time">
+                                                    {{ req.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                                </span>
+                                                <div class="notification-actions">
+                                                    <form method="POST" action="{{ url_for('handle_friend_request') }}">
+                                                        <input type="hidden" name="request_id" value="{{ req.id }}">
+                                                        <button name="action" value="accept"
+                                                                class="notification-btn notification-btn-accept">
+                                                            <i class="bi bi-check-lg"></i> Принять
+                                                        </button>
+                                                        <button name="action" value="reject"
+                                                                class="notification-btn notification-btn-reject">
+                                                            <i class="bi bi-x-lg"></i> Отклонить
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="no-notifications">
-                                    <i class="bi bi-bell-slash" style="font-size: 1.5rem;"></i>
-                                    <p style="margin-top: 0.5rem;">Нет новых уведомлений</p>
                                 </div>
-                            {% endif %}
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-notifications">
+                                <i class="bi bi-bell-slash" style="font-size: 1.5rem;"></i>
+                                <p style="margin-top: 0.5rem;">Нет новых уведомлений</p>
+                            </div>
+                        {% endif %}
                     </div>
+                </div>
 
                 <!-- Кнопка "Выйти" -->
                 <a href="{{ url_for('logout') }}" class="btn btn-outline">Выйти</a>
@@ -92,21 +91,48 @@
 
 {% block content %}
 <div class="friends-container">
-    <h2>Коллеги</h2>
+    <div class="friends-header">
+        <h2>Мои коллеги</h2>
+        <div class="friends-actions">
+            <span class="friends-count">{{ current_user.friends.all()|length }} коллег</span>
+        </div>
+    </div>
+
     <!-- Список друзей -->
-    <div class="friends-list">
-        {% for friend in current_user.friends %}
+    <div class="friends-grid">
+        {% for friend in current_user.friends.all() %}
         <div class="friend-card">
-            <div>
-                <strong>{{ friend.username }}</strong><br>
-                <small>Добавлен: {{ friend.created_at.strftime('%d.%m.%Y') }}</small>
+            <div class="friend-avatar">
+                <img src="{{ url_for('static', filename='images/' + friend.avatar) }}"
+                     onerror="this.src='{{ url_for('static', filename='images/default_avatar.svg') }}'"
+                     alt="{{ friend.username }}">
             </div>
-            <form action="{{ url_for('delete_friend', friend_id=friend.id) }}" method="POST">
-                <button class="btn btn-danger">Удалить</button>
-            </form>
+            <div class="friend-info">
+                <h3 class="friend-name">{{ friend.username }}</h3>
+                <p class="friend-email">{{ friend.email }}</p>
+                <div class="friend-meta">
+                    <span class="friend-since">
+                        <i class="bi bi-calendar"></i>
+                        С {{ friend.created_at.strftime('%d.%m.%Y') }}
+                    </span>
+                </div>
+            </div>
+            <div class="friend-actions">
+                <form action="{{ url_for('delete_friend', friend_id=friend.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger btn-sm" title="Удалить из коллег">
+                        <i class="bi bi-person-dash"></i>
+                    </button>
+                </form>
+            </div>
         </div>
         {% else %}
-        <p>У вас пока нет коллег.</p>
+        <div class="no-friends">
+            <div class="no-friends-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>У вас пока нет коллег</h3>
+            <p>Начните добавлять коллег, чтобы видеть их здесь</p>
+        </div>
         {% endfor %}
     </div>
 </div>
