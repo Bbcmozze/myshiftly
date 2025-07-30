@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - My Shifts{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    {% if not current_user.is_authenticated %}
+        <h2>Добро пожаловать в My Shifts</h2>
+        <p>Удобное управление графиками смен для вашей команды</p>
+        <div class="auth-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Войти</a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline">Регистрация</a>
+        </div>
+    {% else %}
+        <h2>Добро пожаловать, {{ current_user.username }}!</h2>
+        <div class="dashboard">
+            <div class="card">
+                <h3>Ваш график</h3>
+                <p>Ближайшая смена: завтра в 09:00</p>
+            </div>
+            <div class="card">
+                <h3>Статистика</h3>
+                <p>Отработано часов в этом месяце: 120</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
