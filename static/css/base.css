@@ -295,40 +295,174 @@ main {
     }
 }
 
-/* Колокольчик */
+/* Обновленный стиль для колокольчика и уведомлений */
 .dropdown-bell {
     position: relative;
-    display: inline-block;
+}
+
+.dropdown-bell-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.dropdown-bell-btn:hover {
+    background-color: rgba(37, 99, 235, 0.1);
 }
 
 .dropdown-bell-content {
-    display: none;
     position: absolute;
     right: 0;
     top: 120%;
-    background-color: white;
-    border: 1px solid #ddd;
-    min-width: 260px;
-    box-shadow: var(--shadow-md);
-    padding: 1rem;
-    border-radius: var(--radius);
-    z-index: 999;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    transform: translateY(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1000;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.bell-request {
+.dropdown-bell-content.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.dropdown-header {
+    background-color: #f8f8f8;
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.dropdown-title {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.dropdown-close {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.notification-item {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notification-item.unread {
+    background: #ffffff;
+}
+
+.notification-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.notification-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+
+.notification-text {
+    flex: 1;
+}
+
+.notification-username {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.notification-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.notification-actions {
+    display: flex;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
 }
 
-.no-requests {
-    color: #6b7280;
-    text-align: center;
-}
-
-#addFriendForm {
+.notification-btn {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
     display: flex;
     align-items: center;
+    gap: 0.25rem;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.notification-btn-accept {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+
+.notification-btn-accept:hover {
+    background: #059669;
+}
+
+.notification-btn-reject {
+    background: #e41313;
+    color: #ffffff;
+    border: 1px solid #fee2e2;
+}
+
+.notification-btn-reject:hover {
+    background: #b31e1e;
+}
+
+.no-notifications {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #64748b;
+}
+
+.bell-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
 }

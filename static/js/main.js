@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const addFriendForm = document.getElementById('addFriendForm');
     const bellToggle = document.getElementById('bellToggle');
     const bellDropdown = document.getElementById('bellDropdown');
+    const bellClose = document.getElementById('bellClose');
+
 
     // Меню бургера
     if (hamburger && sidebar && overlay) {
@@ -168,4 +170,29 @@ function updatePasswordStrengthIndicator(password, requirementsElement) {
         requirementsElement.style.color = '#16a34a';
         requirementsElement.textContent = 'Пароль соответствует требованиям';
     }
+}
+
+// Управление уведомлениями
+const bellToggle = document.getElementById('bellToggle');
+const bellDropdown = document.getElementById('bellDropdown');
+const bellClose = document.getElementById('bellClose');
+
+if (bellToggle && bellDropdown) {
+    bellToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        bellDropdown.classList.toggle('active');
+    });
+
+    if (bellClose) {
+        bellClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            bellDropdown.classList.remove('active');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!bellDropdown.contains(e.target) && !bellToggle.contains(e.target)) {
+            bellDropdown.classList.remove('active');
+        }
+    });
 }

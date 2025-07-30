@@ -34,43 +34,57 @@
                 {% if current_user.is_authenticated %}
                     <!-- Колокольчик -->
                     <div class="dropdown-bell">
-                        <button id="bellToggle" class="btn btn-outline" type="button" title="Заявки в друзья">
-                            <i class="bi bi-bell-fill"></i>
+                        <button id="bellToggle" class="dropdown-bell-btn" type="button" title="Заявки в друзья">
+                            <i class="bi bi-bell-fill" style="font-size: 1.25rem; color: #4b5563;"></i>
                             {% if current_user.received_requests %}
-                            <span class="badge" style="position: absolute; top: -5px; right: -5px;
-                                  background-color: #ef4444; color: white; border-radius: 50%;
-                                  width: 18px; height: 18px; font-size: 0.7rem; display: flex;
-                                  align-items: center; justify-content: center;">
-                                {{ current_user.received_requests|length }}
-                            </span>
+                            <span class="bell-badge">{{ current_user.received_requests|length }}</span>
                             {% endif %}
                         </button>
                         <div class="dropdown-bell-content" id="bellDropdown">
+                            <div class="dropdown-header">
+                                <span class="dropdown-title">Заявки в друзья</span>
+                                <button class="dropdown-close" id="bellClose">&times;</button>
+                            </div>
                             {% if current_user.received_requests %}
                                 {% for req in current_user.received_requests %}
-                                    <div class="bell-request">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="notification-item unread">
+                                        <div class="notification-content">
                                             <img src="/static/images/{{ req.sender.avatar }}"
-                                                 style="width: 30px; height: 30px; border-radius: 50%;">
-                                            <span>{{ req.sender.username }}</span>
+                                                 class="notification-avatar"
+                                                 onerror="this.src='/static/images/default_avatar.svg'">
+                                            <div class="notification-text">
+                                                <div class="notification-username">{{ req.sender.username }}</div>
+                                                <div>Хочет добавить вас в друзья</div>
+                                                <div class="notification-meta">
+                                                    <span class="notification-time">
+                                                        {{ req.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                                    </span>
+                                                    <div class="notification-actions">
+                                                        <form method="POST" action="{{ url_for('handle_friend_request') }}">
+                                                            <input type="hidden" name="request_id" value="{{ req.id }}">
+                                                            <button name="action" value="accept"
+                                                                    class="notification-btn notification-btn-accept">
+                                                                <i class="bi bi-check-lg"></i> Принять
+                                                            </button>
+                                                            <button name="action" value="reject"
+                                                                    class="notification-btn notification-btn-reject">
+                                                                <i class="bi bi-x-lg"></i> Отклонить
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <form method="POST" action="{{ url_for('handle_friend_request') }}" style="display: flex; gap: 0.25rem;">
-                                            <input type="hidden" name="request_id" value="{{ req.id }}">
-                                            <button name="action" value="accept" class="btn btn-success btn-sm" style="padding: 0.25rem 0.5rem;">
-                                                <i class="bi bi-check-lg"></i>
-                                            </button>
-                                            <button name="action" value="reject" class="btn btn-danger btn-sm" style="padding: 0.25rem 0.5rem;">
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
-                                        </form>
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <div class="no-requests">Нет новых заявок</div>
+                                <div class="no-notifications">
+                                    <i class="bi bi-bell-slash" style="font-size: 1.5rem;"></i>
+                                    <p style="margin-top: 0.5rem;">Нет новых уведомлений</p>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
-
                     <!-- Кнопка "Выйти" -->
                     <a href="{{ url_for('logout') }}" class="btn btn-outline">Выйти</a>
                 {% else %}
