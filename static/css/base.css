@@ -1,8 +1,9 @@
 :root {
+    --bg-color: #f8f8f8;
     --primary-color: #2563eb;
     --primary-hover: #1d4ed8;
     --text-color: #1f2937;
-    --bg-color: #ffffff;
+    --menu-color: #ececec;
     --sidebar-width: 300px;
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -17,7 +18,7 @@
 }
 
 body {
-    background-color: #f9fafb;
+    background-color: var(--bg-color);
     color: var(--text-color);
     min-height: 100vh;
     display: flex;
@@ -26,7 +27,7 @@ body {
 
 /* Header */
 header {
-    background-color: var(--bg-color);
+    background-color: var(--menu-color);
     box-shadow: var(--shadow-md);
     position: sticky;
     top: 0;
