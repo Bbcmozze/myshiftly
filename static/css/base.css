@@ -125,6 +125,12 @@ main {
     left: 0;
 }
 
+.sidebar-separator {
+    border: none;
+    border-top: 1px solid #e5e7eb; /* светло-серая линия */
+    margin: 1rem 0;
+}
+
 .user-profile {
     text-align: center;
     padding: 2rem 1rem;
