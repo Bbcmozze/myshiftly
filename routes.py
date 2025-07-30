@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, generate_user_id
+from models import db, User, generate_user_id, FriendRequest
 from datetime import datetime
 from config import Config
 import os
@@ -87,3 +87,67 @@ def register_routes(app):
         logout_user()
         flash('Вы успешно вышли из системы', 'success')
         return redirect(url_for('home'))
+
+
+    @app.route('/friends', methods=['GET'])
+    @login_required
+    def friends_page():
+        return render_template('friends/friends.html')
+
+
+    @app.route('/friends/add', methods=['POST'])
+    @login_required
+    def send_friend_request():
+        username = request.form.get('username')
+        user = User.query.filter_by(username=username).first()
+
+        if not user or user.id == current_user.id:
+            flash("Пользователь не найден", "danger")
+        elif user in current_user.friends:
+            flash("Этот пользователь уже в вашем списке друзей", "danger")
+        else:
+            existing_request = FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
+            if not existing_request:
+                request_obj = FriendRequest(sender_id=current_user.id, receiver_id=user.id)
+                db.session.add(request_obj)
+                db.session.commit()
+                flash("Запрос отправлен", "success")
+            else:
+                flash("Вы уже отправили запрос этому пользователю", "info")
+
+        return redirect(url_for('friends_page'))
+
+
+    @app.route('/friends/requests', methods=['POST'])
+    @login_required
+    def handle_friend_request():
+        action = request.form.get('action')
+        request_id = request.form.get('request_id')
+        friend_request = FriendRequest.query.get(request_id)
+
+        if friend_request and friend_request.receiver_id == current_user.id:
+            sender = User.query.get(friend_request.sender_id)
+            if action == 'accept':
+                current_user.friends.append(sender)
+                sender.friends.append(current_user)
+                flash(f"Вы теперь друзья с {sender.username}", "success")
+            elif action == 'reject':
+                flash(f"Запрос от {sender.username} отклонен", "info")
+
+            db.session.delete(friend_request)
+            db.session.commit()
+
+        return redirect(url_for('friends_page'))
+
+
+    @app.route('/friends/delete/<int:friend_id>', methods=['POST'])
+    @login_required
+    def delete_friend(friend_id):
+        friend = User.query.get(friend_id)
+        if friend in current_user.friends:
+            current_user.friends.remove(friend)
+            friend.friends.remove(current_user)
+            db.session.commit()
+            flash(f"{friend.username} удален из друзей", "success")
+
+        return redirect(url_for('friends_page'))

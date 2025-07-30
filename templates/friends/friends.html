@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Друзья - My Shifts{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/friends.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="friends-container">
+    <h2>Коллеги</h2>
+
+    <!-- Кнопка и форма добавления -->
+    <div class="add-friend-box">
+        <button class="btn btn-success" id="addFriendToggle">Добавить</button>
+        <form id="addFriendForm" action="{{ url_for('send_friend_request') }}" method="POST" style="display:none;">
+            <input type="text" name="username" placeholder="Имя пользователя" required>
+            <button class="btn btn-primary" type="submit">Добавить</button>
+        </form>
+    </div>
+
+    <!-- Уведомления -->
+    <div class="notifications">
+        <button id="toggleRequests"><i class="bi bi-bell-fill"></i> Заявки</button>
+        <div id="requestsDropdown" style="display:none;">
+            {% for req in current_user.received_requests %}
+            <div class="request-item">
+                <span>{{ req.sender.username }}</span>
+                <form method="POST" action="{{ url_for('handle_friend_request') }}">
+                    <input type="hidden" name="request_id" value="{{ req.id }}">
+                    <button name="action" value="accept" class="btn btn-primary">Принять</button>
+                    <button name="action" value="reject" class="btn btn-danger">Отклонить</button>
+                </form>
+            </div>
+            {% else %}
+            <p>Нет заявок</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Список друзей -->
+    <div class="friends-list">
+        {% for friend in current_user.friends %}
+        <div class="friend-card">
+            <div>
+                <strong>{{ friend.username }}</strong><br>
+                <small>Добавлен: {{ friend.created_at.strftime('%d.%m.%Y') }}</small>
+            </div>
+            <form action="{{ url_for('delete_friend', friend_id=friend.id) }}" method="POST">
+                <button class="btn btn-danger">Удалить</button>
+            </form>
+        </div>
+        {% else %}
+        <p>У вас пока нет коллег.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/friends.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,43 @@
+.friends-container {
+    max-width: 600px;
+    margin: auto;
+    padding: 2rem;
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.add-friend-box {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.add-friend-box input {
+    padding: 0.5rem;
+    margin-top: 1rem;
+    width: 70%;
+}
+
+.notifications {
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.request-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.friends-list {
+    margin-top: 2rem;
+}
+
+.friend-card {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+}
