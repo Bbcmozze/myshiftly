@@ -30,22 +30,38 @@
                 {% endif %}
                 <h1><a href="/">My Shifts</a></h1>
             </div>
-            <div class="nav-links" style="display: flex; align-items: center; gap: 1rem;">
+            <div class="nav-links" style="display: flex; align-items: center; gap: 1.5rem;">
                 {% if current_user.is_authenticated %}
                     <!-- Колокольчик -->
                     <div class="dropdown-bell">
                         <button id="bellToggle" class="btn btn-outline" type="button" title="Заявки в друзья">
                             <i class="bi bi-bell-fill"></i>
+                            {% if current_user.received_requests %}
+                            <span class="badge" style="position: absolute; top: -5px; right: -5px;
+                                  background-color: #ef4444; color: white; border-radius: 50%;
+                                  width: 18px; height: 18px; font-size: 0.7rem; display: flex;
+                                  align-items: center; justify-content: center;">
+                                {{ current_user.received_requests|length }}
+                            </span>
+                            {% endif %}
                         </button>
                         <div class="dropdown-bell-content" id="bellDropdown">
                             {% if current_user.received_requests %}
                                 {% for req in current_user.received_requests %}
                                     <div class="bell-request">
-                                        <span>{{ req.sender.username }}</span>
-                                        <form method="POST" action="{{ url_for('handle_friend_request') }}" style="display: inline;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <img src="/static/images/{{ req.sender.avatar }}"
+                                                 style="width: 30px; height: 30px; border-radius: 50%;">
+                                            <span>{{ req.sender.username }}</span>
+                                        </div>
+                                        <form method="POST" action="{{ url_for('handle_friend_request') }}" style="display: flex; gap: 0.25rem;">
                                             <input type="hidden" name="request_id" value="{{ req.id }}">
-                                            <button name="action" value="accept" class="btn btn-success btn-sm">Принять</button>
-                                            <button name="action" value="reject" class="btn btn-danger btn-sm">Отклонить</button>
+                                            <button name="action" value="accept" class="btn btn-success btn-sm" style="padding: 0.25rem 0.5rem;">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            <button name="action" value="reject" class="btn btn-danger btn-sm" style="padding: 0.25rem 0.5rem;">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
                                         </form>
                                     </div>
                                 {% endfor %}
