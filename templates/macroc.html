@@ -1,0 +1,10 @@
+{% macro pluralize(number, singular, plural_2_4, plural_5plus) %}
+  {% set number = number|int %}
+  {% if number % 10 == 1 and number % 100 != 11 %}
+    {{ number }} {{ singular }}
+  {% elif 2 <= number % 10 <= 4 and (number % 100 < 10 or number % 100 >= 20) %}
+    {{ number }} {{ plural_2_4 }}
+  {% else %}
+    {{ number }} {{ plural_5plus }}
+  {% endif %}
+{% endmacro %}

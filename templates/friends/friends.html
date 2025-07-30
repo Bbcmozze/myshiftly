@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% from "macroc.html" import pluralize %}
+
 {% block title %}Коллеги - My Shifts{% endblock %}
 
 {% block styles %}
@@ -94,7 +96,7 @@
     <div class="friends-header">
         <h2>Мои коллеги</h2>
         <div class="friends-actions">
-            <span class="friends-count">{{ current_user.friends.all()|length }} коллег</span>
+            <span class="friends-count">{{ pluralize(current_user.friends.all()|length, 'коллега', 'коллеги', 'коллег') }}</span>
         </div>
     </div>
 
