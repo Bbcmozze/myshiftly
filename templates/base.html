@@ -19,6 +19,7 @@
         {% endif %}
     {% endwith %}
 
+    {% block header %}
     <header>
         <nav class="navbar">
             <div class="brand">
@@ -29,16 +30,38 @@
                 {% endif %}
                 <h1><a href="/">My Shifts</a></h1>
             </div>
-            <div class="nav-links">
+            <div class="nav-links" style="display: flex; align-items: center; gap: 1rem;">
                 {% if current_user.is_authenticated %}
+                    <!-- Колокольчик -->
+                    <div class="dropdown-bell">
+                        <button id="bellToggle" class="btn btn-outline" type="button" title="Заявки в друзья">
+                            <i class="bi bi-bell-fill"></i>
+                        </button>
+                        <div class="dropdown-bell-content" id="bellDropdown">
+                            {% if current_user.received_requests %}
+                                {% for req in current_user.received_requests %}
+                                    <div class="bell-request">
+                                        <span>{{ req.sender.username }}</span>
+                                        <form method="POST" action="{{ url_for('handle_friend_request') }}" style="display: inline;">
+                                            <input type="hidden" name="request_id" value="{{ req.id }}">
+                                            <button name="action" value="accept" class="btn btn-success btn-sm">Принять</button>
+                                            <button name="action" value="reject" class="btn btn-danger btn-sm">Отклонить</button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="no-requests">Нет новых заявок</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Кнопка "Выйти" -->
                     <a href="{{ url_for('logout') }}" class="btn btn-outline">Выйти</a>
-                {% else %}
-                    <a href="{{ url_for('login') }}" class="btn btn-outline">Войти</a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary">Регистрация</a>
                 {% endif %}
             </div>
         </nav>
     </header>
+    {% endblock %}
 
     {% if current_user.is_authenticated %}
     <!-- Sidebar -->

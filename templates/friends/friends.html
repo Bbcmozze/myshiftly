@@ -5,38 +5,64 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/friends.css') }}">
 {% endblock %}
 
+{% block header %}
+<header>
+    <nav class="navbar">
+        <div class="brand">
+            {% if current_user.is_authenticated %}
+            <button class="hamburger" id="hamburger">
+                <i class="bi bi-list"></i>
+            </button>
+            {% endif %}
+            <h1><a href="/">My Shifts</a></h1>
+        </div>
+        <div class="nav-links" style="display: flex; align-items: center; gap: 1rem;">
+            {% if current_user.is_authenticated %}
+                <!-- Кнопка "Добавить друга" -->
+                <div>
+                    <button class="btn btn-primary" id="toggleAddFriendBtn" type="button">Добавить</button>
+                </div>
+
+                <!-- Форма добавления -->
+                <form id="addFriendForm" method="POST" action="{{ url_for('send_friend_request') }}" style="display: none; gap: 0.5rem;">
+                    <input type="text" name="username" placeholder="Имя пользователя" required class="form-control" style="padding: 0.3rem;">
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </form>
+
+                <!-- Колокольчик -->
+                <div class="dropdown-bell">
+                    <button id="bellToggle" class="btn btn-outline" type="button" title="Заявки в друзья">
+                        <i class="bi bi-bell-fill"></i>
+                    </button>
+                    <div class="dropdown-bell-content" id="bellDropdown">
+                        {% if current_user.received_requests %}
+                            {% for req in current_user.received_requests %}
+                                <div class="bell-request">
+                                    <span>{{ req.sender.username }}</span>
+                                    <form method="POST" action="{{ url_for('handle_friend_request') }}" style="display: inline;">
+                                        <input type="hidden" name="request_id" value="{{ req.id }}">
+                                        <button name="action" value="accept" class="btn btn-success btn-sm">Принять</button>
+                                        <button name="action" value="reject" class="btn btn-danger btn-sm">Отклонить</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="no-requests">Нет новых заявок</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Кнопка "Выйти" -->
+                <a href="{{ url_for('logout') }}" class="btn btn-outline">Выйти</a>
+            {% endif %}
+        </div>
+    </nav>
+</header>
+{% endblock %}
+
 {% block content %}
 <div class="friends-container">
     <h2>Коллеги</h2>
-
-    <!-- Кнопка и форма добавления -->
-    <div class="add-friend-box">
-        <button class="btn btn-success" id="addFriendToggle">Добавить</button>
-        <form id="addFriendForm" action="{{ url_for('send_friend_request') }}" method="POST" style="display:none;">
-            <input type="text" name="username" placeholder="Имя пользователя" required>
-            <button class="btn btn-primary" type="submit">Добавить</button>
-        </form>
-    </div>
-
-    <!-- Уведомления -->
-    <div class="notifications">
-        <button id="toggleRequests"><i class="bi bi-bell-fill"></i> Заявки</button>
-        <div id="requestsDropdown" style="display:none;">
-            {% for req in current_user.received_requests %}
-            <div class="request-item">
-                <span>{{ req.sender.username }}</span>
-                <form method="POST" action="{{ url_for('handle_friend_request') }}">
-                    <input type="hidden" name="request_id" value="{{ req.id }}">
-                    <button name="action" value="accept" class="btn btn-primary">Принять</button>
-                    <button name="action" value="reject" class="btn btn-danger">Отклонить</button>
-                </form>
-            </div>
-            {% else %}
-            <p>Нет заявок</p>
-            {% endfor %}
-        </div>
-    </div>
-
     <!-- Список друзей -->
     <div class="friends-list">
         {% for friend in current_user.friends %}

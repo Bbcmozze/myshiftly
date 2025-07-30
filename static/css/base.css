@@ -294,3 +294,41 @@ main {
         opacity: 0;
     }
 }
+
+/* Колокольчик */
+.dropdown-bell {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-bell-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 120%;
+    background-color: white;
+    border: 1px solid #ddd;
+    min-width: 260px;
+    box-shadow: var(--shadow-md);
+    padding: 1rem;
+    border-radius: var(--radius);
+    z-index: 999;
+}
+
+.bell-request {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.no-requests {
+    color: #6b7280;
+    text-align: center;
+}
+
+#addFriendForm {
+    display: flex;
+    align-items: center;
+}

@@ -2,7 +2,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const hamburger = document.getElementById('hamburger');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+    const toggleAddFriendBtn = document.getElementById('toggleAddFriendBtn');
+    const addFriendForm = document.getElementById('addFriendForm');
+    const bellToggle = document.getElementById('bellToggle');
+    const bellDropdown = document.getElementById('bellDropdown');
 
+    // Меню бургера
     if (hamburger && sidebar && overlay) {
         hamburger.addEventListener('click', () => {
             sidebar.classList.toggle('active');
@@ -15,12 +20,33 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Кнопка "Добавить друга"
+    if (toggleAddFriendBtn && addFriendForm) {
+        toggleAddFriendBtn.addEventListener('click', () => {
+            const isVisible = addFriendForm.style.display === 'flex';
+            addFriendForm.style.display = isVisible ? 'none' : 'flex';
+        });
+    }
+
+    // Колокольчик
+    if (bellToggle && bellDropdown) {
+        bellToggle.addEventListener('click', () => {
+            bellDropdown.style.display = bellDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!bellDropdown.contains(e.target) && !bellToggle.contains(e.target)) {
+                bellDropdown.style.display = 'none';
+            }
+        });
+    }
+
     initFlashMessages();
     setupToastCloseHandlers();
     setupRegistrationFormValidation();
 });
 
-// Toast уведомления
+// === Toast уведомления ===
 const toastManager = {
     toasts: new Set(),
 
@@ -39,7 +65,6 @@ const toastManager = {
         const container = this.getContainer();
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-
         toast.innerHTML = `
             <div>${message}</div>
             <button type="button" class="toast-close">&times;</button>
@@ -48,8 +73,7 @@ const toastManager = {
         container.appendChild(toast);
         this.toasts.add(toast);
 
-        // Принудительный reflow для анимации
-        void toast.offsetWidth;
+        void toast.offsetWidth; // reflow
         toast.classList.add('show');
 
         if (timeout > 0) {
@@ -75,7 +99,7 @@ const toastManager = {
     }
 };
 
-// Перехват flash-сообщений от Jinja2
+// Flash сообщения от Jinja2
 function initFlashMessages() {
     const flashMessages = document.querySelectorAll('.alert');
     flashMessages.forEach(message => {
@@ -94,7 +118,7 @@ function setupToastCloseHandlers() {
     });
 }
 
-// Валидация формы регистрации
+// === Валидация формы регистрации ===
 function setupRegistrationFormValidation() {
     const registerForm = document.querySelector('form[action*="register"]');
     if (!registerForm) return;
