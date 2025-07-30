@@ -41,3 +41,31 @@
     border-radius: var(--radius);
     margin-bottom: 1rem;
 }
+
+.search-result-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-result-item:hover {
+    background-color: #f5f5f5;
+}
+
+.search-result-item img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.search-container {
+    position: relative;
+}
+
+#searchResults {
+    max-height: 300px;
+    overflow-y: auto;
+}

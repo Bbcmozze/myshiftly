@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, generate_user_id, FriendRequest
@@ -151,3 +151,25 @@ def register_routes(app):
             flash(f"{friend.username} удален из друзей", "success")
 
         return redirect(url_for('friends_page'))
+
+
+    @app.route('/api/search_users', methods=['GET'])
+    @login_required
+    def search_users():
+        query = request.args.get('q', '').strip()
+        if len(query) < 2:  # Не ищем при слишком коротком запросе
+            return jsonify([])
+
+        users = User.query.filter(
+            User.username.ilike(f'%{query}%'),
+            User.id != current_user.id
+        ).limit(10).all()
+
+        results = [{
+            'id': user.id,
+            'username': user.username,
+            'avatar': user.avatar,
+            'is_friend': user in current_user.friends
+        } for user in users]
+
+        return jsonify(results)

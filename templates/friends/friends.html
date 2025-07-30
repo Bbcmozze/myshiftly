@@ -18,16 +18,16 @@
         </div>
         <div class="nav-links" style="display: flex; align-items: center; gap: 1rem;">
             {% if current_user.is_authenticated %}
-                <!-- Кнопка "Добавить друга" -->
-                <div>
-                    <button class="btn btn-primary" id="toggleAddFriendBtn" type="button">Добавить</button>
+                <!-- Поле поиска -->
+                <div class="search-container" style="position: relative;">
+                    <input type="text" id="userSearch" placeholder="Поиск пользователей..."
+                           class="form-control" style="padding: 0.5rem; width: 250px;">
+                    <div id="searchResults" style="position: absolute; top: 100%; left: 0; right: 0;
+                         background: white; border: 1px solid #ddd; border-radius: 4px;
+                         box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 1000; display: none;">
+                        <!-- Результаты будут здесь -->
+                    </div>
                 </div>
-
-                <!-- Форма добавления -->
-                <form id="addFriendForm" method="POST" action="{{ url_for('send_friend_request') }}" style="display: none; gap: 0.5rem;">
-                    <input type="text" name="username" placeholder="Имя пользователя" required class="form-control" style="padding: 0.3rem;">
-                    <button type="submit" class="btn btn-primary">Добавить</button>
-                </form>
 
                 <!-- Колокольчик -->
                 <div class="dropdown-bell">
@@ -84,4 +84,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/friends.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
 {% endblock %}
