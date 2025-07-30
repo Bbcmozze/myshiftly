@@ -73,6 +73,9 @@
 
                     <!-- Кнопка "Выйти" -->
                     <a href="{{ url_for('logout') }}" class="btn btn-outline">Выйти</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-outline">Войти</a>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">Регистрация</a>
                 {% endif %}
             </div>
         </nav>
