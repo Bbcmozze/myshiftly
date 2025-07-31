@@ -682,3 +682,47 @@
     min-width: 150px;
     text-align: center;
 }
+
+.template-item {
+    transition: all 0.3s ease;
+    opacity: 1;
+}
+
+/* Анимация для кнопки удаления */
+.delete-template-btn {
+    transition: all 0.2s ease;
+}
+
+.delete-template-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Стили для модального окна подтверждения */
+#confirmDeleteModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+#confirmDeleteModal .modal-body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+#confirmDeleteModal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+#confirmDeleteBtn {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+}
+
+#confirmDeleteBtn:hover {
+    background-color: #dc2626;
+}

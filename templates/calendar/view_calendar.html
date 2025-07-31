@@ -37,6 +37,7 @@
     .shift-badge {
         position: relative;
         z-index: 1;
+        transition: all 0.3s ease;
     }
 
     .template-list {
@@ -48,6 +49,7 @@
     .template-item {
         padding: 0.5rem;
         border-bottom: 1px solid #eee;
+        transition: all 0.3s ease;
     }
 
     .selectable-template {
@@ -62,6 +64,19 @@
         display: flex;
         justify-content: space-between;
         margin-top: 1rem;
+    }
+
+    /* Анимация для удаления */
+    .template-item.fade-out {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .fade-out {
+        opacity: 0;
+        transform: translateX(-20px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
     }
 </style>
 {% endblock %}
@@ -262,6 +277,23 @@
     </div>
 </div>
 
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal" id="confirmDeleteModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h4>Подтверждение удаления</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Удалить этот шаблон? Это не удалит уже созданные смены.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+        </div>
+    </div>
+</div>
+
 <!-- Модальное окно выбора шаблона -->
 <div class="modal" id="selectTemplateModal">
     <div class="modal-content">
@@ -296,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Модальные окна
     const templateModal = document.getElementById('templateModal');
     const selectTemplateModal = document.getElementById('selectTemplateModal');
+    const confirmDeleteModal = document.getElementById('confirmDeleteModal');
     const modalCloseBtns = document.querySelectorAll('.modal-close');
     const saveTemplateBtn = document.getElementById('saveTemplateBtn');
     const createTemplateBtn = document.getElementById('createTemplateBtn');
@@ -305,24 +338,94 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedDate = null;
     let selectedUserId = null;
 
+    // Улучшенная функция для удаления шаблона
+    const deleteTemplate = (templateId) => {
+        // Сначала удаляем визуально
+        const templateElements = document.querySelectorAll(`
+            [data-template-id="${templateId}"],
+            .template-item[data-template-id="${templateId}"],
+            .selectable-template[data-template-id="${templateId}"]
+        `);
+
+        templateElements.forEach(el => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 300);
+        });
+
+        // Затем удаляем связанные смены
+        document.querySelectorAll(`.shift-badge[data-template-id="${templateId}"]`).forEach(badge => {
+            badge.classList.add('fade-out');
+            setTimeout(() => badge.remove(), 300);
+        });
+
+        // Отправляем запрос на сервер
+        fetch(`/api/delete_shift_template/${templateId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                toastManager.show('Ошибка сервера: ' + (data.error || 'Неизвестная ошибка'), 'danger');
+                // В случае ошибки можно добавить логику восстановления элементов
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            toastManager.show('Ошибка при удалении шаблона', 'danger');
+        });
+    };
+
+    // Обработчик для кнопок удаления (делегирование событий)
+    document.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.delete-template-btn');
+        if (!deleteBtn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const templateId = deleteBtn.getAttribute('data-template-id');
+        const templateItem = deleteBtn.closest('.template-item');
+
+        // Показываем модальное окно подтверждения
+        confirmDeleteModal.style.display = 'flex';
+
+        // Назначаем обработчик подтверждения
+        document.getElementById('confirmDeleteBtn').onclick = () => {
+            // Анимация перед удалением
+            if (templateItem) {
+                templateItem.classList.add('fade-out');
+            }
+
+            // Удаляем через небольшой таймаут для анимации
+            setTimeout(() => {
+                deleteTemplate(templateId);
+            }, 300);
+
+            confirmDeleteModal.style.display = 'none';
+        };
+    });
+
+    // Обработчик для кнопок закрытия модального окна подтверждения
+    document.querySelectorAll('#confirmDeleteModal .modal-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+            confirmDeleteModal.style.display = 'none';
+        });
+    });
+
     // Обработчики для кликов по ячейкам
     document.querySelectorAll('.day-cell').forEach(cell => {
         cell.addEventListener('click', (e) => {
-            // Игнорируем клики по дочерним элементам (кнопкам удаления и т.д.)
-            if (e.target.closest('.remove-shift-btn') || e.target.closest('.shift-badge')) {
-                return;
-            }
+            if (e.target.closest('.remove-shift-btn') || e.target.closest('.shift-badge')) return;
 
             selectedDate = cell.getAttribute('data-date');
             selectedUserId = cell.getAttribute('data-user-id');
 
-            // Если в ячейке уже есть смена, не открываем модальное окно
-            if (cell.classList.contains('has-shift')) {
-                return;
+            if (!cell.classList.contains('has-shift')) {
+                selectTemplateModal.style.display = 'flex';
             }
-
-            // Показываем модальное окно выбора шаблона
-            selectTemplateModal.style.display = 'flex';
         });
     });
 
@@ -352,9 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Добавляем новый шаблон в список в сайдбаре
+                // Создаем элемент шаблона с data-атрибутом
                 const templateItem = document.createElement('div');
                 templateItem.className = 'template-item';
+                templateItem.setAttribute('data-template-id', data.template.id);
                 templateItem.innerHTML = `
                     <div>
                         <strong>${data.template.title}</strong><br>
@@ -370,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 templateList.appendChild(templateItem);
 
-                // Добавляем новый шаблон в модальное окно выбора
+                // Создаем элемент для модального окна выбора
                 const selectTemplateItem = document.createElement('div');
                 selectTemplateItem.className = 'template-item selectable-template';
                 selectTemplateItem.setAttribute('data-template-id', data.template.id);
@@ -379,17 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${data.template.start_time} - ${data.template.end_time}
                 `;
                 selectTemplateList.appendChild(selectTemplateItem);
-
-                // Назначаем обработчик для нового шаблона в модальном окне
-                selectTemplateItem.addEventListener('click', function() {
-                    addShiftFromTemplate(this.getAttribute('data-template-id'));
-                });
-
-                // Назначаем обработчик удаления для нового шаблона
-                templateItem.querySelector('.delete-template-btn').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    deleteTemplate(this.getAttribute('data-template-id'));
-                });
 
                 templateModal.style.display = 'none';
                 document.getElementById('templateForm').reset();
@@ -431,45 +524,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Удаление шаблона
-    function deleteTemplate(templateId) {
-        if (confirm('Удалить этот шаблон? Это не удалит уже созданные смены.')) {
-            fetch(`/api/delete_shift_template/${templateId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Удаляем шаблон из списков
-                    document.querySelectorAll(`[data-template-id="${templateId}"]`).forEach(el => el.remove());
-                    toastManager.show('Шаблон успешно удален', 'success');
-                } else {
-                    toastManager.show('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'danger');
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                toastManager.show('Ошибка при удалении шаблона', 'danger');
-            });
-        }
-    }
-
     // Назначаем обработчики для существующих шаблонов в модальном окне
-    document.querySelectorAll('#selectTemplateList .template-item').forEach(item => {
-        item.addEventListener('click', function() {
-            addShiftFromTemplate(this.getAttribute('data-template-id'));
-        });
-    });
-
-    // Назначаем обработчики удаления для существующих шаблонов
-    document.querySelectorAll('.delete-template-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            deleteTemplate(this.getAttribute('data-template-id'));
-        });
+    document.getElementById('selectTemplateList').addEventListener('click', function(e) {
+        const templateItem = e.target.closest('.selectable-template');
+        if (templateItem) {
+            addShiftFromTemplate(templateItem.getAttribute('data-template-id'));
+        }
     });
 
     // Удаление смены
@@ -517,18 +577,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Закрытие модальных окон
+    const closeAllModals = () => {
+        templateModal.style.display = 'none';
+        selectTemplateModal.style.display = 'none';
+        confirmDeleteModal.style.display = 'none';
+    };
+
     modalCloseBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            templateModal.style.display = 'none';
-            selectTemplateModal.style.display = 'none';
-        });
+        btn.addEventListener('click', closeAllModals);
     });
 
-    // Закрытие модальных окон при клике вне их
     window.addEventListener('click', (e) => {
-        if (e.target === templateModal || e.target === selectTemplateModal) {
-            templateModal.style.display = 'none';
-            selectTemplateModal.style.display = 'none';
+        if (e.target === templateModal ||
+            e.target === selectTemplateModal ||
+            e.target === confirmDeleteModal) {
+            closeAllModals();
         }
     });
 
