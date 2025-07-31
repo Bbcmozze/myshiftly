@@ -167,6 +167,7 @@
     background: white;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    overflow: hidden; /* Добавьте это свойство */
 }
 
 .calendar-header {
@@ -237,6 +238,7 @@
     grid-template-columns: 300px 1fr;
     gap: 2rem;
     margin-top: 2rem;
+    width: 100%; /* Добавьте это свойство */
 }
 
 .calendar-sidebar {
@@ -372,6 +374,8 @@
     padding: 1.5rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     border: 1px solid #f1f5f9;
+    width: 100%; /* Добавьте это свойство */
+    overflow-x: auto; /* Добавьте это свойство */
 }
 
 .calendar-toolbar {
@@ -537,33 +541,144 @@
     border-top: 1px solid #f1f5f9;
 }
 
-/* Адаптивность */
-@media (max-width: 1024px) {
-    .calendar-content {
-        grid-template-columns: 1fr;
-    }
+.calendar-grid-container {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
-@media (max-width: 768px) {
-    .calendar-creation-container,
-    .calendars-container,
-    .calendar-view-container {
-        padding: 1.5rem;
-    }
+.calendar-table-container {
+    overflow-x: auto;
+    max-width: 100%;
+    margin-bottom: 1rem;
+    width: 100%; /* Добавьте это свойство */
+}
 
-    .creation-options {
-        grid-template-columns: 1fr;
-    }
 
-    .creation-header h2 {
-        font-size: 2rem;
-    }
+.calendar-table {
+    min-width: 800px;
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
 
-    .form-row {
-        grid-template-columns: 1fr;
-    }
+.calendar-table th {
+    background: #f8fafc;
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+}
 
-    .modal-content {
-        margin: 1rem;
-    }
+.calendar-table td {
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+    min-width: 120px;
+    height: 80px;
+}
+
+.user-cell {
+    min-width: 150px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #f8fafc;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+}
+
+.user-cell img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.day-cell {
+    position: relative;
+    min-height: 80px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.day-cell:hover {
+    background-color: #f8fafc;
+}
+
+.shift-badge {
+    background: #e0f2fe;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    position: relative;
+    z-index: 1;
+}
+
+.shift-badge .remove-shift-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #f87171;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.add-shift-btn {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.add-shift-btn:hover {
+    color: var(--primary-color);
+}
+
+.month-navigation {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.add-shift-area {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.day-cell:hover .add-shift-area {
+    display: flex;
+}
+
+#currentMonth {
+    margin: 0;
+    min-width: 150px;
+    text-align: center;
 }

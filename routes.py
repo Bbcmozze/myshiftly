@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, a
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, generate_user_id, FriendRequest, Calendar, Shift
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import Config
 import os
 from werkzeug.utils import secure_filename
@@ -175,6 +175,22 @@ def register_routes(app):
         return jsonify(results)
 
 
+    @app.route('/my-calendars')
+    @login_required
+    def my_calendars():
+        # Получаем календари пользователя
+        personal_calendars = Calendar.query.filter_by(owner_id=current_user.id, is_team=False).all()
+        team_calendars = Calendar.query.filter_by(owner_id=current_user.id, is_team=True).all()
+        shared_calendars = current_user.shared_calendars
+
+        return render_template(
+            'calendar/my_calendars.html',
+            personal_calendars=personal_calendars,
+            team_calendars=team_calendars,
+            shared_calendars=shared_calendars
+        )
+
+
     @app.route('/create-calendar', methods=['GET', 'POST'])
     @login_required
     def create_calendar():
@@ -209,7 +225,34 @@ def register_routes(app):
         if calendar.owner_id != current_user.id and current_user not in calendar.members:
             abort(403)
 
-        shifts = Shift.query.filter_by(calendar_id=calendar.id).order_by(Shift.start_time).all()
+        # Получаем месяц для отображения (из параметра запроса или текущий месяц)
+        month = request.args.get('month')
+        if month:
+            try:
+                current_month = datetime.strptime(month, '%Y-%m-%d').date().replace(day=1)
+            except ValueError:
+                current_month = datetime.utcnow().date().replace(day=1)
+        else:
+            current_month = datetime.utcnow().date().replace(day=1)
+
+        # Получаем все дни в текущем месяце
+        days_in_month = []
+        next_month = current_month.replace(day=28) + timedelta(days=4)  # Переход к следующему месяцу
+        last_day = next_month - timedelta(days=next_month.day)
+
+        for day in range(1, last_day.day + 1):
+            days_in_month.append(current_month.replace(day=day))
+
+        # Получаем смены для этого месяца
+        first_day = current_month
+        last_day = current_month.replace(day=last_day.day)
+
+        shifts = Shift.query.filter(
+            Shift.calendar_id == calendar.id,
+            Shift.date >= first_day,
+            Shift.date <= last_day
+        ).all()
+
         friends = current_user.friends.all()  # Для добавления участников в командный календарь
 
         return render_template(
@@ -217,21 +260,10 @@ def register_routes(app):
             calendar=calendar,
             shifts=shifts,
             friends=friends,
-            datetime=datetime  # Для использования в шаблоне
+            current_month=current_month,
+            days_in_month=days_in_month,
+            datetime=datetime
         )
-
-
-    @app.route('/calendars')
-    @login_required
-    def my_calendars():
-        personal_calendars = Calendar.query.filter_by(owner_id=current_user.id, is_team=False).all()
-        team_calendars = Calendar.query.filter_by(owner_id=current_user.id, is_team=True).all()
-        shared_calendars = current_user.shared_calendars
-
-        return render_template('calendar/my_calendars.html',
-                               personal_calendars=personal_calendars,
-                               team_calendars=team_calendars,
-                               shared_calendars=shared_calendars)
 
     @app.route('/calendar/<int:calendar_id>/add-shift', methods=['POST'])
     @login_required
@@ -245,20 +277,22 @@ def register_routes(app):
         start_time = request.form.get('start_time')
         end_time = request.form.get('end_time')
         user_id = request.form.get('user_id')
+        date = request.form.get('date')
 
         try:
             shift = Shift(
                 title=title,
-                start_time=datetime.strptime(start_time, '%Y-%m-%dT%H:%M'),
-                end_time=datetime.strptime(end_time, '%Y-%m-%dT%H:%M'),
+                start_time=datetime.strptime(start_time, '%H:%M').time(),
+                end_time=datetime.strptime(end_time, '%H:%M').time(),
                 calendar_id=calendar.id,
-                user_id=user_id if user_id else None
+                user_id=user_id,
+                date=datetime.strptime(date, '%Y-%m-%d').date()
             )
 
             db.session.add(shift)
             db.session.commit()
 
-            return jsonify({'success': True})
+            return jsonify({'success': True, 'shift_id': shift.id})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 400
 

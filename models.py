@@ -58,10 +58,11 @@ class Calendar(db.Model):
 class Shift(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False)
-    end_time = db.Column(db.DateTime, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)  # Изменено с DateTime на Time
+    end_time = db.Column(db.Time, nullable=False)  # Изменено с DateTime на Time
     calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    date = db.Column(db.Date, nullable=False)  # Добавлено поле для даты
 
     user = db.relationship('User', backref='shifts')
 
