@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}{{ calendar.name }} - My Shifts{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar/view.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-view-container">
+    <div class="calendar-header">
+        <div class="header-info">
+            <h2>{{ calendar.name }}</h2>
+            <div class="calendar-meta">
+                <span class="badge {{ 'badge-team' if calendar.is_team else 'badge-personal' }}">
+                    {{ 'Командный' if calendar.is_team else 'Личный' }}
+                </span>
+                <span><i class="bi bi-person-fill"></i> {{ calendar.members|length + 1 }} участников</span>
+                <span><i class="bi bi-calendar3"></i> Создан {{ calendar.created_at.strftime('%d.%m.%Y') }}</span>
+            </div>
+        </div>
+        
+        {% if calendar.owner_id == current_user.id %}
+        <div class="header-actions">
+            <form method="POST" action="{{ url_for('delete_calendar', calendar_id=calendar.id) }}">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="calendar-content">
+        <div class="calendar-sidebar">
+            {% if calendar.is_team %}
+            <div class="sidebar-section">
+                <h4>Участники</h4>
+                <div class="member-list">
+                    <div class="member-item owner">
+                        <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}" 
+                             onerror="this.src='/static/images/default_avatar.svg'">
+                        <span>{{ calendar.owner.username }} (Вы)</span>
+                    </div>
+                    {% for member in calendar.members %}
+                    <div class="member-item">
+                        <img src="{{ url_for('static', filename='images/' + member.avatar) }}" 
+                             onerror="this.src='/static/images/default_avatar.svg'">
+                        <span>{{ member.username }}</span>
+                        {% if calendar.owner_id == current_user.id %}
+                        <form method="POST" action="{{ url_for('remove_calendar_member', calendar_id=calendar.id, user_id=member.id) }}">
+                            <button type="submit" class="btn-remove-member">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if calendar.owner_id == current_user.id %}
+                <div class="add-member-form">
+                    <select id="friendSelect" class="form-select">
+                        <option value="">Выберите коллегу</option>
+                        {% for friend in friends %}
+                        <option value="{{ friend.id }}">{{ friend.username }}</option>
+                        {% endfor %}
+                    </select>
+                    <button id="addMemberBtn" class="btn btn-sm btn-primary">Добавить</button>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="sidebar-section">
+                <h4>Ближайшие смены</h4>
+                <div class="upcoming-shifts">
+                    {% for shift in shifts if shift.start_time > datetime.utcnow() %}
+                    <div class="shift-item">
+                        <div class="shift-time">
+                            {{ shift.start_time.strftime('%d.%m %H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
+                        </div>
+                        <div class="shift-title">{{ shift.title }}</div>
+                        {% if shift.user %}
+                        <div class="shift-user">
+                            <img src="{{ url_for('static', filename='images/' + shift.user.avatar) }}" 
+                                 onerror="this.src='/static/images/default_avatar.svg'">
+                            {{ shift.user.username }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="no-shifts">Нет запланированных смен</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="calendar-main">
+            <div class="calendar-toolbar">
+                <h4>График смен</h4>
+                {% if calendar.owner_id == current_user.id %}
+                <button class="btn btn-primary" id="addShiftBtn">
+                    <i class="bi bi-plus-lg"></i> Добавить смену
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="shifts-grid">
+                {% for shift in shifts %}
+                <div class="shift-card">
+                    <div class="shift-header">
+                        <h5>{{ shift.title }}</h5>
+                        {% if calendar.owner_id == current_user.id %}
+                        <form method="POST" action="{{ url_for('delete_shift', shift_id=shift.id) }}">
+                            <button type="submit" class="btn-delete-shift">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <div class="shift-time">
+                        <i class="bi bi-clock"></i>
+                        {{ shift.start_time.strftime('%d.%m.%Y %H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
+                    </div>
+                    {% if shift.user %}
+                    <div class="shift-assigned">
+                        <img src="{{ url_for('static', filename='images/' + shift.user.avatar) }}" 
+                             onerror="this.src='/static/images/default_avatar.svg'">
+                        {{ shift.user.username }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="no-shifts">
+                    <i class="bi bi-calendar-x"></i>
+                    <p>Нет созданных смен</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления смены -->
+<div class="modal" id="addShiftModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Добавить смену</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="shiftForm" method="POST" action="{{ url_for('add_shift', calendar_id=calendar.id) }}">
+                <div class="form-group">
+                    <label for="shiftTitle">Название смены</label>
+                    <input type="text" id="shiftTitle" name="title" required placeholder="Например: Утренняя смена">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="shiftStart">Начало</label>
+                        <input type="datetime-local" id="shiftStart" name="start_time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="shiftEnd">Конец</label>
+                        <input type="datetime-local" id="shiftEnd" name="end_time" required>
+                    </div>
+                </div>
+                {% if calendar.is_team %}
+                <div class="form-group">
+                    <label for="shiftUser">Назначить коллегу (необязательно)</label>
+                    <select id="shiftUser" name="user_id" class="form-select">
+                        <option value="">Не назначать</option>
+                        <option value="{{ calendar.owner_id }}">{{ calendar.owner.username }} (Вы)</option>
+                        {% for member in calendar.members %}
+                        <option value="{{ member.id }}">{{ member.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-primary" id="saveShiftBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Модальное окно для добавления смены
+    const addShiftBtn = document.getElementById('addShiftBtn');
+    const addShiftModal = document.getElementById('addShiftModal');
+    const modalCloseBtns = document.querySelectorAll('.modal-close');
+    const saveShiftBtn = document.getElementById('saveShiftBtn');
+    const shiftForm = document.getElementById('shiftForm');
+
+    if (addShiftBtn) {
+        addShiftBtn.addEventListener('click', () => {
+            addShiftModal.style.display = 'flex';
+        });
+    }
+
+    modalCloseBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            addShiftModal.style.display = 'none';
+        });
+    });
+
+    saveShiftBtn.addEventListener('click', () => {
+        shiftForm.submit();
+    });
+
+    // Добавление участников в календарь
+    const addMemberBtn = document.getElementById('addMemberBtn');
+    if (addMemberBtn) {
+        addMemberBtn.addEventListener('click', () => {
+            const friendSelect = document.getElementById('friendSelect');
+            const userId = friendSelect.value;
+
+            if (userId) {
+                fetch(`/calendar/${calendar.id}/add-member`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `user_id=${userId}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        });
+    }
+
+    // Инициализация flatpickr для выбора даты и времени
+    flatpickr("#shiftStart", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        locale: "ru"
+    });
+
+    flatpickr("#shiftEnd", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        time_24hr: true,
+        locale: "ru"
+    });
+});
+</script>
+{% endblock %}

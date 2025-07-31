@@ -3,7 +3,7 @@
 {% block title %}Создать календарь - My Shifts{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar/create.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
             </div>
             <h3>Личный календарь</h3>
             <p>Создайте календарь только для себя. Идеально для индивидуального планирования смен.</p>
-            <button class="btn btn-primary">Создать для себя</button>
+            <button class="btn btn-outline" data-type="personal">Выбрать</button>
         </div>
 
         <div class="creation-card" id="teamCalendar">
@@ -29,15 +29,25 @@
             </div>
             <h3>Командный календарь</h3>
             <p>Создайте общий календарь для вашей команды. Управляйте сменами нескольких сотрудников.</p>
-            <button class="btn btn-primary">Создать для команды</button>
+            <button class="btn btn-outline" data-type="team">Выбрать</button>
         </div>
     </div>
 
-    <div class="creation-info">
-        <div class="info-card">
-            <i class="bi bi-question-circle"></i>
-            <h4>Какой календарь мне выбрать?</h4>
-            <p>Если вам нужно планировать только свои смены - выбирайте личный календарь. Для управления графиком нескольких сотрудников используйте командный календарь.</p>
+    <div class="creation-form-container" id="creationForm" style="display: none;">
+        <div class="creation-form">
+            <h3 id="formTitle">Создать командный календарь</h3>
+            <form method="POST" action="{{ url_for('create_calendar') }}">
+                <input type="hidden" name="type" id="calendarType" value="team">
+                <div class="form-group">
+                    <label for="calendarName">Название календаря</label>
+                    <input type="text" id="calendarName" name="name" required
+                           placeholder="Например: График смен на июль">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="cancelCreate">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать календарь</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

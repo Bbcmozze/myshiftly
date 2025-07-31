@@ -1,7 +1,7 @@
-from flask import render_template, request, redirect, url_for, flash, jsonify
+from flask import render_template, request, redirect, url_for, flash, jsonify, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, generate_user_id, FriendRequest
+from models import db, User, generate_user_id, FriendRequest, Calendar, Shift
 from datetime import datetime
 from config import Config
 import os
@@ -89,12 +89,6 @@ def register_routes(app):
         return redirect(url_for('home'))
 
 
-    @app.route('/create-calendar')
-    @login_required
-    def create_calendar():
-        return render_template('calendar/create_calendar.html')
-
-
     @app.route('/friends', methods=['GET'])
     @login_required
     def friends_page():
@@ -179,3 +173,151 @@ def register_routes(app):
         } for user in users]
 
         return jsonify(results)
+
+
+    @app.route('/create-calendar', methods=['GET', 'POST'])
+    @login_required
+    def create_calendar():
+        if request.method == 'POST':
+            name = request.form.get('name')
+            is_team = request.form.get('type') == 'team'
+
+            if not name:
+                flash('Введите название календаря', 'danger')
+                return redirect(url_for('create_calendar'))
+
+            calendar = Calendar(
+                name=name,
+                owner_id=current_user.id,
+                is_team=is_team
+            )
+
+            db.session.add(calendar)
+            db.session.commit()
+
+            flash(f'Календарь "{name}" успешно создан!', 'success')
+            return redirect(url_for('view_calendar', calendar_id=calendar.id))
+
+        return render_template('calendar/create_calendar.html')
+
+    @app.route('/calendar/<int:calendar_id>')
+    @login_required
+    def view_calendar(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        # Проверка, что пользователь имеет доступ к календарю
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            abort(403)
+
+        shifts = Shift.query.filter_by(calendar_id=calendar.id).order_by(Shift.start_time).all()
+        friends = current_user.friends.all()  # Для добавления участников в командный календарь
+
+        return render_template(
+            'calendar/view_calendar.html',
+            calendar=calendar,
+            shifts=shifts,
+            friends=friends,
+            datetime=datetime  # Для использования в шаблоне
+        )
+
+
+    @app.route('/calendars')
+    @login_required
+    def my_calendars():
+        personal_calendars = Calendar.query.filter_by(owner_id=current_user.id, is_team=False).all()
+        team_calendars = Calendar.query.filter_by(owner_id=current_user.id, is_team=True).all()
+        shared_calendars = current_user.shared_calendars
+
+        return render_template('calendar/my_calendars.html',
+                               personal_calendars=personal_calendars,
+                               team_calendars=team_calendars,
+                               shared_calendars=shared_calendars)
+
+    @app.route('/calendar/<int:calendar_id>/add-shift', methods=['POST'])
+    @login_required
+    def add_shift(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        if calendar.owner_id != current_user.id:
+            abort(403)
+
+        title = request.form.get('title')
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        user_id = request.form.get('user_id')
+
+        try:
+            shift = Shift(
+                title=title,
+                start_time=datetime.strptime(start_time, '%Y-%m-%dT%H:%M'),
+                end_time=datetime.strptime(end_time, '%Y-%m-%dT%H:%M'),
+                calendar_id=calendar.id,
+                user_id=user_id if user_id else None
+            )
+
+            db.session.add(shift)
+            db.session.commit()
+
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
+
+    @app.route('/calendar/<int:calendar_id>/add-member', methods=['POST'])
+    @login_required
+    def add_calendar_member(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        if calendar.owner_id != current_user.id:
+            abort(403)
+
+        user_id = request.form.get('user_id')
+        user = User.query.get_or_404(user_id)
+
+        if user not in calendar.members:
+            calendar.members.append(user)
+            db.session.commit()
+
+        return jsonify({'success': True})
+
+    @app.route('/calendar/<int:calendar_id>/remove-member/<int:user_id>', methods=['POST'])
+    @login_required
+    def remove_calendar_member(calendar_id, user_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+        user = User.query.get_or_404(user_id)
+
+        if calendar.owner_id != current_user.id:
+            abort(403)
+
+        if user in calendar.members:
+            calendar.members.remove(user)
+            db.session.commit()
+
+        return redirect(url_for('view_calendar', calendar_id=calendar_id))
+
+    @app.route('/calendar/<int:calendar_id>/delete', methods=['POST'])
+    @login_required
+    def delete_calendar(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        if calendar.owner_id != current_user.id:
+            abort(403)
+
+        db.session.delete(calendar)
+        db.session.commit()
+
+        flash('Календарь успешно удален', 'success')
+        return redirect(url_for('my_calendars'))
+
+    @app.route('/shift/<int:shift_id>/delete', methods=['POST'])
+    @login_required
+    def delete_shift(shift_id):
+        shift = Shift.query.get_or_404(shift_id)
+        calendar = shift.calendar
+
+        if calendar.owner_id != current_user.id:
+            abort(403)
+
+        db.session.delete(shift)
+        db.session.commit()
+
+        return redirect(url_for('view_calendar', calendar_id=calendar.id))

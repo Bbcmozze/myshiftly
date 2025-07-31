@@ -1,23 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
     const personalBtn = document.getElementById('personalCalendar').querySelector('button');
     const teamBtn = document.getElementById('teamCalendar').querySelector('button');
+    const creationForm = document.getElementById('creationForm');
+    const formTitle = document.getElementById('formTitle');
+    const calendarType = document.getElementById('calendarType');
+    const cancelBtn = document.getElementById('cancelCreate');
 
     personalBtn.addEventListener('click', () => {
-        // Здесь будет переход к созданию личного календаря
-        toastManager.show('Создание личного календаря', 'info');
-        // Временная заглушка - можно удалить после реализации функционала
-        setTimeout(() => {
-            window.location.href = '/'; // Перенаправление на главную
-        }, 1500);
+        formTitle.textContent = 'Создать личный календарь';
+        calendarType.value = 'personal';
+        creationForm.style.display = 'block';
     });
 
     teamBtn.addEventListener('click', () => {
-        // Здесь будет переход к созданию командного календаря
-        toastManager.show('Создание командного календаря', 'info');
-        // Временная заглушка - можно удалить после реализации функционала
-        setTimeout(() => {
-            window.location.href = '/'; // Перенаправление на главную
-        }, 1500);
+        formTitle.textContent = 'Создать командный календарь';
+        calendarType.value = 'team';
+        creationForm.style.display = 'block';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        creationForm.style.display = 'none';
     });
 
     // Анимация при наведении на карточки

@@ -41,3 +41,33 @@ class User(db.Model, UserMixin):
 
     def __repr__(self):
         return f"User('{self.username}', '{self.email}')"
+
+
+class Calendar(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_team = db.Column(db.Boolean, default=False)
+
+    owner = db.relationship('User', backref='calendars')
+    members = db.relationship('User', secondary='calendar_members', backref='shared_calendars')
+    shifts = db.relationship('Shift', backref='calendar', lazy='dynamic', cascade='all, delete-orphan')
+
+
+class Shift(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False)
+    calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    user = db.relationship('User', backref='shifts')
+
+
+# Ассоциативная таблица для участников календаря
+calendar_members = db.Table('calendar_members',
+                            db.Column('calendar_id', db.Integer, db.ForeignKey('calendar.id'), primary_key=True),
+                            db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+                            )

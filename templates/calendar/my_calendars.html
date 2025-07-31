@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Мои календари - My Shifts{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar/list.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="calendars-container">
+    <div class="calendars-header">
+        <h2>Мои календари</h2>
+        <a href="{{ url_for('create_calendar') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Создать новый
+        </a>
+    </div>
+
+    <div class="calendar-tabs">
+        <div class="tab-header">
+            <button class="tab-btn active" data-tab="personal">Личные</button>
+            <button class="tab-btn" data-tab="team">Командные</button>
+            <button class="tab-btn" data-tab="shared">Общие</button>
+        </div>
+
+        <div class="tab-content active" id="personal-tab">
+            {% if personal_calendars %}
+            <div class="calendar-grid">
+                {% for calendar in personal_calendars %}
+                <div class="calendar-card">
+                    <div class="calendar-info">
+                        <h3>{{ calendar.name }}</h3>
+                        <p>Личный календарь</p>
+                        <div class="calendar-meta">
+                            <span><i class="bi bi-calendar3"></i> {{ calendar.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="calendar-actions">
+                        <a href="{{ url_for('view_calendar', calendar_id=calendar.id) }}" class="btn btn-sm btn-primary">
+                            Открыть
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-calendars">
+                <i class="bi bi-calendar-x"></i>
+                <h3>Нет личных календарей</h3>
+                <p>Создайте личный календарь для управления своими сменами</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-content" id="team-tab">
+            {% if team_calendars %}
+            <div class="calendar-grid">
+                {% for calendar in team_calendars %}
+                <div class="calendar-card">
+                    <div class="calendar-info">
+                        <h3>{{ calendar.name }}</h3>
+                        <p>Командный календарь · {{ calendar.members|length }} участников</p>
+                        <div class="calendar-meta">
+                            <span><i class="bi bi-calendar3"></i> {{ calendar.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="calendar-actions">
+                        <a href="{{ url_for('view_calendar', calendar_id=calendar.id) }}" class="btn btn-sm btn-primary">
+                            Открыть
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-calendars">
+                <i class="bi bi-calendar-x"></i>
+                <h3>Нет командных календарей</h3>
+                <p>Создайте командный календарь для управления сменами ваших коллег</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="tab-content" id="shared-tab">
+            {% if shared_calendars %}
+            <div class="calendar-grid">
+                {% for calendar in shared_calendars %}
+                <div class="calendar-card">
+                    <div class="calendar-info">
+                        <h3>{{ calendar.name }}</h3>
+                        <p>Общий календарь · Владелец: {{ calendar.owner.username }}</p>
+                        <div class="calendar-meta">
+                            <span><i class="bi bi-calendar3"></i> {{ calendar.created_at.strftime('%d.%m.%Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="calendar-actions">
+                        <a href="{{ url_for('view_calendar', calendar_id=calendar.id) }}" class="btn btn-sm btn-primary">
+                            Открыть
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-calendars">
+                <i class="bi bi-calendar-x"></i>
+                <h3>Нет общих календарей</h3>
+                <p>Здесь будут отображаться календари, которыми с вами поделились</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            
+            // Убираем активные классы у всех кнопок и контента
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Добавляем активные классы к выбранной кнопке и контенту
+            btn.classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}
