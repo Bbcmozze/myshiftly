@@ -89,6 +89,12 @@ def register_routes(app):
         return redirect(url_for('home'))
 
 
+    @app.route('/create-calendar')
+    @login_required
+    def create_calendar():
+        return render_template('calendar/create_calendar.html')
+
+
     @app.route('/friends', methods=['GET'])
     @login_required
     def friends_page():

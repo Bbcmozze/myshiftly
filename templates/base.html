@@ -106,7 +106,7 @@
             <p>{{ current_user.email }}</p>
         </div>
         <ul class="sidebar-nav">
-            <li><a href="#"><i class="bi bi-calendar-plus-fill"></i> Создать календарь</a></li>
+            <li><a href="{{ url_for('create_calendar') }}"><i class="bi bi-calendar-plus-fill"></i> Создать календарь</a></li>
             <li><a href="{{ url_for('friends_page') }}"><i class="bi bi-person-plus-fill"></i> Коллеги</a></li>
             <hr class="sidebar-separator">
             <li><a href="#"><i class="bi bi-clipboard-data-fill"></i> Статистика и Анализ</a></li>

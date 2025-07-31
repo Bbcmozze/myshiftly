@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Создать календарь - My Shifts{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-creation-container">
+    <div class="creation-header">
+        <h2>Создать новый календарь</h2>
+        <p>Выберите тип календаря, который вы хотите создать</p>
+    </div>
+
+    <div class="creation-options">
+        <div class="creation-card" id="personalCalendar">
+            <div class="card-icon">
+                <i class="bi bi-person-fill"></i>
+            </div>
+            <h3>Личный календарь</h3>
+            <p>Создайте календарь только для себя. Идеально для индивидуального планирования смен.</p>
+            <button class="btn btn-primary">Создать для себя</button>
+        </div>
+
+        <div class="creation-card" id="teamCalendar">
+            <div class="card-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <h3>Командный календарь</h3>
+            <p>Создайте общий календарь для вашей команды. Управляйте сменами нескольких сотрудников.</p>
+            <button class="btn btn-primary">Создать для команды</button>
+        </div>
+    </div>
+
+    <div class="creation-info">
+        <div class="info-card">
+            <i class="bi bi-question-circle"></i>
+            <h4>Какой календарь мне выбрать?</h4>
+            <p>Если вам нужно планировать только свои смены - выбирайте личный календарь. Для управления графиком нескольких сотрудников используйте командный календарь.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}
