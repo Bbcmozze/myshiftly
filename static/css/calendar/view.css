@@ -167,7 +167,7 @@
     background: white;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    overflow: hidden; /* Добавьте это свойство */
+    overflow: hidden;
 }
 
 .calendar-header {
@@ -374,8 +374,8 @@
     padding: 1.5rem;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
     border: 1px solid #f1f5f9;
-    width: 100%; /* Добавьте это свойство */
-    overflow-x: auto; /* Добавьте это свойство */
+    width: 100%;
+    overflow-x: auto;
 }
 
 .calendar-toolbar {
@@ -695,6 +695,23 @@
 
 .delete-template-btn:hover {
     transform: scale(1.1);
+}
+
+/* Стили для элементов с правами редактирования */
+.has-edit-rights .day-cell .remove-shift-btn {
+    display: block;
+}
+
+/* Скрываем кнопки удаления по умолчанию */
+.day-cell .remove-shift-btn {
+    display: none;
+}
+
+/* Анимации */
+.fade-out {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 /* Стили для модального окна подтверждения */

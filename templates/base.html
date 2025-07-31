@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     {% block styles %}{% endblock %}
 </head>
-<body>
+<body data-calendar-id="{{ calendar.id }}"
+      data-current-month="{{ current_month.strftime('%Y-%m-01') }}"
+      data-is-owner="{{ 'true' if calendar.owner_id == current_user.id else 'false' }}"
+      data-is-member="{{ 'true' if current_user in calendar.members else 'false' }}">
     <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
