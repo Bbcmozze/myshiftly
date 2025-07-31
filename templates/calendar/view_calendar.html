@@ -130,12 +130,16 @@
                                 {% for shift in shifts if shift.user_id == calendar.owner.id and shift.date == day %}
                                 <div class="shift-badge" data-shift-id="{{ shift.id }}">
                                     {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
+                                    {% if calendar.owner_id == current_user.id or current_user in calendar.members %}
                                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
+                                {% if calendar.owner_id == current_user.id or current_user in calendar.members %}
                                 <div class="add-shift-area">
                                     <i class="bi bi-plus"></i> Добавить смену
                                 </div>
+                                {% endif %}
                             </td>
                             {% endfor %}
                         </tr>

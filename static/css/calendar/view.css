@@ -684,8 +684,14 @@
 }
 
 .template-item {
-    transition: all 0.3s ease;
+    transition: all 0.1s ease;
     opacity: 1;
+    cursor: pointer;
+}
+
+.template-item:hover {
+    background: #ededed;
+    transform: scale(1.01);
 }
 
 /* Анимация для кнопки удаления */

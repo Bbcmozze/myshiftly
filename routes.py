@@ -314,8 +314,20 @@ def register_routes(app):
         if user not in calendar.members:
             calendar.members.append(user)
             db.session.commit()
-
-        return jsonify({'success': True})
+            return jsonify({
+                'success': True,
+                'message': f'{user.username} успешно добавлен в календарь',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.avatar
+                }
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Пользователь уже в календаре'
+            }), 400
 
     @app.route('/calendar/<int:calendar_id>/remove-member/<int:user_id>', methods=['POST'])
     @login_required
@@ -415,7 +427,6 @@ def register_routes(app):
         data = request.get_json()
 
         try:
-            # Проверяем доступ к календарю
             calendar = Calendar.query.get(data['calendar_id'])
             if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
                 return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
@@ -424,14 +435,25 @@ def register_routes(app):
             if not template:
                 return jsonify({'success': False, 'error': 'Шаблон не найден'}), 404
 
-            # Проверяем, что шаблон принадлежит этому календарю
             if template.calendar_id != calendar.id:
                 return jsonify({'success': False, 'error': 'Неверный шаблон'}), 400
 
-            # Проверяем, что пользователь существует и имеет доступ к календарю
             user = User.query.get(data['user_id'])
             if not user or (user.id != current_user.id and user not in calendar.members):
                 return jsonify({'success': False, 'error': 'Неверный пользователь'}), 400
+
+            # Проверяем, есть ли уже смена в этот день у этого пользователя
+            existing_shift = Shift.query.filter_by(
+                calendar_id=data['calendar_id'],
+                user_id=data['user_id'],
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date()
+            ).first()
+
+            if existing_shift:
+                return jsonify({
+                    'success': False,
+                    'error': 'У пользователя уже есть смена в этот день'
+                }), 400
 
             shift = Shift(
                 title=template.title,
@@ -445,7 +467,16 @@ def register_routes(app):
             db.session.add(shift)
             db.session.commit()
 
-            return jsonify({'success': True})
+            return jsonify({
+                'success': True,
+                'shift': {
+                    'id': shift.id,
+                    'title': shift.title,
+                    'start_time': shift.start_time.strftime('%H:%M'),
+                    'end_time': shift.end_time.strftime('%H:%M'),
+                    'date': shift.date.strftime('%Y-%m-%d')
+                }
+            })
         except Exception as e:
             return jsonify({
                 'success': False,

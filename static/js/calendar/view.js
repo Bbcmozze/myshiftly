@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
             templateStart: document.getElementById('templateStart'),
             templateEnd: document.getElementById('templateEnd'),
             friendSelect: document.getElementById('friendSelect'),
-            confirmDeleteBtn: document.getElementById('confirmDeleteBtn')
+            confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            toastContainer: document.getElementById('toastContainer') || document.body
         };
     };
 
@@ -42,20 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
         templateStart,
         templateEnd,
         friendSelect,
-        confirmDeleteBtn
+        confirmDeleteBtn,
+        toastContainer
     } = initElements();
-
-    // Скрываем элементы управления для пользователей без прав
-    if (!hasEditRights) {
-        document.querySelectorAll('.remove-shift-btn, .delete-template-btn').forEach(btn => {
-            btn.style.display = 'none';
-        });
-
-        if (createTemplateBtn) createTemplateBtn.style.display = 'none';
-        if (!isOwner && addMemberBtn) {
-            document.querySelector('.add-member-form').style.display = 'none';
-        }
-    }
 
     // Русские названия месяцев
     const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -67,6 +57,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedUserId = null;
     let currentTemplateId = null;
 
+    // ====================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ======================
+
+    // Показать toast-уведомление
+    const showToast = (message, type = 'success') => {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div>${message}</div>
+            <button type="button" class="toast-close">&times;</button>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Анимация появления
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
+
+        // Автоматическое скрытие через 3 секунды
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+
+        // Закрытие по клику
+        toast.querySelector('.toast-close').addEventListener('click', () => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        });
+    };
+
+    // Обработка ошибок
+    const handleError = (error, message = 'Произошла ошибка') => {
+        console.error(message, error);
+        showToast(message, 'danger');
+    };
+
     // Обновление отображения месяца
     const updateMonthDisplay = () => {
         const monthName = monthNames[currentMonth.getMonth()];
@@ -76,6 +103,36 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
         window.history.pushState({}, '', url);
     };
+
+    // Обновление ячейки календаря после добавления смены
+    const updateCalendarCell = (date, userId, shiftData) => {
+        const cell = document.querySelector(`.day-cell[data-date="${date}"][data-user-id="${userId}"]`);
+        if (!cell) return;
+
+        // Проверяем, есть ли уже смена в этой ячейке
+        const existingShift = cell.querySelector('.shift-badge');
+        if (existingShift) {
+            showToast('В этот день уже есть смена', 'warning');
+            return;
+        }
+
+        cell.classList.add('has-shift');
+
+        const shiftBadge = document.createElement('div');
+        shiftBadge.className = 'shift-badge';
+        shiftBadge.dataset.shiftId = shiftData.id;
+        shiftBadge.innerHTML = `
+            ${shiftData.title} (${shiftData.start_time}-${shiftData.end_time})
+            <button class="remove-shift-btn" data-shift-id="${shiftData.id}">&times;</button>
+        `;
+
+        cell.appendChild(shiftBadge);
+
+        // Переустанавливаем обработчики для новой кнопки удаления
+        setupShiftHandlers();
+    };
+
+    // ====================== ОСНОВНЫЕ ФУНКЦИИ ======================
 
     // Навигация по месяцам
     const setupMonthNavigation = () => {
@@ -94,17 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Управление модальными окнами
     const setupModals = () => {
-        const modalCloseBtns = document.querySelectorAll('.modal-close');
         const closeAllModals = () => {
             [templateModal, selectTemplateModal, confirmDeleteModal].forEach(modal => {
                 modal.style.display = 'none';
             });
         };
 
-        modalCloseBtns.forEach(btn => {
+        // Закрытие модальных окон
+        document.querySelectorAll('.modal-close').forEach(btn => {
             btn.addEventListener('click', closeAllModals);
         });
 
+        // Закрытие по клику вне модального окна
         window.addEventListener('click', (e) => {
             if ([templateModal, selectTemplateModal, confirmDeleteModal].includes(e.target)) {
                 closeAllModals();
@@ -134,21 +192,23 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Создание нового шаблона смены
-    const createTemplate = (title, start, end) => {
-        fetch('/api/create_shift_template', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: title,
-                start_time: start,
-                end_time: end,
-                calendar_id: document.body.dataset.calendarId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
+    const createTemplate = async (title, start, end) => {
+        try {
+            const response = await fetch('/api/create_shift_template', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    start_time: start,
+                    end_time: end,
+                    calendar_id: document.body.dataset.calendarId
+                })
+            });
+
+            const data = await response.json();
+
             if (data.success) {
                 addTemplateToDOM(data.template);
                 templateModal.style.display = 'none';
@@ -159,10 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 showToast(data.error || 'Ошибка при создании шаблона', 'danger');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             handleError(error, 'Ошибка при создании шаблона');
-        });
+        }
     };
 
     // Добавление шаблона в DOM
@@ -198,25 +257,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Удаление шаблона
-    const deleteTemplate = (templateId) => {
-        fetch(`/api/delete_shift_template/${templateId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
+    const deleteTemplate = async (templateId) => {
+        try {
+            const response = await fetch(`/api/delete_shift_template/${templateId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
             if (data.success) {
                 removeTemplateFromDOM(templateId);
                 showToast('Шаблон успешно удален', 'success');
             } else {
                 showToast(data.error || 'Ошибка при удалении шаблона', 'danger');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             handleError(error, 'Ошибка при удалении шаблона');
-        });
+        }
     };
 
     // Удаление шаблона из DOM
@@ -226,6 +286,103 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => el.remove(), 300);
         });
     };
+
+    // Добавление смены из шаблона
+    const addShiftFromTemplate = async (templateId) => {
+        try {
+            const response = await fetch('/api/add_shift_from_template', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    template_id: templateId,
+                    date: selectedDate,
+                    user_id: selectedUserId,
+                    calendar_id: document.body.dataset.calendarId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('Смена успешно добавлена', 'success');
+                updateCalendarCell(selectedDate, selectedUserId, data.shift);
+                selectTemplateModal.style.display = 'none';
+            } else {
+                showToast(data.error || 'Ошибка при добавлении смены', 'danger');
+            }
+        } catch (error) {
+            handleError(error, 'Ошибка при добавлении смены');
+        }
+    };
+
+    // Удаление смены
+    const deleteShift = async (shiftId) => {
+        try {
+            const response = await fetch(`/shift/${shiftId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            });
+
+            if (response.ok) {
+                showToast('Смена успешно удалена', 'success');
+                // Находим и удаляем элемент смены
+                const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
+                if (shiftBadge) {
+                    shiftBadge.remove();
+                    const cell = shiftBadge.closest('.day-cell');
+                    if (cell && !cell.querySelector('.shift-badge')) {
+                        cell.classList.remove('has-shift');
+                    }
+                }
+            } else {
+                showToast('Ошибка при удалении смены', 'danger');
+            }
+        } catch (error) {
+            handleError(error, 'Ошибка при удалении смены');
+        }
+    };
+
+    // Добавление участников (только для владельца)
+    const setupMemberHandlers = () => {
+        if (isOwner && addMemberBtn) {
+            addMemberBtn.addEventListener('click', async () => {
+                const userId = friendSelect.value;
+
+                if (!userId) {
+                    showToast('Выберите коллегу', 'danger');
+                    return;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('user_id', userId);
+
+                    const response = await fetch(`/calendar/${document.body.dataset.calendarId}/add-member`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        // Обновляем страницу для отображения изменений
+                        location.reload();
+                    } else {
+                        showToast(data.message || 'Ошибка при добавлении участника', 'danger');
+                    }
+                } catch (error) {
+                    handleError(error, 'Ошибка при добавлении участника');
+                }
+            });
+        }
+    };
+
+    // ====================== ОБРАБОТЧИКИ СОБЫТИЙ ======================
 
     // Обработка кликов по шаблонам
     const setupTemplateHandlers = () => {
@@ -259,35 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Добавление смены из шаблона
-    const addShiftFromTemplate = (templateId) => {
-        fetch('/api/add_shift_from_template', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                template_id: templateId,
-                date: selectedDate,
-                user_id: selectedUserId,
-                calendar_id: document.body.dataset.calendarId
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Смена успешно добавлена', 'success');
-                location.reload();
-            } else {
-                showToast(data.error || 'Ошибка при добавлении смены', 'danger');
-            }
-        })
-        .catch(error => {
-            handleError(error, 'Ошибка при добавлении смены');
-        });
-    };
-
-    // Удаление смены
+    // Установка обработчиков для кнопок удаления смен
     const setupShiftHandlers = () => {
         document.querySelectorAll('.remove-shift-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -303,64 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const deleteShift = (shiftId) => {
-        fetch(`/shift/${shiftId}/delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                showToast('Смена успешно удалена', 'success');
-                location.reload();
-            } else {
-                showToast('Ошибка при удалении смены', 'danger');
-            }
-        })
-        .catch(error => {
-            handleError(error, 'Ошибка при удалении смены');
-        });
-    };
-
-    // Добавление участников (только для владельца)
-    const setupMemberHandlers = () => {
-        if (isOwner && addMemberBtn) {
-            addMemberBtn.addEventListener('click', () => {
-                const userId = friendSelect.value;
-
-                if (!userId) {
-                    showToast('Выберите коллегу', 'danger');
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('user_id', userId);
-
-                fetch(`/calendar/${document.body.dataset.calendarId}/add-member`, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('Участник успешно добавлен', 'success');
-                        location.reload();
-                    } else {
-                        showToast(data.error || 'Ошибка при добавлении участника', 'danger');
-                    }
-                })
-                .catch(error => {
-                    handleError(error, 'Ошибка при добавлении участника');
-                });
-            });
-        }
-    };
-
     // Обработка кликов по ячейкам календаря
     const setupCalendarCellHandlers = () => {
         document.querySelectorAll('.day-cell').forEach(cell => {
             cell.addEventListener('click', (e) => {
+                // Игнорируем клики по кнопкам удаления и самим сменам
                 if (e.target.closest('.remove-shift-btn') || e.target.closest('.shift-badge')) return;
 
                 if (!hasEditRights) return;
@@ -368,6 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 selectedDate = cell.dataset.date;
                 selectedUserId = cell.dataset.userId;
 
+                // Открываем модальное окно только если в ячейке нет смены
                 if (!cell.classList.contains('has-shift')) {
                     selectTemplateModal.style.display = 'flex';
                 }
@@ -375,23 +452,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Вспомогательные функции
-    const showToast = (message, type = 'success') => {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.innerHTML = `
-            <div>${message}</div>
-            <button type="button" class="toast-close">&times;</button>
-        `;
+    // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
-        document.querySelector('.toast-container').appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    };
+    // Скрываем элементы управления для пользователей без прав
+    if (!hasEditRights) {
+        document.querySelectorAll('.remove-shift-btn, .delete-template-btn').forEach(btn => {
+            btn.style.display = 'none';
+        });
 
-    const handleError = (error, message = 'Произошла ошибка') => {
-        console.error(message, error);
-        showToast(message, 'danger');
-    };
+        if (createTemplateBtn) createTemplateBtn.style.display = 'none';
+        if (!isOwner && addMemberBtn) {
+            document.querySelector('.add-member-form').style.display = 'none';
+        }
+    }
 
     // Инициализация всех обработчиков
     const init = () => {
