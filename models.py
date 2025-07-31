@@ -72,3 +72,15 @@ calendar_members = db.Table('calendar_members',
                             db.Column('calendar_id', db.Integer, db.ForeignKey('calendar.id'), primary_key=True),
                             db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
                             )
+
+
+class ShiftTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    calendar = db.relationship('Calendar', backref='shift_templates')
+    owner = db.relationship('User', backref='shift_templates')

@@ -4,6 +4,66 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar/view.css') }}">
+<style>
+    .day-cell {
+        position: relative;
+        min-height: 80px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .day-cell:hover {
+        background-color: #f8fafc;
+    }
+
+    .add-shift-area {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 0.9rem;
+        background-color: rgba(248, 250, 252, 0.8);
+    }
+
+    .day-cell:not(.has-shift):hover .add-shift-area {
+        display: flex;
+    }
+
+    .shift-badge {
+        position: relative;
+        z-index: 1;
+    }
+
+    .template-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+    }
+
+    .template-item {
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .selectable-template {
+        cursor: pointer;
+    }
+
+    .selectable-template:hover {
+        background-color: #f1f5f9;
+    }
+
+    .template-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1rem;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -69,6 +129,32 @@
                 </div>
                 {% endif %}
             </div>
+
+            {% if calendar.owner_id == current_user.id %}
+            <div class="sidebar-section">
+                <h4>Шаблоны смен</h4>
+                <button id="createTemplateBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                    <i class="bi bi-plus-lg"></i> Создать шаблон
+                </button>
+                <div class="template-list" id="templateList">
+                    {% for template in shift_templates %}
+                    <div class="template-item">
+                        <div>
+                            <strong>{{ template.title }}</strong><br>
+                            {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                        </div>
+                        <div class="template-actions">
+                            <small class="text-muted">ID: {{ template.id }}</small>
+                            <button class="btn btn-sm btn-outline-danger delete-template-btn"
+                                    data-template-id="{{ template.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <div class="calendar-main">
@@ -98,20 +184,18 @@
                                 {{ calendar.owner.username }}
                             </td>
                             {% for day in days_in_month %}
-                            <td class="day-cell" data-date="{{ day.strftime('%Y-%m-%d') }}" data-user-id="{{ calendar.owner.id }}">
+                            <td class="day-cell {% if shifts|selectattr('user_id', 'equalto', calendar.owner.id)|selectattr('date', 'equalto', day)|list %}has-shift{% endif %}"
+                                data-date="{{ day.strftime('%Y-%m-%d') }}"
+                                data-user-id="{{ calendar.owner.id }}">
                                 {% for shift in shifts if shift.user_id == calendar.owner.id and shift.date == day %}
                                 <div class="shift-badge" data-shift-id="{{ shift.id }}">
                                     {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
-                                    {% if calendar.owner_id == current_user.id %}
                                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
-                                    {% endif %}
                                 </div>
                                 {% endfor %}
-                                {% if calendar.owner_id == current_user.id %}
                                 <div class="add-shift-area">
                                     <i class="bi bi-plus"></i> Добавить смену
                                 </div>
-                                {% endif %}
                             </td>
                             {% endfor %}
                         </tr>
@@ -123,20 +207,18 @@
                                 {{ member.username }}
                             </td>
                             {% for day in days_in_month %}
-                            <td class="day-cell" data-date="{{ day.strftime('%Y-%m-%d') }}" data-user-id="{{ member.id }}">
+                            <td class="day-cell {% if shifts|selectattr('user_id', 'equalto', member.id)|selectattr('date', 'equalto', day)|list %}has-shift{% endif %}"
+                                data-date="{{ day.strftime('%Y-%m-%d') }}"
+                                data-user-id="{{ member.id }}">
                                 {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
                                 <div class="shift-badge" data-shift-id="{{ shift.id }}">
                                     {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
-                                    {% if calendar.owner_id == current_user.id %}
                                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
-                                    {% endif %}
                                 </div>
                                 {% endfor %}
-                                {% if calendar.owner_id == current_user.id %}
                                 <div class="add-shift-area">
                                     <i class="bi bi-plus"></i> Добавить смену
                                 </div>
-                                {% endif %}
                             </td>
                             {% endfor %}
                         </tr>
@@ -148,36 +230,57 @@
     </div>
 </div>
 
-<!-- Модальное окно создания смены -->
-<div class="modal" id="shiftModal">
+<!-- Модальное окно создания шаблона смены -->
+<div class="modal" id="templateModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h4>Создать смену</h4>
+            <h4>Создать шаблон смены</h4>
             <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-            <form id="shiftForm" method="POST" action="{{ url_for('add_shift', calendar_id=calendar.id) }}">
-                <input type="hidden" id="shiftDate" name="date">
-                <input type="hidden" id="shiftUserId" name="user_id">
+            <form id="templateForm">
                 <div class="form-group">
-                    <label for="shiftTitle">Название смены</label>
-                    <input type="text" id="shiftTitle" name="title" required placeholder="Например: Утренняя смена">
+                    <label for="templateTitle">Название смены</label>
+                    <input type="text" id="templateTitle" required placeholder="Например: Утренняя смена">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="shiftStart">Начало</label>
-                        <input type="time" id="shiftStart" name="start_time" required value="09:00">
+                        <label for="templateStart">Начало</label>
+                        <input type="time" id="templateStart" required value="09:00">
                     </div>
                     <div class="form-group">
-                        <label for="shiftEnd">Конец</label>
-                        <input type="time" id="shiftEnd" name="end_time" required value="18:00">
+                        <label for="templateEnd">Конец</label>
+                        <input type="time" id="templateEnd" required value="18:00">
                     </div>
                 </div>
             </form>
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline modal-close">Отмена</button>
-            <button class="btn btn-primary" id="saveShiftBtn">Сохранить</button>
+            <button class="btn btn-primary" id="saveTemplateBtn">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно выбора шаблона -->
+<div class="modal" id="selectTemplateModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Выберите шаблон смены</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="template-list" id="selectTemplateList">
+                {% for template in shift_templates %}
+                <div class="template-item selectable-template" data-template-id="{{ template.id }}">
+                    <strong>{{ template.title }}</strong><br>
+                    {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
         </div>
     </div>
 </div>
@@ -190,11 +293,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
                        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
-    // Модальное окно для создания смены
-    const shiftModal = document.getElementById('shiftModal');
+    // Модальные окна
+    const templateModal = document.getElementById('templateModal');
+    const selectTemplateModal = document.getElementById('selectTemplateModal');
     const modalCloseBtns = document.querySelectorAll('.modal-close');
-    const saveShiftBtn = document.getElementById('saveShiftBtn');
-    const shiftForm = document.getElementById('shiftForm');
+    const saveTemplateBtn = document.getElementById('saveTemplateBtn');
+    const createTemplateBtn = document.getElementById('createTemplateBtn');
+    const templateList = document.getElementById('templateList');
+    const selectTemplateList = document.getElementById('selectTemplateList');
+
+    let selectedDate = null;
+    let selectedUserId = null;
 
     // Обработчики для кликов по ячейкам
     document.querySelectorAll('.day-cell').forEach(cell => {
@@ -204,13 +313,158 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const date = cell.getAttribute('data-date');
-            const userId = cell.getAttribute('data-user-id');
+            selectedDate = cell.getAttribute('data-date');
+            selectedUserId = cell.getAttribute('data-user-id');
 
-            document.getElementById('shiftDate').value = date;
-            document.getElementById('shiftUserId').value = userId;
+            // Если в ячейке уже есть смена, не открываем модальное окно
+            if (cell.classList.contains('has-shift')) {
+                return;
+            }
 
-            shiftModal.style.display = 'flex';
+            // Показываем модальное окно выбора шаблона
+            selectTemplateModal.style.display = 'flex';
+        });
+    });
+
+    // Создание шаблона смены
+    createTemplateBtn.addEventListener('click', () => {
+        templateModal.style.display = 'flex';
+    });
+
+    // Сохранение шаблона
+    saveTemplateBtn.addEventListener('click', () => {
+        const title = document.getElementById('templateTitle').value;
+        const start = document.getElementById('templateStart').value;
+        const end = document.getElementById('templateEnd').value;
+
+        fetch('/api/create_shift_template', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: title,
+                start_time: start,
+                end_time: end,
+                calendar_id: {{ calendar.id }}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Добавляем новый шаблон в список в сайдбаре
+                const templateItem = document.createElement('div');
+                templateItem.className = 'template-item';
+                templateItem.innerHTML = `
+                    <div>
+                        <strong>${data.template.title}</strong><br>
+                        ${data.template.start_time} - ${data.template.end_time}
+                    </div>
+                    <div class="template-actions">
+                        <small class="text-muted">ID: ${data.template.id}</small>
+                        <button class="btn btn-sm btn-outline-danger delete-template-btn"
+                                data-template-id="${data.template.id}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+                templateList.appendChild(templateItem);
+
+                // Добавляем новый шаблон в модальное окно выбора
+                const selectTemplateItem = document.createElement('div');
+                selectTemplateItem.className = 'template-item selectable-template';
+                selectTemplateItem.setAttribute('data-template-id', data.template.id);
+                selectTemplateItem.innerHTML = `
+                    <strong>${data.template.title}</strong><br>
+                    ${data.template.start_time} - ${data.template.end_time}
+                `;
+                selectTemplateList.appendChild(selectTemplateItem);
+
+                // Назначаем обработчик для нового шаблона в модальном окне
+                selectTemplateItem.addEventListener('click', function() {
+                    addShiftFromTemplate(this.getAttribute('data-template-id'));
+                });
+
+                // Назначаем обработчик удаления для нового шаблона
+                templateItem.querySelector('.delete-template-btn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteTemplate(this.getAttribute('data-template-id'));
+                });
+
+                templateModal.style.display = 'none';
+                document.getElementById('templateForm').reset();
+            } else {
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при сохранении шаблона');
+        });
+    });
+
+    // Добавление смены из шаблона
+    function addShiftFromTemplate(templateId) {
+        fetch('/api/add_shift_from_template', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                template_id: templateId,
+                date: selectedDate,
+                user_id: selectedUserId,
+                calendar_id: {{ calendar.id }}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при добавлении смены');
+        });
+    }
+
+    // Удаление шаблона
+    function deleteTemplate(templateId) {
+        if (confirm('Удалить этот шаблон? Это не удалит уже созданные смены.')) {
+            fetch(`/api/delete_shift_template/${templateId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Удаляем шаблон из списков
+                    document.querySelectorAll(`[data-template-id="${templateId}"]`).forEach(el => el.remove());
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Ошибка при удалении шаблона');
+            });
+        }
+    }
+
+    // Назначаем обработчики для существующих шаблонов в модальном окне
+    document.querySelectorAll('#selectTemplateList .template-item').forEach(item => {
+        item.addEventListener('click', function() {
+            addShiftFromTemplate(this.getAttribute('data-template-id'));
+        });
+    });
+
+    // Назначаем обработчики удаления для существующих шаблонов
+    document.querySelectorAll('.delete-template-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deleteTemplate(this.getAttribute('data-template-id'));
         });
     });
 
@@ -258,39 +512,19 @@ document.addEventListener('DOMContentLoaded', () => {
         location.reload();
     });
 
-    // Закрытие модального окна
+    // Закрытие модальных окон
     modalCloseBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            shiftModal.style.display = 'none';
+            templateModal.style.display = 'none';
+            selectTemplateModal.style.display = 'none';
         });
     });
 
-    // Сохранение смены
-    saveShiftBtn.addEventListener('click', () => {
-        const formData = new FormData(shiftForm);
-
-        fetch(shiftForm.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-            alert('Ошибка при сохранении смены');
-        });
-    });
-
-    // Закрытие модального окна при клике вне его
+    // Закрытие модальных окон при клике вне их
     window.addEventListener('click', (e) => {
-        if (e.target === shiftModal) {
-            shiftModal.style.display = 'none';
+        if (e.target === templateModal || e.target === selectTemplateModal) {
+            templateModal.style.display = 'none';
+            selectTemplateModal.style.display = 'none';
         }
     });
 

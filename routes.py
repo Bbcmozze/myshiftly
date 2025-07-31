@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, generate_user_id, FriendRequest, Calendar, Shift
+from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate
 from datetime import datetime, timedelta
 from config import Config
 import os
@@ -253,12 +253,16 @@ def register_routes(app):
             Shift.date <= last_day
         ).all()
 
+        # Получаем шаблоны смен для этого календаря
+        shift_templates = ShiftTemplate.query.filter_by(calendar_id=calendar.id).all()
+
         friends = current_user.friends.all()  # Для добавления участников в командный календарь
 
         return render_template(
             'calendar/view_calendar.html',
             calendar=calendar,
             shifts=shifts,
+            shift_templates=shift_templates,
             friends=friends,
             current_month=current_month,
             days_in_month=days_in_month,
@@ -355,3 +359,82 @@ def register_routes(app):
         db.session.commit()
 
         return redirect(url_for('view_calendar', calendar_id=calendar.id))
+
+    @app.route('/api/create_shift_template', methods=['POST'])
+    @login_required
+    def create_shift_template():
+        data = request.get_json()
+
+        try:
+            calendar = Calendar.query.get(data['calendar_id'])
+            if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
+                return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+            template = ShiftTemplate(
+                title=data['title'],
+                start_time=datetime.strptime(data['start_time'], '%H:%M').time(),
+                end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
+                calendar_id=data['calendar_id'],
+                owner_id=current_user.id
+            )
+
+            db.session.add(template)
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'template': {
+                    'id': template.id,
+                    'title': template.title,
+                    'start_time': template.start_time.strftime('%H:%M'),
+                    'end_time': template.end_time.strftime('%H:%M')
+                }
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 400
+
+    @app.route('/api/add_shift_from_template', methods=['POST'])
+    @login_required
+    def add_shift_from_template():
+        data = request.get_json()
+
+        try:
+            # Проверяем доступ к календарю
+            calendar = Calendar.query.get(data['calendar_id'])
+            if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
+                return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+            template = ShiftTemplate.query.get(data['template_id'])
+            if not template:
+                return jsonify({'success': False, 'error': 'Шаблон не найден'}), 404
+
+            # Проверяем, что шаблон принадлежит этому календарю
+            if template.calendar_id != calendar.id:
+                return jsonify({'success': False, 'error': 'Неверный шаблон'}), 400
+
+            # Проверяем, что пользователь существует и имеет доступ к календарю
+            user = User.query.get(data['user_id'])
+            if not user or (user.id != current_user.id and user not in calendar.members):
+                return jsonify({'success': False, 'error': 'Неверный пользователь'}), 400
+
+            shift = Shift(
+                title=template.title,
+                start_time=template.start_time,
+                end_time=template.end_time,
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                calendar_id=data['calendar_id'],
+                user_id=data['user_id']
+            )
+
+            db.session.add(shift)
+            db.session.commit()
+
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 400
