@@ -426,6 +426,9 @@ main {
 }
 
 .notification-btn-accept {
+    padding: 1em;
+    width: 100px;
+    height: 28px;
     background: #10b981;
     color: white;
     border: none;
@@ -436,6 +439,9 @@ main {
 }
 
 .notification-btn-reject {
+    padding: 1em;
+    width: 100px;
+    height: 28px;
     background: #e41313;
     color: #ffffff;
     border: 1px solid #fee2e2;
