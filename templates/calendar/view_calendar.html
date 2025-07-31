@@ -435,20 +435,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function deleteTemplate(templateId) {
         if (confirm('Удалить этот шаблон? Это не удалит уже созданные смены.')) {
             fetch(`/api/delete_shift_template/${templateId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     // Удаляем шаблон из списков
                     document.querySelectorAll(`[data-template-id="${templateId}"]`).forEach(el => el.remove());
+                    toastManager.show('Шаблон успешно удален', 'success');
                 } else {
-                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    toastManager.show('Ошибка: ' + (data.error || 'Неизвестная ошибка'), 'danger');
                 }
             })
             .catch(error => {
                 console.error('Ошибка:', error);
-                alert('Ошибка при удалении шаблона');
+                toastManager.show('Ошибка при удалении шаблона', 'danger');
             });
         }
     }

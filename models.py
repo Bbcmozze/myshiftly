@@ -52,7 +52,8 @@ class Calendar(db.Model):
 
     owner = db.relationship('User', backref='calendars')
     members = db.relationship('User', secondary='calendar_members', backref='shared_calendars')
-    shifts = db.relationship('Shift', backref='calendar', lazy='dynamic', cascade='all, delete-orphan')
+    shift_templates = db.relationship('ShiftTemplate', back_populates='calendar', lazy='dynamic', cascade='all, delete-orphan')
+    shifts = db.relationship('Shift', back_populates='calendar', lazy='dynamic', cascade='all, delete-orphan')
 
 
 class Shift(db.Model):
@@ -65,7 +66,7 @@ class Shift(db.Model):
     date = db.Column(db.Date, nullable=False)  # Добавлено поле для даты
 
     user = db.relationship('User', backref='shifts')
-
+    calendar = db.relationship('Calendar', back_populates='shifts')
 
 # Ассоциативная таблица для участников календаря
 calendar_members = db.Table('calendar_members',
@@ -82,5 +83,5 @@ class ShiftTemplate(db.Model):
     calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    calendar = db.relationship('Calendar', backref='shift_templates')
+    calendar = db.relationship('Calendar', back_populates='shift_templates')
     owner = db.relationship('User', backref='shift_templates')

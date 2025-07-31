@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate
+from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members
 from datetime import datetime, timedelta
 from config import Config
 import os
@@ -332,6 +332,7 @@ def register_routes(app):
 
         return redirect(url_for('view_calendar', calendar_id=calendar_id))
 
+
     @app.route('/calendar/<int:calendar_id>/delete', methods=['POST'])
     @login_required
     def delete_calendar(calendar_id):
@@ -340,10 +341,22 @@ def register_routes(app):
         if calendar.owner_id != current_user.id:
             abort(403)
 
-        db.session.delete(calendar)
-        db.session.commit()
+        try:
+            # Удаляем все связанные шаблоны вручную (на всякий случай)
+            ShiftTemplate.query.filter_by(calendar_id=calendar.id).delete()
+            # Удаляем все связанные смены
+            Shift.query.filter_by(calendar_id=calendar.id).delete()
+            # Удаляем связи с участниками
+            db.session.execute(calendar_members.delete().where(calendar_members.c.calendar_id == calendar.id))
 
-        flash('Календарь успешно удален', 'success')
+            db.session.delete(calendar)
+            db.session.commit()
+            flash('Календарь успешно удален', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Ошибка при удалении календаря', 'danger')
+            app.logger.error(f"Error deleting calendar: {str(e)}")
+
         return redirect(url_for('my_calendars'))
 
     @app.route('/shift/<int:shift_id>/delete', methods=['POST'])
@@ -438,3 +451,21 @@ def register_routes(app):
                 'success': False,
                 'error': str(e)
             }), 400
+
+
+    @app.route('/api/delete_shift_template/<int:template_id>', methods=['DELETE'])
+    @login_required
+    def delete_shift_template(template_id):
+        template = ShiftTemplate.query.get_or_404(template_id)
+
+        # Проверка прав доступа
+        if template.owner_id != current_user.id:
+            abort(403)
+
+        try:
+            db.session.delete(template)
+            db.session.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
