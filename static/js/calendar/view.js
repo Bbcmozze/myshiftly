@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
         window.history.pushState({}, '', url);
 
-        // Загружаем данные через AJAX
         try {
             const response = await fetch(url.toString(), {
                 headers: {
@@ -82,7 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tableContainer = document.querySelector('.calendar-table-container');
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
-                setupCalendarCellHandlers(); // Переустанавливаем обработчики для новых ячеек
+
+                // Переустанавливаем все обработчики после загрузки новой таблицы
+                setupCalendarCellHandlers();
+                setupShiftHandlers();
             }
         } catch (error) {
             console.error('Ошибка при загрузке календаря:', error);
@@ -465,16 +467,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обработка кликов по шаблонам
     const setupTemplateHandlers = () => {
-        // Удаление шаблона
+        // Обработчик для кнопок удаления шаблонов
         document.addEventListener('click', (e) => {
             const deleteBtn = e.target.closest('.delete-template-btn');
-            if (!deleteBtn) return;
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            currentTemplateId = deleteBtn.dataset.templateId;
-            confirmDeleteModal.style.display = 'flex';
+            if (deleteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                currentTemplateId = deleteBtn.dataset.templateId;
+                confirmDeleteModal.style.display = 'flex';
+            }
         });
 
         // Подтверждение удаления
@@ -487,18 +488,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Выбор шаблона для добавления смены
-        selectTemplateList.addEventListener('click', (e) => {
+        document.addEventListener('click', (e) => {
             const templateItem = e.target.closest('.selectable-template');
             if (templateItem && selectedDate && selectedUserId) {
                 addShiftFromTemplate(templateItem.dataset.templateId);
             }
         });
     };
-
     // Установка обработчиков для кнопок удаления смен
     const setupShiftHandlers = () => {
         document.querySelectorAll('.remove-shift-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
 
@@ -508,7 +508,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const shiftId = e.target.dataset.shiftId;
-                deleteShift(shiftId); // Убрали confirm, можно добавить обратно если нужно
+                try {
+                    const response = await fetch(`/shift/${shiftId}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        credentials: 'same-origin'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('Смена успешно удалена', 'success');
+                            const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
+                            if (shiftBadge) {
+                                const cell = shiftBadge.closest('.day-cell');
+                                shiftBadge.remove();
+                                if (cell && !cell.querySelector('.shift-badge')) {
+                                    cell.classList.remove('has-shift');
+                                }
+                            }
+                        }
+                    } else {
+                        const error = await response.text();
+                        showToast(error || 'Ошибка при удалении смены', 'danger');
+                    }
+                } catch (error) {
+                    handleError(error, 'Ошибка при удалении смены');
+                }
             });
         });
     };

@@ -407,7 +407,7 @@ def register_routes(app):
         if shift.calendar.owner_id != current_user.id:
             abort(403)
 
-        calendar_id = shift.calendar_id  # Получаем ID календаря перед удалением
+        calendar_id = shift.calendar_id
         db.session.delete(shift)
         db.session.commit()
 
@@ -416,6 +416,7 @@ def register_routes(app):
         else:
             flash('Смена успешно удалена', 'success')
             return redirect(url_for('view_calendar', calendar_id=calendar_id))
+
 
     @app.route('/api/create_shift_template', methods=['POST'])
     @login_required
