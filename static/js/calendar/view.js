@@ -355,8 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Смена успешно удалена', 'success');
                     const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
                     if (shiftBadge) {
-                        shiftBadge.remove();
                         const cell = shiftBadge.closest('.day-cell');
+                        shiftBadge.remove();
+                        // Проверяем, остались ли еще смены в ячейке
                         if (cell && !cell.querySelector('.shift-badge')) {
                             cell.classList.remove('has-shift');
                         }
