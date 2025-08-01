@@ -402,6 +402,34 @@
     font-weight: 600;
 }
 
+.calendar-main.fullscreen {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 95vw;
+    height: 85vh;
+    z-index: 999;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    overflow: auto;
+    transition: all 0.4s ease;
+}
+
+.calendar-main.fullscreen-animating {
+    transition: all 0.4s ease;
+}
+
+body.fullscreen-active {
+    overflow: hidden;
+}
+
+#toggleFullscreenBtn i.bi-arrows-collapse {
+    transform: rotate(180deg);
+}
+
 #addShiftBtn {
     display: flex;
     align-items: center;

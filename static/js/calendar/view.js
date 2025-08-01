@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
             templateEnd: document.getElementById('templateEnd'),
             friendSelect: document.getElementById('friendSelect'),
             confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            toggleFullscreenBtn: document.getElementById('toggleFullscreenBtn'),
+            calendarMain: document.querySelector('.calendar-main'),
             toastContainer: document.getElementById('toastContainer') || document.body
         };
     };
@@ -490,6 +492,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const setupFullscreenToggle = () => {
+        const btn = toggleFullscreenBtn;
+        const calendar = document.querySelector('.calendar-main');
+        const icon = btn.querySelector('i');
+
+        let isFullscreen = false;
+
+        btn.addEventListener('click', () => {
+            calendar.classList.add('fullscreen-animating');
+
+            if (!isFullscreen) {
+                calendar.classList.add('fullscreen');
+                document.body.classList.add('fullscreen-active');
+                icon.classList.replace('bi-arrows-fullscreen', 'bi-arrows-collapse');
+                btn.innerHTML = '<i class="bi bi-arrows-collapse"></i> Свернуть';
+            } else {
+                calendar.classList.remove('fullscreen');
+                document.body.classList.remove('fullscreen-active');
+                icon.classList.replace('bi-arrows-collapse', 'bi-arrows-fullscreen');
+                btn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> На весь экран';
+            }
+
+            isFullscreen = !isFullscreen;
+
+            // Убираем класс анимации после завершения
+            setTimeout(() => {
+                calendar.classList.remove('fullscreen-animating');
+            }, 400); // должно совпадать с transition в CSS
+        });
+    };
+
+
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
     // Скрываем элементы управления для пользователей без прав
@@ -513,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupShiftHandlers();
         setupMemberHandlers();
         setupCalendarCellHandlers();
+        setupFullscreenToggle();
     };
 
     init();
