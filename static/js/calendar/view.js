@@ -55,13 +55,39 @@ document.addEventListener('DOMContentLoaded', () => {
                        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
     // Обновление отображения месяца
-    const updateMonthDisplay = () => {
+    const updateMonthDisplay = async () => {
         const monthName = monthNames[currentMonth.getMonth()];
         currentMonthEl.textContent = `${monthName} ${currentMonth.getFullYear()}`;
 
         const url = new URL(window.location.href);
         url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
         window.history.pushState({}, '', url);
+
+        // Загружаем данные через AJAX
+        try {
+            const response = await fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки данных');
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('.calendar-table');
+
+            if (newTable) {
+                const tableContainer = document.querySelector('.calendar-table-container');
+                tableContainer.innerHTML = '';
+                tableContainer.appendChild(newTable);
+                setupCalendarCellHandlers(); // Переустанавливаем обработчики для новых ячеек
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке календаря:', error);
+            showToast('Не удалось загрузить данные календаря', 'danger');
+        }
     };
 
 
@@ -143,15 +169,22 @@ document.addEventListener('DOMContentLoaded', () => {
         prevMonthBtn.addEventListener('click', () => {
             currentMonth.setMonth(currentMonth.getMonth() - 1);
             updateMonthDisplay();
-            location.reload();
         });
 
         nextMonthBtn.addEventListener('click', () => {
             currentMonth.setMonth(currentMonth.getMonth() + 1);
             updateMonthDisplay();
-            location.reload();
         });
     };
+
+    const todayBtn = document.createElement('button');
+    todayBtn.className = 'btn btn-outline';
+    todayBtn.innerHTML = '<i class="bi bi-calendar-event"></i> Сегодня';
+    todayBtn.addEventListener('click', () => {
+        currentMonth = new Date(); // Сбрасываем на текущий месяц
+        updateMonthDisplay();
+    });
+    document.querySelector('.month-navigation').appendChild(todayBtn);
 
     // Управление модальными окнами
     const setupModals = () => {
@@ -170,6 +203,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('click', (e) => {
             if ([templateModal, selectTemplateModal, confirmDeleteModal].includes(e.target)) {
                 closeAllModals();
+            }
+        });
+
+        window.addEventListener('popstate', () => {
+            const url = new URL(window.location.href);
+            const monthParam = url.searchParams.get('month');
+
+            if (monthParam) {
+                currentMonth = new Date(monthParam);
+                updateMonthDisplay();
             }
         });
 

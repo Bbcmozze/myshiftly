@@ -222,6 +222,7 @@ def register_routes(app):
 
         return render_template('calendar/create_calendar.html')
 
+
     @app.route('/calendar/<int:calendar_id>')
     @login_required
     def view_calendar(calendar_id):
@@ -246,7 +247,7 @@ def register_routes(app):
         last_day = next_month - timedelta(days=next_month.day)
         days_in_month = [current_month.replace(day=day) for day in range(1, last_day.day + 1)]
 
-        # ВАЖНО: Получаем смены для всех участников (включая владельца)
+        # Получаем смены
         shifts = Shift.query.filter(
             Shift.calendar_id == calendar.id,
             Shift.date >= current_month,
@@ -259,16 +260,27 @@ def register_routes(app):
         # Получаем друзей для добавления в календарь
         friends = current_user.friends.all()
 
-        return render_template(
-            'calendar/view_calendar.html',
-            calendar=calendar,
-            shifts=shifts,
-            shift_templates=shift_templates,
-            friends=friends,
-            current_month=current_month,
-            days_in_month=days_in_month,
-            datetime=datetime
-        )
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return render_template(
+                'calendar/_calendar_table.html',  # Создайте этот шаблон с только таблицей
+                calendar=calendar,
+                shifts=shifts,
+                current_month=current_month,
+                days_in_month=days_in_month,
+                datetime=datetime
+            )
+        else:
+            return render_template(
+                'calendar/view_calendar.html',
+                calendar=calendar,
+                shifts=shifts,
+                shift_templates=shift_templates,
+                friends=friends,
+                current_month=current_month,
+                days_in_month=days_in_month,
+                datetime=datetime
+            )
+
 
     @app.route('/calendar/<int:calendar_id>/add-shift', methods=['POST'])
     @login_required
