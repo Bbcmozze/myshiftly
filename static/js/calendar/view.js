@@ -324,9 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Назначаем обработчик для новой кнопки удаления
                     shiftBadge.querySelector('.remove-shift-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
-                        if (confirm('Удалить эту смену?')) {
-                            deleteShift(data.shift.id);
-                        }
+                        deleteShift(data.shift.id);
                     });
                 }
 
