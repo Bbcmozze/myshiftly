@@ -346,12 +346,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                }
+                },
+                credentials: 'same-origin'
             });
 
             if (response.ok) {
                 showToast('Смена успешно удалена', 'success');
-                // Находим и удаляем элемент смены
                 const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
                 if (shiftBadge) {
                     shiftBadge.remove();
@@ -443,8 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.remove-shift-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                e.preventDefault();
 
-                if (!hasEditRights) return;
+                if (!isOwner) {
+                    showToast('Только создатель календаря может удалять смены', 'warning');
+                    return;
+                }
 
                 const shiftId = e.target.dataset.shiftId;
                 if (confirm('Удалить эту смену?')) {
@@ -457,20 +461,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обработка кликов по ячейкам календаря
     const setupCalendarCellHandlers = () => {
         document.querySelectorAll('.day-cell').forEach(cell => {
-            cell.addEventListener('click', (e) => {
-                // Игнорируем клики по кнопкам удаления и самим сменам
-                if (e.target.closest('.remove-shift-btn') || e.target.closest('.shift-badge')) return;
+            // Проверяем, является ли пользователь владельцем календаря
+            const isOwner = document.body.dataset.isOwner === 'true';
 
-                if (!hasEditRights) return;
+            // Только для владельца календаря
+            if (isOwner) {
+                cell.addEventListener('click', (e) => {
+                    if (e.target.closest('.remove-shift-btn') || e.target.closest('.shift-badge')) return;
 
-                selectedDate = cell.dataset.date;
-                selectedUserId = cell.dataset.userId;
+                    selectedDate = cell.dataset.date;
+                    selectedUserId = cell.dataset.userId;
 
-                // Открываем модальное окно только если в ячейке нет смены
-                if (!cell.classList.contains('has-shift')) {
-                    selectTemplateModal.style.display = 'flex';
-                }
-            });
+                    // Проверяем, есть ли уже смена в этой ячейке
+                    if (!cell.classList.contains('has-shift')) {
+                        selectTemplateModal.style.display = 'flex';
+                    }
+                });
+            }
         });
     };
 

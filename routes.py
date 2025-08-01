@@ -392,10 +392,7 @@ def register_routes(app):
     @login_required
     def delete_shift(shift_id):
         shift = Shift.query.get_or_404(shift_id)
-        calendar = shift.calendar
-
-        # Проверяем, что текущий пользователь - владелец календаря или участник
-        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+        if shift.calendar.owner_id != current_user.id:
             abort(403)
 
         db.session.delete(shift)

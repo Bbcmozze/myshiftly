@@ -708,11 +708,6 @@
     display: block;
 }
 
-/* Скрываем кнопки удаления по умолчанию */
-.day-cell .remove-shift-btn {
-    display: none;
-}
-
 /* Анимации */
 .fade-out {
     opacity: 0;
