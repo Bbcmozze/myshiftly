@@ -4,6 +4,8 @@ from models import db
 from config import Config
 import os
 
+from routes import add_jinja2_filters
+
 
 def create_app():
     app = Flask(__name__)
@@ -29,7 +31,7 @@ def create_app():
 
     from routes import register_routes
     register_routes(app)
-
+    add_jinja2_filters(app)
     return app
 
 

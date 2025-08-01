@@ -307,7 +307,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success) {
                 showToast('Смена успешно добавлена', 'success');
-                updateCalendarCell(selectedDate, selectedUserId, data.shift);
+
+                // Динамически добавляем смену в ячейку
+                const cell = document.querySelector(`.day-cell[data-date="${selectedDate}"][data-user-id="${selectedUserId}"]`);
+                if (cell) {
+                    const shiftBadge = document.createElement('div');
+                    shiftBadge.className = 'shift-badge';
+                    shiftBadge.dataset.shiftId = data.shift.id;
+                    shiftBadge.innerHTML = `
+                        ${data.shift.title} (${data.shift.start_time}-${data.shift.end_time})
+                        <button class="remove-shift-btn" data-shift-id="${data.shift.id}">&times;</button>
+                    `;
+                    cell.appendChild(shiftBadge);
+                    cell.classList.add('has-shift');
+
+                    // Назначаем обработчик для новой кнопки удаления
+                    shiftBadge.querySelector('.remove-shift-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (confirm('Удалить эту смену?')) {
+                            deleteShift(data.shift.id);
+                        }
+                    });
+                }
+
                 selectTemplateModal.style.display = 'none';
             } else {
                 showToast(data.error || 'Ошибка при добавлении смены', 'danger');
@@ -358,22 +380,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 try {
-                    const formData = new FormData();
-                    formData.append('user_id', userId);
-
                     const response = await fetch(`/calendar/${document.body.dataset.calendarId}/add-member`, {
                         method: 'POST',
-                        body: formData
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `user_id=${userId}`
                     });
 
                     const data = await response.json();
 
                     if (data.success) {
                         showToast(data.message, 'success');
-                        // Обновляем страницу для отображения изменений
-                        location.reload();
+                        // Обновляем страницу
+                        window.location.reload();
                     } else {
-                        showToast(data.message || 'Ошибка при добавлении участника', 'danger');
+                        showToast(data.message, 'danger');
                     }
                 } catch (error) {
                     handleError(error, 'Ошибка при добавлении участника');

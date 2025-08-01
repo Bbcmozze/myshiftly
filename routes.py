@@ -4,8 +4,14 @@ from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members
 from datetime import datetime, timedelta
 from config import Config
+from jinja2 import Environment
 import os
 from werkzeug.utils import secure_filename
+
+
+def add_jinja2_filters(app):
+    env = app.jinja_env
+    env.filters['unique'] = lambda items: list(set(items))
 
 
 def allowed_file(filename):
@@ -221,11 +227,11 @@ def register_routes(app):
     def view_calendar(calendar_id):
         calendar = Calendar.query.get_or_404(calendar_id)
 
-        # Проверка, что пользователь имеет доступ к календарю
+        # Проверка доступа
         if calendar.owner_id != current_user.id and current_user not in calendar.members:
             abort(403)
 
-        # Получаем месяц для отображения (из параметра запроса или текущий месяц)
+        # Получаем месяц
         month = request.args.get('month')
         if month:
             try:
@@ -235,28 +241,23 @@ def register_routes(app):
         else:
             current_month = datetime.utcnow().date().replace(day=1)
 
-        # Получаем все дни в текущем месяце
-        days_in_month = []
-        next_month = current_month.replace(day=28) + timedelta(days=4)  # Переход к следующему месяцу
+        # Получаем все дни месяца
+        next_month = current_month.replace(day=28) + timedelta(days=4)
         last_day = next_month - timedelta(days=next_month.day)
+        days_in_month = [current_month.replace(day=day) for day in range(1, last_day.day + 1)]
 
-        for day in range(1, last_day.day + 1):
-            days_in_month.append(current_month.replace(day=day))
-
-        # Получаем смены для этого месяца
-        first_day = current_month
-        last_day = current_month.replace(day=last_day.day)
-
+        # ВАЖНО: Получаем смены для всех участников (включая владельца)
         shifts = Shift.query.filter(
             Shift.calendar_id == calendar.id,
-            Shift.date >= first_day,
+            Shift.date >= current_month,
             Shift.date <= last_day
         ).all()
 
-        # Получаем шаблоны смен для этого календаря
+        # Получаем шаблоны
         shift_templates = ShiftTemplate.query.filter_by(calendar_id=calendar.id).all()
 
-        friends = current_user.friends.all()  # Для добавления участников в командный календарь
+        # Получаем друзей для добавления в календарь
+        friends = current_user.friends.all()
 
         return render_template(
             'calendar/view_calendar.html',
@@ -311,23 +312,32 @@ def register_routes(app):
         user_id = request.form.get('user_id')
         user = User.query.get_or_404(user_id)
 
-        if user not in calendar.members:
-            calendar.members.append(user)
-            db.session.commit()
-            return jsonify({
-                'success': True,
-                'message': f'{user.username} успешно добавлен в календарь',
-                'user': {
-                    'id': user.id,
-                    'username': user.username,
-                    'avatar': user.avatar
-                }
-            })
-        else:
+        # Проверяем, что пользователь ещё не добавлен
+        if user in calendar.members:
             return jsonify({
                 'success': False,
-                'message': 'Пользователь уже в календаре'
+                'message': 'Пользователь уже добавлен в календарь'
             }), 400
+
+        # Проверяем, что это не владелец календаря
+        if user.id == calendar.owner_id:
+            return jsonify({
+                'success': False,
+                'message': 'Нельзя добавить владельца календаря'
+            }), 400
+
+        calendar.members.append(user)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'{user.username} успешно добавлен в календарь',
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'avatar': user.avatar
+            }
+        })
 
     @app.route('/calendar/<int:calendar_id>/remove-member/<int:user_id>', methods=['POST'])
     @login_required
@@ -339,8 +349,15 @@ def register_routes(app):
             abort(403)
 
         if user in calendar.members:
+            # Удаляем все смены пользователя в этом календаре
+            Shift.query.filter_by(calendar_id=calendar.id, user_id=user.id).delete()
+
+            # Удаляем пользователя из календаря
             calendar.members.remove(user)
             db.session.commit()
+            flash(f'{user.username} удален из календаря', 'success')
+        else:
+            flash('Пользователь не является участником календаря', 'warning')
 
         return redirect(url_for('view_calendar', calendar_id=calendar_id))
 
@@ -377,11 +394,13 @@ def register_routes(app):
         shift = Shift.query.get_or_404(shift_id)
         calendar = shift.calendar
 
-        if calendar.owner_id != current_user.id:
+        # Проверяем, что текущий пользователь - владелец календаря или участник
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
             abort(403)
 
         db.session.delete(shift)
         db.session.commit()
+        flash('Смена успешно удалена', 'success')
 
         return redirect(url_for('view_calendar', calendar_id=calendar.id))
 
@@ -465,7 +484,7 @@ def register_routes(app):
             )
 
             db.session.add(shift)
-            db.session.commit()
+            db.session.commit()  # Явное сохранение
 
             return jsonify({
                 'success': True,
@@ -478,10 +497,11 @@ def register_routes(app):
                 }
             })
         except Exception as e:
+            db.session.rollback()
             return jsonify({
                 'success': False,
                 'error': str(e)
-            }), 400
+            }), 500
 
 
     @app.route('/api/delete_shift_template/<int:template_id>', methods=['DELETE'])

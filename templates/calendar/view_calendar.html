@@ -41,7 +41,7 @@
                              onerror="this.src='/static/images/default_avatar.svg'">
                         <span>{{ calendar.owner.username }} (Вы)</span>
                     </div>
-                    {% for member in calendar.members %}
+                    {% for member in calendar.members|unique %}
                     <div class="member-item">
                         <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
                              onerror="this.src='/static/images/default_avatar.svg'">
@@ -117,14 +117,15 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Владелец календаря -->
                         <tr class="user-row">
                             <td class="user-cell">
                                 <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                                      onerror="this.src='/static/images/default_avatar.svg'">
-                                {{ calendar.owner.username }}
+                                {{ calendar.owner.username }} {% if calendar.owner_id == current_user.id %}(Вы){% endif %}
                             </td>
                             {% for day in days_in_month %}
-                            <td class="day-cell {% if shifts|selectattr('user_id', 'equalto', calendar.owner.id)|selectattr('date', 'equalto', day)|list %}has-shift{% endif %}"
+                            <td class="day-cell"
                                 data-date="{{ day.strftime('%Y-%m-%d') }}"
                                 data-user-id="{{ calendar.owner.id }}">
                                 {% for shift in shifts if shift.user_id == calendar.owner.id and shift.date == day %}
@@ -143,26 +144,32 @@
                             </td>
                             {% endfor %}
                         </tr>
-                        {% for member in calendar.members %}
+
+                        <!-- Участники календаря (уникальные) -->
+                        {% for member in calendar.members|unique %}
                         <tr class="user-row">
                             <td class="user-cell">
                                 <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
                                      onerror="this.src='/static/images/default_avatar.svg'">
-                                {{ member.username }}
+                                {{ member.username }} {% if member.id == current_user.id %}(Вы){% endif %}
                             </td>
                             {% for day in days_in_month %}
-                            <td class="day-cell {% if shifts|selectattr('user_id', 'equalto', member.id)|selectattr('date', 'equalto', day)|list %}has-shift{% endif %}"
+                            <td class="day-cell"
                                 data-date="{{ day.strftime('%Y-%m-%d') }}"
                                 data-user-id="{{ member.id }}">
                                 {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
                                 <div class="shift-badge" data-shift-id="{{ shift.id }}">
                                     {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
+                                    {% if calendar.owner_id == current_user.id or current_user in calendar.members %}
                                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
+                                {% if calendar.owner_id == current_user.id or current_user in calendar.members %}
                                 <div class="add-shift-area">
                                     <i class="bi bi-plus"></i> Добавить смену
                                 </div>
+                                {% endif %}
                             </td>
                             {% endfor %}
                         </tr>
