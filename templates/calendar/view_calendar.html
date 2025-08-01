@@ -36,16 +36,25 @@
             <div class="sidebar-section">
                 <h4>Участники</h4>
                 <div class="member-list">
-                    <div class="member-item owner">
+                    <!-- Владелец календаря -->
+                    <div class="member-item {% if calendar.owner_id == current_user.id %}owner{% endif %}">
                         <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                              onerror="this.src='/static/images/default_avatar.svg'">
-                        <span>{{ calendar.owner.username }} (Вы)</span>
+                        <span>
+                            {{ calendar.owner.username }}
+                            {% if calendar.owner_id == current_user.id %}(Вы){% endif %}
+                        </span>
                     </div>
+
+                    <!-- Участники календаря -->
                     {% for member in calendar.members|unique %}
-                    <div class="member-item">
+                    <div class="member-item {% if member.id == current_user.id %}owner{% endif %}">
                         <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
                              onerror="this.src='/static/images/default_avatar.svg'">
-                        <span>{{ member.username }}</span>
+                        <span>
+                            {{ member.username }}
+                            {% if member.id == current_user.id %}(Вы){% endif %}
+                        </span>
                         {% if calendar.owner_id == current_user.id %}
                         <form method="POST" action="{{ url_for('remove_calendar_member', calendar_id=calendar.id, user_id=member.id) }}">
                             <button type="submit" class="btn-remove-member">
