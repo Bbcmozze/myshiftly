@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
             toggleFullscreenBtn: document.getElementById('toggleFullscreenBtn'),
             calendarMain: document.querySelector('.calendar-main'),
+            fullscreenOverlay: document.getElementById('fullscreenOverlay'),
             toastContainer: document.getElementById('toastContainer') || document.body
         };
     };
@@ -496,32 +497,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = toggleFullscreenBtn;
         const calendar = document.querySelector('.calendar-main');
         const icon = btn.querySelector('i');
+        const overlay = fullscreenOverlay;
 
         let isFullscreen = false;
 
         btn.addEventListener('click', () => {
-            calendar.classList.add('fullscreen-animating');
-
             if (!isFullscreen) {
+                calendar.classList.add('animating-open');
                 calendar.classList.add('fullscreen');
                 document.body.classList.add('fullscreen-active');
-                icon.classList.replace('bi-arrows-fullscreen', 'bi-arrows-collapse');
-                btn.innerHTML = '<i class="bi bi-arrows-collapse"></i> Свернуть';
+
+                requestAnimationFrame(() => {
+                    calendar.classList.remove('animating-open');
+                });
+
+                btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
             } else {
-                calendar.classList.remove('fullscreen');
-                document.body.classList.remove('fullscreen-active');
-                icon.classList.replace('bi-arrows-collapse', 'bi-arrows-fullscreen');
-                btn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> На весь экран';
+                calendar.style.transformOrigin = 'bottom right';
+                calendar.style.transform = 'translateX(-50%) scale(0.7)';
+                calendar.style.opacity = '0';
+
+                overlay.style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    calendar.classList.remove('fullscreen');
+                    calendar.style.transform = '';
+                    calendar.style.opacity = '';
+                    document.body.classList.remove('fullscreen-active');
+                }, 400);
+
+                btn.innerHTML = '<i class="bi bi-arrows-fullscreen"></i>';
             }
 
             isFullscreen = !isFullscreen;
+        });
 
-            // Убираем класс анимации после завершения
-            setTimeout(() => {
-                calendar.classList.remove('fullscreen-animating');
-            }, 400); // должно совпадать с transition в CSS
+        // Клик по фону также сворачивает календарь
+        overlay.addEventListener('click', () => {
+            if (!isFullscreen) return;
+            btn.click();
         });
     };
+
 
 
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================

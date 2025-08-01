@@ -800,3 +800,19 @@ body.fullscreen-active {
 #confirmDeleteBtn:hover {
     background-color: #dc2626;
 }
+
+#fullscreenOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* Когда активен */
+body.fullscreen-active #fullscreenOverlay {
+    opacity: 1;
+    pointer-events: auto;
+}
