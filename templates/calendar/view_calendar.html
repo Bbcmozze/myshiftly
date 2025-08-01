@@ -93,7 +93,6 @@
                             {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
                         </div>
                         <div class="template-actions">
-                            <small class="text-muted">ID: {{ template.id }}</small>
                             <button class="btn btn-sm btn-outline-danger delete-template-btn"
                                     data-template-id="{{ template.id }}">
                                 <i class="bi bi-trash"></i>
@@ -147,7 +146,7 @@
                                 {% endfor %}
                                 {% if calendar.owner_id == current_user.id %}  <!-- Изменено: убрано условие для участников -->
                                 <div class="add-shift-area">
-                                    <i class="bi bi-plus"></i> Добавить смену
+                                    Добавить смену
                                 </div>
                                 {% endif %}
                             </td>
@@ -167,7 +166,9 @@
                             data-date="{{ day.strftime('%Y-%m-%d') }}"
                             data-user-id="{{ member.id }}">
                                 {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
-                                <div class="shift-badge" data-shift-id="{{ shift.id }}">
+                                <div class="shift-badge"
+                                     data-shift-id="{{ shift.id }}"
+                                     data-template-id="{{ shift.template_id if shift.template_id else '' }}">
                                     {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
                                     {% if calendar.owner_id == current_user.id %}
                                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>

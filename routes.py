@@ -504,7 +504,6 @@ def register_routes(app):
                 'error': str(e)
             }), 500
 
-
     @app.route('/api/delete_shift_template/<int:template_id>', methods=['DELETE'])
     @login_required
     def delete_shift_template(template_id):
@@ -515,9 +514,23 @@ def register_routes(app):
             abort(403)
 
         try:
+            # Получаем ID связанных смен перед удалением
+            related_shift_ids = [
+                shift.id for shift in
+                Shift.query.filter_by(template_id=template_id).all()
+            ]
+
+            # Удаляем шаблон
             db.session.delete(template)
             db.session.commit()
-            return jsonify({'success': True})
+
+            return jsonify({
+                'success': True,
+                'deleted_shift_ids': related_shift_ids  # Отправляем клиенту
+            })
         except Exception as e:
             db.session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500

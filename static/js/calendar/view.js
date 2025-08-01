@@ -51,6 +51,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
                        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
 
+    // Обновление отображения месяца
+    const updateMonthDisplay = () => {
+        const monthName = monthNames[currentMonth.getMonth()];
+        currentMonthEl.textContent = `${monthName} ${currentMonth.getFullYear()}`;
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
+        window.history.pushState({}, '', url);
+    };
+
+
     // Текущий месяц и год
     let currentMonth = new Date(document.body.dataset.currentMonth);
     let selectedDate = null;
@@ -92,16 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleError = (error, message = 'Произошла ошибка') => {
         console.error(message, error);
         showToast(message, 'danger');
-    };
-
-    // Обновление отображения месяца
-    const updateMonthDisplay = () => {
-        const monthName = monthNames[currentMonth.getMonth()];
-        currentMonthEl.textContent = `${monthName} ${currentMonth.getFullYear()}`;
-
-        const url = new URL(window.location.href);
-        url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
-        window.history.pushState({}, '', url);
     };
 
     // Обновление ячейки календаря после добавления смены
@@ -236,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${template.start_time} - ${template.end_time}
             </div>
             <div class="template-actions">
-                <small class="text-muted">ID: ${template.id}</small>
                 <button class="btn btn-sm btn-outline-danger delete-template-btn"
                         data-template-id="${template.id}">
                     <i class="bi bi-trash"></i>
@@ -269,8 +269,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
+                // Удаляем шаблон из списка
                 removeTemplateFromDOM(templateId);
-                showToast('Шаблон успешно удален', 'success');
+
+                // Удаляем все связанные смены из календаря
+                document.querySelectorAll(`.shift-badge[data-template-id="${templateId}"]`).forEach(badge => {
+                    badge.remove();
+                });
+
+                showToast('Шаблон удален', 'success');
             } else {
                 showToast(data.error || 'Ошибка при удалении шаблона', 'danger');
             }
