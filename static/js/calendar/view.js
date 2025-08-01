@@ -345,23 +345,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(`/shift/${shiftId}/delete`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin'
             });
 
             if (response.ok) {
-                showToast('Смена успешно удалена', 'success');
-                const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
-                if (shiftBadge) {
-                    shiftBadge.remove();
-                    const cell = shiftBadge.closest('.day-cell');
-                    if (cell && !cell.querySelector('.shift-badge')) {
-                        cell.classList.remove('has-shift');
+                const data = await response.json();
+                if (data.success) {
+                    showToast('Смена успешно удалена', 'success');
+                    const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
+                    if (shiftBadge) {
+                        shiftBadge.remove();
+                        const cell = shiftBadge.closest('.day-cell');
+                        if (cell && !cell.querySelector('.shift-badge')) {
+                            cell.classList.remove('has-shift');
+                        }
                     }
                 }
             } else {
-                showToast('Ошибка при удалении смены', 'danger');
+                const error = await response.text();
+                showToast(error || 'Ошибка при удалении смены', 'danger');
             }
         } catch (error) {
             handleError(error, 'Ошибка при удалении смены');
@@ -451,9 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const shiftId = e.target.dataset.shiftId;
-                if (confirm('Удалить эту смену?')) {
-                    deleteShift(shiftId);
-                }
+                deleteShift(shiftId); // Убрали confirm, можно добавить обратно если нужно
             });
         });
     };
