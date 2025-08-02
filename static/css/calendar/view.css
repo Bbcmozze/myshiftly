@@ -565,6 +565,15 @@ body.fullscreen-active {
 
 .modal-body {
     padding: 1.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.modal-body h5 {
+    font-size: 1.1rem;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    font-weight: 600;
 }
 
 .form-row {
@@ -822,19 +831,26 @@ body.fullscreen-active #fullscreenOverlay {
 
 /* Стили для модального окна добавления участников */
 .friends-select-list {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
 }
 
 .friend-select-item {
     padding: 0.75rem;
-    border-radius: 6px;
-    transition: background-color 0.2s;
+    border-radius: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .friend-select-item:hover {
-    background-color: #f8fafc;
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .friend-select-item label {
@@ -845,13 +861,57 @@ body.fullscreen-active #fullscreenOverlay {
 }
 
 .friend-select-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #e2e8f0;
+    transition: transform 0.2s ease;
+}
+
+.friend-select-item:hover .friend-select-avatar {
+    transform: scale(1.05);
+    border-color: #94a3b8;
 }
 
 .friend-select-item input[type="checkbox"] {
-    margin-right: 0.5rem;
+    width: 18px;
+    height: 18px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+.friend-select-item span {
+    font-weight: 500;
+    color: #1e293b;
+    flex: 1;
+}
+
+/* Анимация появления модального окна */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-content {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Кастомный скроллбар */
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }

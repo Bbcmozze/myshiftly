@@ -242,16 +242,19 @@
             <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="form-group">
-                <label>Выберите коллег для добавления:</label>
-                <div class="friends-select-list" id="friendsSelectList">
-                    <!-- Список будет заполнен JavaScript -->
-                </div>
+            <h5>Выберите коллег</h5>
+            <p style="color: #64748b; margin-bottom: 1rem;">
+                Выберите друзей, которых хотите добавить в календарь.
+            </p>
+            <div class="friends-select-list" id="friendsSelectList">
+                <!-- Список будет заполнен через JavaScript -->
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline modal-close">Отмена</button>
-            <button class="btn btn-primary" id="confirmAddMembers">Добавить</button>
+            <button class="btn btn-primary" id="confirmAddMembers">
+                <i class="bi bi-plus-lg"></i> Добавить
+            </button>
         </div>
     </div>
 </div>
