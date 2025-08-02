@@ -166,64 +166,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Функция для обновления списка доступных друзей
     const updateAvailableFriendsList = async () => {
-        try {
-            const calendarId = document.body.dataset.calendarId;
-            const currentUserId = parseInt(document.body.dataset.currentUserId);
+    try {
+        const calendarId = document.body.dataset.calendarId;
+        const currentUserId = parseInt(document.body.dataset.currentUserId);
 
-            // Получаем текущих участников календаря
-            const currentMembers = new Set(
-                Array.from(document.querySelectorAll('.member-item[data-user-id]'))
-                    .map(item => parseInt(item.dataset.userId))
-            );
+        // Получаем текущих участников календаря (включая владельца)
+        const currentMembers = new Set(
+            Array.from(document.querySelectorAll('.member-item[data-user-id]'))
+                .map(item => parseInt(item.dataset.userId))
+        );
 
-            // Добавляем владельца календаря в список исключений
-            const ownerId = parseInt(document.querySelector('.member-item.owner').dataset.userId);
-            currentMembers.add(ownerId);
+        // Добавляем владельца календаря (если он не в списке)
+        const ownerId = parseInt(document.querySelector('.member-item.owner').dataset.userId);
+        currentMembers.add(ownerId);
 
-            // Получаем всех друзей текущего пользователя
-            const response = await fetch(`/api/search_users?q=`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            const allFriends = await response.json();
-
-            // Фильтруем друзей, исключая уже добавленных и самого пользователя
-            const availableFriends = allFriends.filter(friend =>
-                friend.id !== currentUserId &&
-                !currentMembers.has(friend.id)
-            );
-
-            const friendsSelectList = document.getElementById('friendsSelectList');
-            friendsSelectList.innerHTML = '';
-
-            if (availableFriends.length === 0) {
-                friendsSelectList.innerHTML = '<p>Нет доступных коллег для добавления</p>';
-                return false;
+        // Запрашиваем список друзей текущего пользователя
+        const response = await fetch('/api/get_friends', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
             }
+        });
 
-            availableFriends.forEach(friend => {
-                const friendItem = document.createElement('div');
-                friendItem.className = 'friend-select-item';
-                friendItem.innerHTML = `
-                    <label>
-                        <input type="checkbox" name="selected_friends" value="${friend.id}">
-                        <img src="/static/images/${friend.avatar}" 
-                             onerror="this.src='/static/images/default_avatar.svg'"
-                             class="friend-select-avatar">
-                        <span>${friend.username}</span>
-                    </label>
-                `;
-                friendsSelectList.appendChild(friendItem);
-            });
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки списка друзей');
+        }
 
-            return true;
-        } catch (error) {
-            console.error('Ошибка при обновлении списка друзей:', error);
+        const friends = await response.json();
+
+        // Фильтруем друзей, исключая уже добавленных и самого себя
+        const availableFriends = friends.filter(friend =>
+            friend.id !== currentUserId &&
+            !currentMembers.has(friend.id)
+        );
+
+        const friendsSelectList = document.getElementById('friendsSelectList');
+        friendsSelectList.innerHTML = '';
+
+        if (availableFriends.length === 0) {
+            friendsSelectList.innerHTML = '<p>Нет доступных коллег для добавления</p>';
             return false;
         }
-    };
+
+        // Заполняем список доступных друзей
+        availableFriends.forEach(friend => {
+            const friendItem = document.createElement('div');
+            friendItem.className = 'friend-select-item';
+            friendItem.innerHTML = `
+                <label>
+                    <input type="checkbox" name="selected_friends" value="${friend.id}">
+                    <img src="/static/images/${friend.avatar}" 
+                         onerror="this.src='/static/images/default_avatar.svg'"
+                         class="friend-select-avatar">
+                    <span>${friend.username}</span>
+                </label>
+            `;
+            friendsSelectList.appendChild(friendItem);
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Ошибка при обновлении списка друзей:', error);
+        showToast('Не удалось загрузить список друзей', 'danger');
+        return false;
+    }
+};
 
     // ====================== УПРАВЛЕНИЕ УЧАСТНИКАМИ ======================
 

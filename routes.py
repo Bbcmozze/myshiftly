@@ -544,3 +544,14 @@ def register_routes(app):
                 'success': False,
                 'error': str(e)
             }), 500
+
+    @app.route('/api/get_friends', methods=['GET'])
+    @login_required
+    def get_friends():
+        friends = current_user.friends.all()
+        results = [{
+            'id': friend.id,
+            'username': friend.username,
+            'avatar': friend.avatar,
+        } for friend in friends]
+        return jsonify(results)
