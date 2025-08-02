@@ -14,19 +14,21 @@ document.addEventListener('DOMContentLoaded', () => {
             createTemplateBtn: document.getElementById('createTemplateBtn'),
             prevMonthBtn: document.getElementById('prevMonth'),
             nextMonthBtn: document.getElementById('nextMonth'),
-            addMemberBtn: document.getElementById('addMemberBtn'),
-            templateList: document.getElementById('templateList'),
-            selectTemplateList: document.getElementById('selectTemplateList'),
             currentMonthEl: document.getElementById('currentMonth'),
             templateTitle: document.getElementById('templateTitle'),
             templateStart: document.getElementById('templateStart'),
             templateEnd: document.getElementById('templateEnd'),
-            friendSelect: document.getElementById('friendSelect'),
             confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
             toggleFullscreenBtn: document.getElementById('toggleFullscreenBtn'),
             calendarMain: document.querySelector('.calendar-main'),
             fullscreenOverlay: document.getElementById('fullscreenOverlay'),
-            toastContainer: document.getElementById('toastContainer') || document.body
+            toastContainer: document.getElementById('toastContainer') || document.body,
+            // Новые элементы для управления участниками
+            addMembersBtn: document.getElementById('addMembersBtn'),
+            addMembersModal: document.getElementById('addMembersModal'),
+            confirmAddMembers: document.getElementById('confirmAddMembers'),
+            memberList: document.getElementById('memberList'),
+            friendsSelectList: document.getElementById('friendsSelectList')
         };
     };
 
@@ -38,60 +40,25 @@ document.addEventListener('DOMContentLoaded', () => {
         createTemplateBtn,
         prevMonthBtn,
         nextMonthBtn,
-        addMemberBtn,
-        templateList,
-        selectTemplateList,
         currentMonthEl,
         templateTitle,
         templateStart,
         templateEnd,
-        friendSelect,
         confirmDeleteBtn,
-        toastContainer
+        toggleFullscreenBtn,
+        calendarMain,
+        fullscreenOverlay,
+        toastContainer,
+        addMembersBtn,
+        addMembersModal,
+        confirmAddMembers,
+        memberList,
+        friendsSelectList
     } = initElements();
 
     // Русские названия месяцев
     const monthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
                        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
-
-    // Обновление отображения месяца
-    const updateMonthDisplay = async () => {
-        const monthName = monthNames[currentMonth.getMonth()];
-        currentMonthEl.textContent = `${monthName} ${currentMonth.getFullYear()}`;
-
-        const url = new URL(window.location.href);
-        url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
-        window.history.pushState({}, '', url);
-
-        try {
-            const response = await fetch(url.toString(), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            if (!response.ok) throw new Error('Ошибка загрузки данных');
-
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newTable = doc.querySelector('.calendar-table');
-
-            if (newTable) {
-                const tableContainer = document.querySelector('.calendar-table-container');
-                tableContainer.innerHTML = '';
-                tableContainer.appendChild(newTable);
-
-                // Переустанавливаем все обработчики после загрузки новой таблицы
-                setupCalendarCellHandlers();
-                setupShiftHandlers();
-            }
-        } catch (error) {
-            console.error('Ошибка при загрузке календаря:', error);
-            showToast('Не удалось загрузить данные календаря', 'danger');
-        }
-    };
-
 
     // Текущий месяц и год
     let currentMonth = new Date(document.body.dataset.currentMonth);
@@ -136,32 +103,187 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(message, 'danger');
     };
 
-    // Обновление ячейки календаря после добавления смены
-    const updateCalendarCell = (date, userId, shiftData) => {
-        const cell = document.querySelector(`.day-cell[data-date="${date}"][data-user-id="${userId}"]`);
-        if (!cell) return;
+    // Обновление отображения месяца
+    const updateMonthDisplay = async () => {
+        const monthName = monthNames[currentMonth.getMonth()];
+        currentMonthEl.textContent = `${monthName} ${currentMonth.getFullYear()}`;
 
-        // Проверяем, есть ли уже смена в этой ячейке
-        const existingShift = cell.querySelector('.shift-badge');
-        if (existingShift) {
-            showToast('В этот день уже есть смена', 'warning');
-            return;
+        const url = new URL(window.location.href);
+        url.searchParams.set('month', currentMonth.toISOString().split('T')[0]);
+        window.history.pushState({}, '', url);
+
+        try {
+            const response = await fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки данных');
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('.calendar-table');
+
+            if (newTable) {
+                const tableContainer = document.querySelector('.calendar-table-container');
+                tableContainer.innerHTML = '';
+                tableContainer.appendChild(newTable);
+
+                // Переустанавливаем все обработчики после загрузки новой таблицы
+                setupCalendarCellHandlers();
+                setupShiftHandlers();
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке календаря:', error);
+            showToast('Не удалось загрузить данные календаря', 'danger');
         }
+    };
 
-        cell.classList.add('has-shift');
+    // Обновление таблицы календаря
+    const updateCalendarTable = async () => {
+        try {
+            const response = await fetch(window.location.href, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
 
-        const shiftBadge = document.createElement('div');
-        shiftBadge.className = 'shift-badge';
-        shiftBadge.dataset.shiftId = shiftData.id;
-        shiftBadge.innerHTML = `
-            ${shiftData.title} (${shiftData.start_time}-${shiftData.end_time})
-            <button class="remove-shift-btn" data-shift-id="${shiftData.id}">&times;</button>
-        `;
+            if (!response.ok) throw new Error('Ошибка загрузки данных');
 
-        cell.appendChild(shiftBadge);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTable = doc.querySelector('.calendar-table');
 
-        // Переустанавливаем обработчики для новой кнопки удаления
-        setupShiftHandlers();
+            if (newTable) {
+                const tableContainer = document.querySelector('.calendar-table-container');
+                tableContainer.innerHTML = '';
+                tableContainer.appendChild(newTable);
+                setupCalendarCellHandlers();
+                setupShiftHandlers();
+            }
+        } catch (error) {
+            console.error('Ошибка при обновлении таблицы:', error);
+        }
+    };
+
+    // ====================== УПРАВЛЕНИЕ УЧАСТНИКАМИ ======================
+
+    const setupMemberManagement = () => {
+        if (!addMembersBtn || !addMembersModal) return;
+
+        // Функция для закрытия модального окна
+        const closeModal = () => {
+            addMembersModal.style.display = 'none';
+        };
+
+        // Открытие модального окна
+        addMembersBtn.addEventListener('click', () => {
+            addMembersModal.style.display = 'flex';
+        });
+
+        // Закрытие модального окна
+        addMembersModal.querySelectorAll('.modal-close, .btn-outline').forEach(btn => {
+            btn.addEventListener('click', closeModal);
+        });
+
+        // Закрытие по клику вне модального окна
+        addMembersModal.addEventListener('click', (e) => {
+            if (e.target === addMembersModal) {
+                closeModal();
+            }
+        });
+
+        // Обработчик добавления участников
+        confirmAddMembers.addEventListener('click', async () => {
+            const selectedFriends = Array.from(
+                document.querySelectorAll('#friendsSelectList input[name="selected_friends"]:checked')
+            ).map(el => el.value);
+
+            if (selectedFriends.length === 0) {
+                showToast('Выберите хотя бы одного участника', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/calendar/${document.body.dataset.calendarId}/add-members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_ids: selectedFriends
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Участники успешно добавлены', 'success');
+                    closeModal();
+
+                    // Очищаем выбранные элементы
+                    document.querySelectorAll('#friendsSelectList input[type="checkbox"]').forEach(checkbox => {
+                        checkbox.checked = false;
+                    });
+
+                    // Обновляем список участников
+                    data.added_members.forEach(member => {
+                        const memberItem = document.createElement('div');
+                        memberItem.className = 'member-item';
+                        memberItem.dataset.userId = member.id;
+                        memberItem.innerHTML = `
+                            <img src="/static/images/${member.avatar}" 
+                                 onerror="this.src='/static/images/default_avatar.svg'">
+                            <span>${member.username}</span>
+                            <button class="btn-remove-member" data-user-id="${member.id}">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        `;
+                        memberList.appendChild(memberItem);
+                    });
+
+                    updateCalendarTable();
+                } else {
+                    showToast(data.message || 'Ошибка при добавлении участников', 'danger');
+                }
+            } catch (error) {
+                handleError(error, 'Ошибка при добавлении участников');
+            }
+        });
+
+        // Обработчик удаления участников
+        document.addEventListener('click', async (e) => {
+            const removeBtn = e.target.closest('.btn-remove-member');
+            if (!removeBtn) return;
+
+            const userId = removeBtn.dataset.userId;
+            const memberItem = removeBtn.closest('.member-item');
+
+            try {
+                const response = await fetch(`/calendar/${document.body.dataset.calendarId}/remove-member/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Участник удален', 'success');
+                    memberItem.remove();
+                    updateCalendarTable();
+                } else {
+                    showToast(data.message || 'Ошибка при удалении участника', 'danger');
+                }
+            } catch (error) {
+                handleError(error, 'Ошибка при удалении участника');
+            }
+        });
     };
 
     // ====================== ОСНОВНЫЕ ФУНКЦИИ ======================
@@ -177,16 +299,17 @@ document.addEventListener('DOMContentLoaded', () => {
             currentMonth.setMonth(currentMonth.getMonth() + 1);
             updateMonthDisplay();
         });
-    };
 
-    const todayBtn = document.createElement('button');
-    todayBtn.className = 'btn btn-outline';
-    todayBtn.innerHTML = '<i class="bi bi-calendar-event"></i> Сегодня';
-    todayBtn.addEventListener('click', () => {
-        currentMonth = new Date(); // Сбрасываем на текущий месяц
-        updateMonthDisplay();
-    });
-    document.querySelector('.month-navigation').appendChild(todayBtn);
+        // Кнопка "Сегодня"
+        const todayBtn = document.createElement('button');
+        todayBtn.className = 'btn btn-outline';
+        todayBtn.innerHTML = '<i class="bi bi-calendar-event"></i> Сегодня';
+        todayBtn.addEventListener('click', () => {
+            currentMonth = new Date();
+            updateMonthDisplay();
+        });
+        document.querySelector('.month-navigation').appendChild(todayBtn);
+    };
 
     // Управление модальными окнами
     const setupModals = () => {
@@ -427,42 +550,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Добавление участников (только для владельца)
-    const setupMemberHandlers = () => {
-        if (isOwner && addMemberBtn) {
-            addMemberBtn.addEventListener('click', async () => {
-                const userId = friendSelect.value;
-
-                if (!userId) {
-                    showToast('Выберите коллегу', 'danger');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/calendar/${document.body.dataset.calendarId}/add-member`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `user_id=${userId}`
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        showToast(data.message, 'success');
-                        // Обновляем страницу
-                        window.location.reload();
-                    } else {
-                        showToast(data.message, 'danger');
-                    }
-                } catch (error) {
-                    handleError(error, 'Ошибка при добавлении участника');
-                }
-            });
-        }
-    };
-
     // ====================== ОБРАБОТЧИКИ СОБЫТИЙ ======================
 
     // Обработка кликов по шаблонам
@@ -495,6 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     };
+
     // Установка обработчиков для кнопок удаления смен
     const setupShiftHandlers = () => {
         document.querySelectorAll('.remove-shift-btn').forEach(btn => {
@@ -611,8 +699,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-
-
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
     // Скрываем элементы управления для пользователей без прав
@@ -622,9 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (createTemplateBtn) createTemplateBtn.style.display = 'none';
-        if (!isOwner && addMemberBtn) {
-            document.querySelector('.add-member-form').style.display = 'none';
-        }
     }
 
     // Инициализация всех обработчиков
@@ -634,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupModals();
         setupTemplateHandlers();
         setupShiftHandlers();
-        setupMemberHandlers();
+        setupMemberManagement();  // Добавляем управление участниками
         setupCalendarCellHandlers();
         setupFullscreenToggle();
     };

@@ -35,20 +35,24 @@
         <div class="calendar-sidebar">
             <div class="sidebar-section">
                 <h4>Участники</h4>
-                <div class="member-list">
+                {% if calendar.owner_id == current_user.id %}
+                <button id="addMembersBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                    <i class="bi bi-plus-lg"></i> Добавить участников
+                </button>
+                {% endif %}
+                <div class="member-list" id="memberList">
                     <!-- Владелец календаря -->
-                    <div class="member-item {% if calendar.owner_id == current_user.id %}owner{% endif %}">
+                    <div class="member-item owner">
                         <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                              onerror="this.src='/static/images/default_avatar.svg'">
                         <span>
-                            {{ calendar.owner.username }}
-                            {% if calendar.owner_id == current_user.id %}(Вы){% endif %}
+                            {{ calendar.owner.username }} (Вы)
                         </span>
                     </div>
 
                     <!-- Участники календаря -->
                     {% for member in calendar.members|unique %}
-                    <div class="member-item {% if member.id == current_user.id %}owner{% endif %}">
+                    <div class="member-item" data-user-id="{{ member.id }}">
                         <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
                              onerror="this.src='/static/images/default_avatar.svg'">
                         <span>
@@ -56,27 +60,13 @@
                             {% if member.id == current_user.id %}(Вы){% endif %}
                         </span>
                         {% if calendar.owner_id == current_user.id %}
-                        <form method="POST" action="{{ url_for('remove_calendar_member', calendar_id=calendar.id, user_id=member.id) }}">
-                            <button type="submit" class="btn-remove-member">
-                                <i class="bi bi-x"></i>
-                            </button>
-                        </form>
+                        <button class="btn-remove-member" data-user-id="{{ member.id }}">
+                            <i class="bi bi-x"></i>
+                        </button>
                         {% endif %}
                     </div>
                     {% endfor %}
                 </div>
-
-                {% if calendar.owner_id == current_user.id %}
-                <div class="add-member-form">
-                    <select id="friendSelect" class="form-select">
-                        <option value="">Выберите коллегу</option>
-                        {% for friend in friends %}
-                        <option value="{{ friend.id }}">{{ friend.username }}</option>
-                        {% endfor %}
-                    </select>
-                    <button id="addMemberBtn" class="btn btn-sm btn-primary">Добавить</button>
-                </div>
-                {% endif %}
             </div>
 
             {% if calendar.owner_id == current_user.id %}
@@ -241,6 +231,39 @@
         <div class="modal-footer">
             <button class="btn btn-outline modal-close">Отмена</button>
             <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="addMembersModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h4>Добавить участников</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Выберите коллег для добавления:</label>
+                <div class="friends-select-list" id="friendsSelectList">
+                    {% for friend in friends if friend not in calendar.members and friend.id != calendar.owner_id %}
+                    <div class="friend-select-item">
+                        <label>
+                            <input type="checkbox" name="selected_friends" value="{{ friend.id }}">
+                            <img src="{{ url_for('static', filename='images/' + friend.avatar) }}"
+                                 onerror="this.src='/static/images/default_avatar.svg'"
+                                 class="friend-select-avatar">
+                            <span>{{ friend.username }}</span>
+                        </label>
+                    </div>
+                    {% else %}
+                    <p>Нет доступных коллег для добавления</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-primary" id="confirmAddMembers">Добавить</button>
         </div>
     </div>
 </div>

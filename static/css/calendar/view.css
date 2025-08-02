@@ -308,13 +308,15 @@
     border: none;
     color: #94a3b8;
     cursor: pointer;
+    padding: 0.25rem;
+    margin-left: auto;
     transition: all 0.2s;
 }
 
 .btn-remove-member:hover {
     color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
 }
-
 .add-member-form {
     display: flex;
     gap: 0.5rem;
@@ -525,19 +527,20 @@ body.fullscreen-active {
 
 .modal-content {
     background: white;
-    border-radius: 16px;
+    border-radius: 12px;
     width: 100%;
     max-width: 500px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #f1f5f9;
 }
 
 .modal-header h4 {
@@ -550,10 +553,10 @@ body.fullscreen-active {
 .modal-close {
     background: none;
     border: none;
-    font-size: 1rem;
-    color: #94a3b8;
+    font-size: 1.5rem;
     cursor: pointer;
-    transition: all 0.2s;
+    color: #64748b;
+    transition: color 0.2s;
 }
 
 .modal-close:hover {
@@ -571,11 +574,11 @@ body.fullscreen-active {
 }
 
 .modal-footer {
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
     display: flex;
     justify-content: flex-end;
-    gap: 1rem;
-    border-top: 1px solid #f1f5f9;
+    gap: 0.75rem;
 }
 
 .calendar-grid-container {
@@ -815,4 +818,40 @@ body.fullscreen-active {
 body.fullscreen-active #fullscreenOverlay {
     opacity: 1;
     pointer-events: auto;
+}
+
+/* Стили для модального окна добавления участников */
+.friends-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+.friend-select-item {
+    padding: 0.75rem;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.friend-select-item:hover {
+    background-color: #f8fafc;
+}
+
+.friend-select-item label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.friend-select-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+
+.friend-select-item input[type="checkbox"] {
+    margin-right: 0.5rem;
 }

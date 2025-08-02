@@ -313,42 +313,34 @@ def register_routes(app):
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 400
 
-    @app.route('/calendar/<int:calendar_id>/add-member', methods=['POST'])
+    @app.route('/calendar/<int:calendar_id>/add-members', methods=['POST'])
     @login_required
-    def add_calendar_member(calendar_id):
+    def add_calendar_members(calendar_id):
         calendar = Calendar.query.get_or_404(calendar_id)
 
         if calendar.owner_id != current_user.id:
             abort(403)
 
-        user_id = request.form.get('user_id')
-        user = User.query.get_or_404(user_id)
+        data = request.get_json()
+        user_ids = data.get('user_ids', [])
+        added_members = []
 
-        # Проверяем, что пользователь ещё не добавлен
-        if user in calendar.members:
-            return jsonify({
-                'success': False,
-                'message': 'Пользователь уже добавлен в календарь'
-            }), 400
+        for user_id in user_ids:
+            user = User.query.get(user_id)
+            if user and user not in calendar.members and user.id != calendar.owner_id:
+                calendar.members.append(user)
+                added_members.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.avatar
+                })
 
-        # Проверяем, что это не владелец календаря
-        if user.id == calendar.owner_id:
-            return jsonify({
-                'success': False,
-                'message': 'Нельзя добавить владельца календаря'
-            }), 400
-
-        calendar.members.append(user)
         db.session.commit()
 
         return jsonify({
             'success': True,
-            'message': f'{user.username} успешно добавлен в календарь',
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'avatar': user.avatar
-            }
+            'message': 'Участники успешно добавлены',
+            'added_members': added_members
         })
 
     @app.route('/calendar/<int:calendar_id>/remove-member/<int:user_id>', methods=['POST'])
@@ -367,11 +359,16 @@ def register_routes(app):
             # Удаляем пользователя из календаря
             calendar.members.remove(user)
             db.session.commit()
-            flash(f'{user.username} удален из календаря', 'success')
-        else:
-            flash('Пользователь не является участником календаря', 'warning')
 
-        return redirect(url_for('view_calendar', calendar_id=calendar_id))
+            return jsonify({
+                'success': True,
+                'message': f'{user.username} удален из календаря'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'Пользователь не является участником календаря'
+            }), 400
 
 
     @app.route('/calendar/<int:calendar_id>/delete', methods=['POST'])
