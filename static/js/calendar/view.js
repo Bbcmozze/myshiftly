@@ -497,13 +497,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const addTemplateToDOM = (template) => {
         const templateList = document.getElementById('templateList');
 
-        // Удаляем сообщение "Нет шаблонов", если оно есть
+        // Если есть сообщение "Нет шаблонов" - удаляем его
         const noTemplates = templateList.querySelector('.no-templates');
         if (noTemplates) {
             noTemplates.remove();
         }
 
-        // Добавляем новый шаблон
+        // Создаем новый элемент шаблона
         const templateItem = document.createElement('div');
         templateItem.className = 'template-item';
         templateItem.dataset.templateId = template.id;
@@ -518,18 +518,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             </div>
         `;
-        templateList.appendChild(templateItem);
-        document.getElementById('templateList').appendChild(templateItem);
 
-        // В модальное окно выбора
-        const selectTemplateItem = document.createElement('div');
-        selectTemplateItem.className = 'template-item selectable-template';
-        selectTemplateItem.dataset.templateId = template.id;
-        selectTemplateItem.innerHTML = `
-            <strong>${template.title}</strong><br>
-            ${template.start_time} - ${template.end_time}
-        `;
-        document.getElementById('selectTemplateList').appendChild(selectTemplateItem);
+        // Добавляем с анимацией
+        templateItem.style.opacity = '0';
+        templateItem.style.transform = 'translateY(10px)';
+        templateList.appendChild(templateItem);
+
+        // Запускаем анимацию
+        setTimeout(() => {
+            templateItem.style.opacity = '1';
+            templateItem.style.transform = 'translateY(0)';
+            templateItem.style.transition = 'all 0.3s ease';
+        }, 10);
     };
 
     // Удаление шаблона
@@ -545,11 +545,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Удаляем шаблон из списка
-                removeTemplateFromDOM(templateId);
+                // Удаляем шаблон из DOM
+                const templateList = document.getElementById('templateList');
+                const templateItems = templateList.querySelectorAll('.template-item');
 
-                // Проверяем, остались ли шаблоны
-                checkEmptyTemplatesList();
+                // Если удаляем последний шаблон
+                if (templateItems.length === 1) {
+                    // Плавно скрываем последний элемент
+                    templateItems[0].classList.add('fade-out');
+
+                    // После анимации удаляем и показываем сообщение
+                    setTimeout(() => {
+                        templateList.innerHTML = `
+                            <div class="no-templates">
+                                <i class="bi bi-calendar-x"></i>
+                                <p>Нет созданных шаблонов</p>
+                            </div>
+                        `;
+                    }, 300);
+                } else {
+                    // Если не последний - просто удаляем
+                    removeTemplateFromDOM(templateId);
+                }
 
                 showToast('Шаблон удален', 'success');
             } else {

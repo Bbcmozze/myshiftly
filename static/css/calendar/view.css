@@ -424,9 +424,15 @@
 
 .no-templates {
     text-align: center;
-    padding: 1rem;
+    padding: 1.5rem;
     color: #64748b;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.5s ease;
+}
+
+.no-templates i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
 }
 
 .calendar-main {
@@ -808,7 +814,7 @@ body.fullscreen-active {
     border-radius: 6px;
     background: white;
     border: 1px solid #e2e8f0;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .template-actions {
@@ -882,7 +888,6 @@ body.fullscreen-active {
 .fade-out {
     opacity: 0;
     transform: translateX(-20px);
-    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 /* Стили для модального окна подтверждения */
@@ -991,7 +996,7 @@ body.fullscreen-active #fullscreenOverlay {
 
 /* Анимация появления модального окна */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
