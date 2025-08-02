@@ -44,6 +44,7 @@
     overflow: hidden;
     transition: all 0.2s ease;
     border: 1px solid #f1f5f9;
+    padding: 0.5rem; /* Уменьшили отступы */
 }
 
 .friend-card:hover {
@@ -52,33 +53,33 @@
 }
 
 .friend-avatar {
-    padding: 1.5rem;
+    padding: 0.5rem; /* Было 1.5rem */
     text-align: center;
     background: #f8fafc;
 }
 
 .friend-avatar img {
-    width: 100px;
-    height: 100px;
+    width: 60px; /* Было 100px */
+    height: 60px; /* Было 100px */
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid white;
+    border: 2px solid white; /* Было 3px */
     box-shadow: var(--shadow-sm);
 }
 
 .friend-info {
-    padding: 1rem 1.5rem;
+    padding: 0.5rem; /* Было 1rem 1.5rem */
     flex: 1;
 }
 
 .friend-name {
-    font-size: 1.1rem;
+    font-size: 0.95rem; /* Было 1.1rem */
     color: var(--text-color);
     margin-bottom: 0.25rem;
 }
 
 .friend-email {
-    font-size: 0.85rem;
+    font-size: 0.75rem; /* Было 0.85rem */
     color: #64748b;
     margin-bottom: 1rem;
 }
@@ -86,7 +87,7 @@
 .friend-meta {
     display: flex;
     align-items: center;
-    font-size: 0.8rem;
+    font-size: 0.7rem; /* Было 0.8rem */
     color: #64748b;
 }
 
@@ -97,7 +98,7 @@
 .friend-actions {
     display: flex;
     justify-content: center; /* Изменено с space-between на center */
-    padding: 1rem 1.5rem;
+    padding: 0.5rem; /* Было 1rem 1.5rem */
     border-top: 1px solid #f1f5f9;
     background: #f8fafc;
 }
@@ -152,6 +153,74 @@
         gap: 1rem;
     }
 }
+
+/* Современное поле поиска */
+.friends-search-container {
+    margin-bottom: 1.5rem;
+    max-width: 400px;
+    position: relative;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.modern-search-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.modern-search-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    transform: translateY(-1px);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    color: #94a3b8;
+    font-size: 1rem;
+}
+
+.search-clear {
+    position: absolute;
+    right: 1rem;
+    color: #94a3b8;
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.search-clear.visible {
+    opacity: 1;
+}
+
+.search-clear:hover {
+    color: #64748b;
+}
+
+/* Анимация при фокусе */
+@keyframes input-focus {
+    0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    100% { box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+}
+
+.modern-search-input:focus {
+    animation: input-focus 0.3s ease forwards;
+}
+
 
 /* Поле поиска */
 .search-container {
