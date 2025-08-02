@@ -422,6 +422,13 @@
     font-size: 0.9rem;
 }
 
+.no-templates {
+    text-align: center;
+    padding: 1rem;
+    color: #64748b;
+    animation: fadeIn 0.3s ease;
+}
+
 .calendar-main {
     background: white;
     border-radius: 12px;

@@ -495,22 +495,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Добавление шаблона в DOM
     const addTemplateToDOM = (template) => {
-        // В список шаблонов
+        const templateList = document.getElementById('templateList');
+
+        // Удаляем сообщение "Нет шаблонов", если оно есть
+        const noTemplates = templateList.querySelector('.no-templates');
+        if (noTemplates) {
+            noTemplates.remove();
+        }
+
+        // Добавляем новый шаблон
         const templateItem = document.createElement('div');
         templateItem.className = 'template-item';
         templateItem.dataset.templateId = template.id;
         templateItem.innerHTML = `
-            <div>
-                <strong>${template.title}</strong><br>
-                ${template.start_time} - ${template.end_time}
+            <div class="template-info">
+                <div class="template-title">${template.title}</div>
+                <div class="template-time">${template.start_time} - ${template.end_time}</div>
             </div>
             <div class="template-actions">
-                <button class="btn btn-sm btn-outline-danger delete-template-btn"
-                        data-template-id="${template.id}">
+                <button class="delete-template-btn" data-template-id="${template.id}">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;
+        templateList.appendChild(templateItem);
         document.getElementById('templateList').appendChild(templateItem);
 
         // В модальное окно выбора
@@ -540,10 +548,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Удаляем шаблон из списка
                 removeTemplateFromDOM(templateId);
 
-                // Удаляем все связанные смены из календаря
-                document.querySelectorAll(`.shift-badge[data-template-id="${templateId}"]`).forEach(badge => {
-                    badge.remove();
-                });
+                // Проверяем, остались ли шаблоны
+                checkEmptyTemplatesList();
 
                 showToast('Шаблон удален', 'success');
             } else {
@@ -551,6 +557,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             handleError(error, 'Ошибка при удалении шаблона');
+        }
+    };
+
+    // Новая функция для проверки пустого списка
+    const checkEmptyTemplatesList = () => {
+        const templateList = document.getElementById('templateList');
+        const templateItems = templateList.querySelectorAll('.template-item');
+
+        if (templateItems.length === 0) {
+            templateList.innerHTML = `
+                <div class="no-templates" style="text-align: center; padding: 1rem; color: #64748b;">
+                    <i class="bi bi-calendar-x" style="font-size: 1.5rem;"></i>
+                    <p>Нет созданных шаблонов</p>
+                </div>
+            `;
         }
     };
 
