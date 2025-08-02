@@ -782,36 +782,88 @@ body.fullscreen-active {
     text-align: center;
 }
 
+/* Стили для списка шаблонов смен */
+.template-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+}
+
 .template-item {
-    transition: all 0.1s ease;
-    opacity: 1;
-    cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem;
-    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
 }
 
 .template-actions {
     display: flex;
-    align-items: center;
     gap: 0.5rem;
 }
 
 .template-item:hover {
-    background: #ededed;
-    transform: scale(1.01);
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.template-info {
+    flex: 1;
+}
+
+.template-title {
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.template-time {
+    font-size: 0.85rem;
+    color: #64748b;
 }
 
 /* Анимация для кнопки удаления */
 .delete-template-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
     transition: all 0.2s ease;
-    margin-left: auto; /* Выравнивает кнопку вправо */
 }
 
 .delete-template-btn:hover {
-    transform: scale(1.1);
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Кастомный скроллбар для шаблонов */
+.template-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.template-list-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.template-list-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.template-list-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 /* Стили для элементов с правами редактирования */

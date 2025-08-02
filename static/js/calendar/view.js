@@ -372,6 +372,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const searchTemplateInput = document.getElementById('searchTemplateInput');
+    if (searchTemplateInput) {
+        searchTemplateInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.template-item').forEach(item => {
+                const title = item.querySelector('.template-title').textContent.toLowerCase();
+                item.style.display = title.includes(query) ? 'flex' : 'none';
+            });
+        });
+    }
+
     // ====================== ОСНОВНЫЕ ФУНКЦИИ ======================
 
     // Навигация по месяцам

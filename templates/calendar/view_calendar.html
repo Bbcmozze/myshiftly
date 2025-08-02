@@ -84,21 +84,33 @@
                 <button id="createTemplateBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
                     <i class="bi bi-plus-lg"></i> Создать шаблон
                 </button>
-                <div class="template-list" id="templateList">
-                    {% for template in shift_templates %}
-                    <div class="template-item" data-template-id="{{ template.id }}">
-                        <div>
-                            <strong>{{ template.title }}</strong><br>
-                            {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                <div class="search-box" style="margin-bottom: 0.5rem;">
+                    <input type="text" id="searchTemplateInput" placeholder="Поиск шаблонов..."
+                           class="search-input" style="width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+                </div>
+                <div class="template-list-container">
+                    <div class="template-list" id="templateList">
+                        {% for template in shift_templates %}
+                        <div class="template-item" data-template-id="{{ template.id }}">
+                            <div class="template-info">
+                                <div class="template-title">{{ template.title }}</div>
+                                <div class="template-time">
+                                    {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                                </div>
+                            </div>
+                            <div class="template-actions">
+                                <button class="delete-template-btn" data-template-id="{{ template.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="template-actions">
-                            <button class="btn btn-sm btn-outline-danger delete-template-btn"
-                                    data-template-id="{{ template.id }}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        {% else %}
+                        <div class="no-templates" style="text-align: center; padding: 1rem; color: #64748b;">
+                            <i class="bi bi-calendar-x" style="font-size: 1.5rem;"></i>
+                            <p>Нет созданных шаблонов</p>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
             {% endif %}
