@@ -1,3 +1,7 @@
+html {
+    scroll-behavior: smooth;
+}
+
 .calendar-creation-container {
     max-width: 1200px;
     margin: 2rem auto;
@@ -115,6 +119,8 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
     margin-top: 2rem;
     border: 1px solid #f1f5f9;
+    scroll-margin-top: 20px; /* Отступ при прокрутке */
+    transition: all 0.3s ease;
 }
 
 .creation-form h3 {
