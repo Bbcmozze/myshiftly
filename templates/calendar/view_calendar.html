@@ -245,19 +245,6 @@
             <div class="form-group">
                 <label>Выберите коллег для добавления:</label>
                 <div class="friends-select-list" id="friendsSelectList">
-                    {% for friend in friends if friend not in calendar.members and friend.id != calendar.owner_id %}
-                    <div class="friend-select-item">
-                        <label>
-                            <input type="checkbox" name="selected_friends" value="{{ friend.id }}">
-                            <img src="{{ url_for('static', filename='images/' + friend.avatar) }}"
-                                 onerror="this.src='/static/images/default_avatar.svg'"
-                                 class="friend-select-avatar">
-                            <span>{{ friend.username }}</span>
-                        </label>
-                    </div>
-                    {% else %}
-                    <p>Нет доступных коллег для добавления</p>
-                    {% endfor %}
                 </div>
             </div>
         </div>

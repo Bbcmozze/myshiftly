@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
             calendarMain: document.querySelector('.calendar-main'),
             fullscreenOverlay: document.getElementById('fullscreenOverlay'),
             toastContainer: document.getElementById('toastContainer') || document.body,
-            // Новые элементы для управления участниками
             addMembersBtn: document.getElementById('addMembersBtn'),
             addMembersModal: document.getElementById('addMembersModal'),
             confirmAddMembers: document.getElementById('confirmAddMembers'),
@@ -79,18 +78,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         toastContainer.appendChild(toast);
 
-        // Анимация появления
         setTimeout(() => {
             toast.classList.add('show');
         }, 10);
 
-        // Автоматическое скрытие через 3 секунды
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
 
-        // Закрытие по клику
         toast.querySelector('.toast-close').addEventListener('click', () => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
@@ -131,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
 
-                // Переустанавливаем все обработчики после загрузки новой таблицы
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
             }
@@ -169,6 +164,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Функция для обновления списка доступных друзей
+    const updateAvailableFriendsList = async () => {
+        try {
+            const calendarId = document.body.dataset.calendarId;
+            const currentUserId = parseInt(document.body.dataset.currentUserId);
+
+            // Получаем текущих участников календаря
+            const currentMembers = new Set(
+                Array.from(document.querySelectorAll('.member-item[data-user-id]'))
+                    .map(item => parseInt(item.dataset.userId))
+            );
+
+            // Добавляем владельца календаря в список исключений
+            const ownerId = parseInt(document.querySelector('.member-item.owner').dataset.userId);
+            currentMembers.add(ownerId);
+
+            // Получаем всех друзей текущего пользователя
+            const response = await fetch(`/api/search_users?q=`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const allFriends = await response.json();
+
+            // Фильтруем друзей, исключая уже добавленных и самого пользователя
+            const availableFriends = allFriends.filter(friend =>
+                friend.id !== currentUserId &&
+                !currentMembers.has(friend.id)
+            );
+
+            const friendsSelectList = document.getElementById('friendsSelectList');
+            friendsSelectList.innerHTML = '';
+
+            if (availableFriends.length === 0) {
+                friendsSelectList.innerHTML = '<p>Нет доступных коллег для добавления</p>';
+                return false;
+            }
+
+            availableFriends.forEach(friend => {
+                const friendItem = document.createElement('div');
+                friendItem.className = 'friend-select-item';
+                friendItem.innerHTML = `
+                    <label>
+                        <input type="checkbox" name="selected_friends" value="${friend.id}">
+                        <img src="/static/images/${friend.avatar}" 
+                             onerror="this.src='/static/images/default_avatar.svg'"
+                             class="friend-select-avatar">
+                        <span>${friend.username}</span>
+                    </label>
+                `;
+                friendsSelectList.appendChild(friendItem);
+            });
+
+            return true;
+        } catch (error) {
+            console.error('Ошибка при обновлении списка друзей:', error);
+            return false;
+        }
+    };
+
     // ====================== УПРАВЛЕНИЕ УЧАСТНИКАМИ ======================
 
     const setupMemberManagement = () => {
@@ -180,12 +236,14 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Открытие модального окна
-        addMembersBtn.addEventListener('click', () => {
-            const availableFriends = document.querySelectorAll('#friendsSelectList .friend-select-item').length;
-            if (availableFriends === 0) {
+        addMembersBtn.addEventListener('click', async () => {
+            const hasAvailableFriends = await updateAvailableFriendsList();
+
+            if (!hasAvailableFriends) {
                 showToast('Нет доступных коллег для добавления', 'warning');
                 return;
             }
+
             addMembersModal.style.display = 'flex';
         });
 
@@ -206,13 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedFriends = Array.from(
                 document.querySelectorAll('#friendsSelectList input[name="selected_friends"]:checked')
             ).map(el => el.value);
-
-            // Проверка, есть ли доступные участники для добавления
-            const availableFriends = document.querySelectorAll('#friendsSelectList .friend-select-item').length;
-            if (availableFriends === 0) {
-                showToast('Нет доступных коллег для добавления', 'warning');
-                return;
-            }
 
             if (selectedFriends.length === 0) {
                 showToast('Выберите хотя бы одного участника', 'warning');
@@ -236,8 +287,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Участники успешно добавлены', 'success');
                     closeModal();
 
-                    // Обновляем страницу
-                    window.location.reload();
+                    // Динамически добавляем новых участников
+                    data.added_members.forEach(member => {
+                        const memberItem = document.createElement('div');
+                        memberItem.className = 'member-item';
+                        memberItem.dataset.userId = member.id;
+                        memberItem.innerHTML = `
+                            <img src="/static/images/${member.avatar}" 
+                                 onerror="this.src='/static/images/default_avatar.svg'">
+                            <span>${member.username}</span>
+                            <button class="btn-remove-member" data-user-id="${member.id}">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        `;
+                        memberList.appendChild(memberItem);
+                    });
+
+                    // Обновляем список доступных друзей
+                    await updateAvailableFriendsList();
+
+                    // Обновляем таблицу календаря
+                    updateCalendarTable();
                 } else {
                     showToast(data.message || 'Ошибка при добавлении участников', 'danger');
                 }
@@ -267,7 +337,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.success) {
                     showToast('Участник удален', 'success');
+
+                    // Удаляем участника из списка
                     memberItem.remove();
+
+                    // Обновляем список доступных друзей в модальном окне
+                    await updateAvailableFriendsList();
+
+                    // Обновляем таблицу календаря
                     updateCalendarTable();
                 } else {
                     showToast(data.message || 'Ошибка при удалении участника', 'danger');
@@ -306,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Управление модальными окнами
     const setupModals = () => {
         const closeAllModals = () => {
-            [templateModal, selectTemplateModal, confirmDeleteModal].forEach(modal => {
+            [templateModal, selectTemplateModal, confirmDeleteModal, addMembersModal].forEach(modal => {
                 modal.style.display = 'none';
             });
         };
@@ -318,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Закрытие по клику вне модального окна
         window.addEventListener('click', (e) => {
-            if ([templateModal, selectTemplateModal, confirmDeleteModal].includes(e.target)) {
+            if ([templateModal, selectTemplateModal, confirmDeleteModal, addMembersModal].includes(e.target)) {
                 closeAllModals();
             }
         });
@@ -406,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             </div>
         `;
-        templateList.appendChild(templateItem);
+        document.getElementById('templateList').appendChild(templateItem);
 
         // В модальное окно выбора
         const selectTemplateItem = document.createElement('div');
@@ -416,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <strong>${template.title}</strong><br>
             ${template.start_time} - ${template.end_time}
         `;
-        selectTemplateList.appendChild(selectTemplateItem);
+        document.getElementById('selectTemplateList').appendChild(selectTemplateItem);
     };
 
     // Удаление шаблона
@@ -527,7 +604,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (shiftBadge) {
                         const cell = shiftBadge.closest('.day-cell');
                         shiftBadge.remove();
-                        // Проверяем, остались ли еще смены в ячейке
                         if (cell && !cell.querySelector('.shift-badge')) {
                             cell.classList.remove('has-shift');
                         }
@@ -709,7 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupModals();
         setupTemplateHandlers();
         setupShiftHandlers();
-        setupMemberManagement();  // Добавляем управление участниками
+        setupMemberManagement();
         setupCalendarCellHandlers();
         setupFullscreenToggle();
     };
