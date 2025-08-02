@@ -40,32 +40,37 @@
                     <i class="bi bi-plus-lg"></i> Добавить участников
                 </button>
                 {% endif %}
-                <div class="member-list" id="memberList">
-                    <!-- Владелец календаря -->
-                    <div class="member-item owner">
-                        <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
-                             onerror="this.src='/static/images/default_avatar.svg'">
-                        <span>
-                            {{ calendar.owner.username }} (Вы)
-                        </span>
-                    </div>
 
-                    <!-- Участники календаря -->
-                    {% for member in calendar.members|unique %}
-                    <div class="member-item" data-user-id="{{ member.id }}">
-                        <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
-                             onerror="this.src='/static/images/default_avatar.svg'">
-                        <span>
-                            {{ member.username }}
-                            {% if member.id == current_user.id %}(Вы){% endif %}
-                        </span>
-                        {% if calendar.owner_id == current_user.id %}
-                        <button class="btn-remove-member" data-user-id="{{ member.id }}">
-                            <i class="bi bi-x"></i>
-                        </button>
-                        {% endif %}
+                <div class="member-list-container">
+                    <div class="member-list" id="memberList">
+                        <!-- Владелец календаря -->
+                        <div class="member-item owner" data-user-id="{{ calendar.owner.id }}">
+                            <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
+                                 onerror="this.src='/static/images/default_avatar.svg'"
+                                 class="member-avatar">
+                            <span class="member-name">
+                                {{ calendar.owner.username }} (Вы)
+                            </span>
+                        </div>
+
+                        <!-- Участники календаря -->
+                        {% for member in calendar.members|unique %}
+                        <div class="member-item" data-user-id="{{ member.id }}">
+                            <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
+                                 onerror="this.src='/static/images/default_avatar.svg'"
+                                 class="member-avatar">
+                            <span class="member-name">
+                                {{ member.username }}
+                                {% if member.id == current_user.id %}(Вы){% endif %}
+                            </span>
+                            {% if calendar.owner_id == current_user.id %}
+                            <button class="btn-remove-member" data-user-id="{{ member.id }}">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
 
