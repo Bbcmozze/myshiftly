@@ -181,6 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Открытие модального окна
         addMembersBtn.addEventListener('click', () => {
+            const availableFriends = document.querySelectorAll('#friendsSelectList .friend-select-item').length;
+            if (availableFriends === 0) {
+                showToast('Нет доступных коллег для добавления', 'warning');
+                return;
+            }
             addMembersModal.style.display = 'flex';
         });
 
@@ -201,6 +206,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedFriends = Array.from(
                 document.querySelectorAll('#friendsSelectList input[name="selected_friends"]:checked')
             ).map(el => el.value);
+
+            // Проверка, есть ли доступные участники для добавления
+            const availableFriends = document.querySelectorAll('#friendsSelectList .friend-select-item').length;
+            if (availableFriends === 0) {
+                showToast('Нет доступных коллег для добавления', 'warning');
+                return;
+            }
 
             if (selectedFriends.length === 0) {
                 showToast('Выберите хотя бы одного участника', 'warning');
@@ -224,28 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Участники успешно добавлены', 'success');
                     closeModal();
 
-                    // Очищаем выбранные элементы
-                    document.querySelectorAll('#friendsSelectList input[type="checkbox"]').forEach(checkbox => {
-                        checkbox.checked = false;
-                    });
-
-                    // Обновляем список участников
-                    data.added_members.forEach(member => {
-                        const memberItem = document.createElement('div');
-                        memberItem.className = 'member-item';
-                        memberItem.dataset.userId = member.id;
-                        memberItem.innerHTML = `
-                            <img src="/static/images/${member.avatar}" 
-                                 onerror="this.src='/static/images/default_avatar.svg'">
-                            <span>${member.username}</span>
-                            <button class="btn-remove-member" data-user-id="${member.id}">
-                                <i class="bi bi-x"></i>
-                            </button>
-                        `;
-                        memberList.appendChild(memberItem);
-                    });
-
-                    updateCalendarTable();
+                    // Обновляем страницу
+                    window.location.reload();
                 } else {
                     showToast(data.message || 'Ошибка при добавлении участников', 'danger');
                 }
