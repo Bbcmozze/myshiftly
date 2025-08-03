@@ -496,6 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Добавление шаблона в DOM
     const addTemplateToDOM = (template) => {
         const templateList = document.getElementById('templateList');
+        const selectTemplateList = document.getElementById('selectTemplateList');
 
         // Если есть сообщение "Нет шаблонов" - удаляем его
         const noTemplates = templateList.querySelector('.no-templates');
@@ -503,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
             noTemplates.remove();
         }
 
-        // Создаем новый элемент шаблона
+        // Создаем новый элемент шаблона для основного списка
         const templateItem = document.createElement('div');
         templateItem.className = 'template-item';
         templateItem.dataset.templateId = template.id;
@@ -524,11 +525,38 @@ document.addEventListener('DOMContentLoaded', () => {
         templateItem.style.transform = 'translateY(10px)';
         templateList.appendChild(templateItem);
 
+        // Создаем элемент для модального окна выбора шаблона
+        const selectTemplateItem = document.createElement('div');
+        selectTemplateItem.className = 'template-item selectable-template';
+        selectTemplateItem.dataset.templateId = template.id;
+        selectTemplateItem.innerHTML = `
+            <strong>${template.title}</strong><br>
+            ${template.start_time} - ${template.end_time}
+        `;
+
+        // Проверяем, есть ли сообщение "Нет шаблонов" в модальном окне
+        const noTemplatesInModal = selectTemplateList.querySelector('.no-templates');
+        if (noTemplatesInModal) {
+            selectTemplateList.innerHTML = ''; // Очищаем сообщение
+        }
+
+        selectTemplateList.appendChild(selectTemplateItem);
+
         // Запускаем анимацию
         setTimeout(() => {
             templateItem.style.opacity = '1';
             templateItem.style.transform = 'translateY(0)';
             templateItem.style.transition = 'all 0.3s ease';
+
+            selectTemplateItem.style.opacity = '0';
+            selectTemplateItem.style.transform = 'translateY(10px)';
+            selectTemplateList.appendChild(selectTemplateItem);
+
+            setTimeout(() => {
+                selectTemplateItem.style.opacity = '1';
+                selectTemplateItem.style.transform = 'translateY(0)';
+                selectTemplateItem.style.transition = 'all 0.3s ease';
+            }, 10);
         }, 10);
     };
 
@@ -547,16 +575,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 // Удаляем шаблон из DOM
                 const templateList = document.getElementById('templateList');
+                const selectTemplateList = document.getElementById('selectTemplateList');
                 const templateItems = templateList.querySelectorAll('.template-item');
+                const selectTemplateItems = selectTemplateList.querySelectorAll('.template-item');
 
                 // Если удаляем последний шаблон
                 if (templateItems.length === 1) {
                     // Плавно скрываем последний элемент
                     templateItems[0].classList.add('fade-out');
+                    selectTemplateItems[0].classList.add('fade-out');
 
                     // После анимации удаляем и показываем сообщение
                     setTimeout(() => {
                         templateList.innerHTML = `
+                            <div class="no-templates">
+                                <i class="bi bi-calendar-x"></i>
+                                <p>Нет созданных шаблонов</p>
+                            </div>
+                        `;
+
+                        selectTemplateList.innerHTML = `
                             <div class="no-templates">
                                 <i class="bi bi-calendar-x"></i>
                                 <p>Нет созданных шаблонов</p>
@@ -580,10 +618,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Новая функция для проверки пустого списка
     const checkEmptyTemplatesList = () => {
         const templateList = document.getElementById('templateList');
+        const selectTemplateList = document.getElementById('selectTemplateList');
         const templateItems = templateList.querySelectorAll('.template-item');
+        const selectTemplateItems = selectTemplateList.querySelectorAll('.template-item');
 
         if (templateItems.length === 0) {
             templateList.innerHTML = `
+                <div class="no-templates" style="text-align: center; padding: 1rem; color: #64748b;">
+                    <i class="bi bi-calendar-x" style="font-size: 1.5rem;"></i>
+                    <p>Нет созданных шаблонов</p>
+                </div>
+            `;
+        }
+
+        if (selectTemplateItems.length === 0) {
+            selectTemplateList.innerHTML = `
                 <div class="no-templates" style="text-align: center; padding: 1rem; color: #64748b;">
                     <i class="bi bi-calendar-x" style="font-size: 1.5rem;"></i>
                     <p>Нет созданных шаблонов</p>
@@ -594,10 +643,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Удаление шаблона из DOM
     const removeTemplateFromDOM = (templateId) => {
-        document.querySelectorAll(`[data-template-id="${templateId}"]`).forEach(el => {
+        // Удаляем из основного списка
+        const templateItems = document.querySelectorAll(`.template-item[data-template-id="${templateId}"]`);
+        templateItems.forEach(el => {
             el.classList.add('fade-out');
             setTimeout(() => el.remove(), 300);
         });
+
+        // Удаляем из модального окна выбора
+        const selectTemplateItems = document.querySelectorAll(`.selectable-template[data-template-id="${templateId}"]`);
+        selectTemplateItems.forEach(el => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 300);
+        });
+
+        // Проверяем, не остался ли список пустым
+        setTimeout(() => {
+            checkEmptyTemplatesList();
+        }, 350);
     };
 
     // Добавление смены из шаблона

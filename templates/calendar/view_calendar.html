@@ -291,7 +291,7 @@
             <div class="template-list" id="selectTemplateList">
                 {% for template in shift_templates %}
                 <div class="template-item selectable-template" data-template-id="{{ template.id }}">
-                    <strong>{{ template.title }}</strong><br>
+                    <strong class="template-name">{{ template.title }}</strong><br>
                     {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
                 </div>
                 {% endfor %}
