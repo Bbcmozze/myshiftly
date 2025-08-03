@@ -555,3 +555,29 @@ def register_routes(app):
             'avatar': friend.avatar,
         } for friend in friends]
         return jsonify(results)
+
+
+    @app.route('/calendar/<int:calendar_id>/clear-all-shifts', methods=['POST'])
+    @login_required
+    def clear_all_shifts(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        # Проверка прав
+        if calendar.owner_id != current_user.id:
+            abort(403)
+
+        try:
+            # Удаляем все смены календаря
+            Shift.query.filter_by(calendar_id=calendar.id).delete()
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': 'Все смены успешно удалены'
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'message': str(e)
+            }), 500

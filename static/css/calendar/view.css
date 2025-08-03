@@ -162,8 +162,8 @@
 /* Стили для страницы просмотра календаря */
 .calendar-view-container {
     max-width: 1400px;
-    margin: 0.5rem auto;
-    padding: 2rem;
+    margin: 0 auto;
+    padding: 1rem 2rem;
     background: white;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
@@ -174,7 +174,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid #f1f5f9;
 }
@@ -223,6 +223,7 @@
 }
 
 .header-actions .btn-danger {
+    margin-top: 1rem;
     background: #fee2e2;
     color: #dc2626;
     border: none;
@@ -672,7 +673,7 @@ body.fullscreen-active {
     max-width: 100%;
     margin-bottom: 1rem;
     width: 100%; /* Добавьте это свойство */
-    max-height: calc(10 * 60px); /* 8 строк по высоте ячейки */
+    max-height: calc(8 * 60px); /* 8 строк по высоте ячейки */
     overflow-y: auto;
     position: relative;
     scroll-behavior: smooth;
@@ -804,6 +805,10 @@ body.fullscreen-active {
     z-index: 1;
     align-items: center; /* Центрирование по горизонтали */
     justify-content: center; /* Центрирование по вертикали */
+}
+
+.shift-badge.removing {
+    animation: fadeOut 0.3s forwards;
 }
 
 .shift-badge .remove-shift-btn {
@@ -1177,4 +1182,139 @@ body.fullscreen-active #fullscreenOverlay {
     position: sticky;
     left: 0;
     z-index: 5;
+}
+
+/* Стиль кнопки очистки */
+#clearAllShiftsBtn {
+    margin-left: 10px;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    transition: all 0.2s;
+}
+
+#clearAllShiftsBtn:hover {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #b91c1c;
+}
+
+/* Иконка в кнопке */
+#clearAllShiftsBtn i {
+    margin-right: 5px;
+}
+
+/* Основное модальное окно */
+#confirmClearAllModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Контент модального окна */
+#confirmClearAllModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 450px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Шапка модалки */
+#confirmClearAllModal .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    position: relative;
+}
+
+#confirmClearAllModal .modal-header h4 {
+    margin: 0;
+    color: #dc2626;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Тело модалки */
+#confirmClearAllModal .modal-body {
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+#confirmClearAllModal .modal-body p {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 1.05rem;
+    line-height: 1.5;
+}
+
+#confirmClearAllModal .modal-body .text-muted {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Футер модалки */
+#confirmClearAllModal .modal-footer {
+    padding: 1.25rem;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #fafafa;
+}
+
+/* Кнопки */
+#confirmClearAllModal .btn {
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#confirmClearAllModal .btn-outline {
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #4b5563;
+}
+
+#confirmClearAllModal .btn-outline:hover {
+    background: #f3f4f6;
+}
+
+#confirmClearAllModal .btn-danger {
+    background: #ef4444;
+    border: none;
+    color: white;
+}
+
+#confirmClearAllModal .btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Кнопка закрытия */
+#confirmClearAllModal .modal-closee {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+}
+
+#confirmClearAllModal .modal-closee:hover {
+    color: #6b7280;
 }

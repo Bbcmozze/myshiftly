@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
             addMembersModal: document.getElementById('addMembersModal'),
             confirmAddMembers: document.getElementById('confirmAddMembers'),
             memberList: document.getElementById('memberList'),
+            clearAllShiftsBtn: document.getElementById('clearAllShiftsBtn'),
+            confirmClearAllModal: document.getElementById('confirmClearAllModal'),
+            confirmClearAllBtn: document.getElementById('confirmClearAllBtn'),
             friendsSelectList: document.getElementById('friendsSelectList')
         };
     };
@@ -397,15 +400,38 @@ document.addEventListener('DOMContentLoaded', () => {
             updateMonthDisplay();
         });
 
-        // Кнопка "Сегодня"
-        const todayBtn = document.createElement('button');
-        todayBtn.className = 'btn btn-outline';
-        todayBtn.innerHTML = '<i class="bi bi-calendar-event"></i> Сегодня';
+        // Обработчик для кнопки очистки
+        if (clearAllShiftsBtn) {
+            clearAllShiftsBtn.addEventListener('click', () => {
+                confirmClearAllModal.style.display = 'flex';
+            });
+        }
+
+        // Подтверждение очистки
+        if (confirmClearAllBtn) {
+            confirmClearAllBtn.addEventListener('click', () => {
+                confirmClearAllModal.style.display = 'none';
+                clearAllShifts();
+            });
+        }
+
+        confirmClearAllModal.addEventListener('click', (e) => {
+            if (e.target === confirmClearAllModal) {
+                confirmClearAllModal.style.display = 'none';
+            }
+        });
+
+        // Закрытие модального окна при клике на крестик или кнопку "Отмена"
+        const closeButtons = confirmClearAllModal.querySelectorAll('.modal-closee, .btn-outline');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                confirmClearAllModal.style.display = 'none';
+            });
+        });
         todayBtn.addEventListener('click', () => {
             currentMonth = new Date();
             updateMonthDisplay();
         });
-        document.querySelector('.month-navigation').appendChild(todayBtn);
     };
 
     // Управление модальными окнами
@@ -945,6 +971,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // Вызываем при загрузке и при изменении размеров
     window.addEventListener('load', adjustTableLayout);
     window.addEventListener('resize', adjustTableLayout);
+
+
+    // Улучшенная версия функции clearAllShifts
+    const clearAllShifts = async () => {
+        try {
+            // Анимация удаления
+            document.querySelectorAll('.shift-badge').forEach(badge => {
+                badge.classList.add('removing');
+            });
+
+            const calendarId = document.body.dataset.calendarId;
+            const response = await fetch(`/calendar/${calendarId}/clear-all-shifts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('Все смены успешно удалены', 'success');
+                // Даем время для анимации перед обновлением
+                setTimeout(updateCalendarTable, 300);
+            } else {
+                // Отменяем анимацию если была ошибка
+                document.querySelectorAll('.shift-badge').forEach(badge => {
+                    badge.classList.remove('removing');
+                });
+                showToast(data.message || 'Ошибка при удалении смен', 'danger');
+            }
+        } catch (error) {
+            handleError(error, 'Ошибка при удалении смен');
+        }
+    };
 
 
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================

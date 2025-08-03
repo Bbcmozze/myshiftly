@@ -122,6 +122,12 @@
                     <button id="prevMonth" class="btn btn-outline"><i class="bi bi-chevron-left"></i></button>
                     <h4 id="currentMonth">{{ current_month.strftime('%B %Y') }}</h4>
                     <button id="nextMonth" class="btn btn-outline"><i class="bi bi-chevron-right"></i></button>
+                    <button id="todayBtn" class="btn btn-outline">
+                        <i class="bi bi-calendar-event"></i> Сегодня
+                    </button>
+                    <button id="clearAllShiftsBtn" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Очистить все
+                    </button>
                 </div>
                 <div class="calendar-controls">
                     <button id="toggleFullscreenBtn" class="btn btn-sm btn-outline">
@@ -302,6 +308,25 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно подтверждения очистки -->
+<div class="modal" id="confirmClearAllModal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h4>Подтверждение очистки</h4>
+            <button class="modal-closee">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Вы уверены, что хотите удалить все смены в этом календаре?</p>
+            <p class="text-muted">Это действие нельзя отменить.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-danger" id="confirmClearAllBtn">Удалить все</button>
+        </div>
+    </div>
+</div>
+
 <div id="fullscreenOverlay"></div>
 {% endblock %}
 
