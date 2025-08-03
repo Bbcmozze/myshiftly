@@ -481,7 +481,8 @@
     left: 50%;
     transform: translateX(-50%);
     width: 95vw;
-    height: 85vh;
+    height: auto;
+    max-height: 90vh;
     z-index: 999;
     background: white;
     border-radius: 16px;
@@ -672,13 +673,16 @@ body.fullscreen-active {
     overflow-x: auto;
     max-width: 100%;
     margin-bottom: 1rem;
-    width: 100%; /* Добавьте это свойство */
-    max-height: calc(8 * 60px); /* 8 строк по высоте ячейки */
+    width: 100%;
+    max-height: calc(8 * 60px); /* 8 строк по 60px */
     overflow-y: auto;
     position: relative;
     scroll-behavior: smooth;
 }
 
+.calendar-main.fullscreen .calendar-table-container {
+    max-height: calc(10 * 60px); /* 10 строк по 60px */
+}
 
 .calendar-table {
     min-width: 800px;
@@ -703,7 +707,9 @@ body.fullscreen-active {
     vertical-align: top;
     min-width: 100px;
     height: 60px;
-    position: relative;  /* Для позиционирования внутренних элементов */
+    min-height: 60px;
+    max-height: 60px;
+    position: sticky;  /* Для позиционирования внутренних элементов */
     overflow: hidden;    /* Скрываем вылезающие элементы */
 }
 
