@@ -672,6 +672,10 @@ body.fullscreen-active {
     max-width: 100%;
     margin-bottom: 1rem;
     width: 100%; /* Добавьте это свойство */
+    max-height: calc(8 * 60px); /* 8 строк по высоте ячейки */
+    overflow-y: auto;
+    position: relative;
+    scroll-behavior: smooth;
 }
 
 
@@ -700,6 +704,14 @@ body.fullscreen-active {
     height: 60px;
 }
 
+.calendar-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
 .user-cell {
     font-size: 0.8rem;
     min-width: 150px;
@@ -710,7 +722,18 @@ body.fullscreen-active {
     background: #f8fafc;
     position: sticky;
     left: 0;
-    z-index: 2;
+    z-index: 5;
+}
+
+.user-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -8px;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
+    pointer-events: none;
 }
 
 .user-cell img {
@@ -718,6 +741,10 @@ body.fullscreen-active {
     height: 20px;
     border-radius: 50%;
     object-fit: cover;
+}
+
+.user-row {
+    height: 60px;
 }
 
 .day-cell {
@@ -729,6 +756,21 @@ body.fullscreen-active {
 
 .day-cell:hover {
     background-color: #f8fafc;
+}
+
+/* Стиль скроллбара */
+.calendar-table-container::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.calendar-table-container::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+.calendar-table-container::-webkit-scrollbar-track {
+    background-color: #f1f5f9;
 }
 
 .shift-badge {
@@ -1099,4 +1141,19 @@ body.fullscreen-active #fullscreenOverlay {
 .modern-search .clear-search:hover {
     color: #64748b;
     background: #f1f5f9;
+}
+
+/* Совместимость sticky-элементов */
+.sticky-header-cell {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 15;
+    background: #f8fafc;
+}
+
+.sticky-cell {
+    position: sticky;
+    left: 0;
+    z-index: 5;
 }

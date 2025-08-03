@@ -896,6 +896,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Синхронизация горизонтальной прокрутки
+    const syncHorizontalScroll = () => {
+        const tableContainer = document.querySelector('.calendar-table-container');
+        const header = document.querySelector('.calendar-table thead');
+        const firstColumn = document.querySelectorAll('.user-cell');
+
+        if (!tableContainer) return;
+
+        tableContainer.addEventListener('scroll', (e) => {
+            // Синхронизация заголовка
+            if (header) {
+                header.style.transform = `translateX(-${e.target.scrollLeft}px)`;
+            }
+
+            // Синхронизация первого столбца (если нужна вертикальная прокрутка)
+            const scrollTop = e.target.scrollTop;
+            firstColumn.forEach(cell => {
+                cell.style.transform = `translateY(${scrollTop}px)`;
+            });
+        });
+    };
+
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
     // Скрываем элементы управления для пользователей без прав
@@ -917,6 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupMemberManagement();
         setupCalendarCellHandlers();
         setupFullscreenToggle();
+        syncHorizontalScroll();
     };
 
     init();
