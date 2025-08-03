@@ -918,6 +918,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const adjustTableLayout = () => {
+        const headerCells = document.querySelectorAll('.calendar-table thead th');
+        const firstRowCells = document.querySelectorAll('.user-row:first-child td');
+
+        // Синхронизируем ширину ячеек
+        if (headerCells.length > 0 && firstRowCells.length > 0) {
+            firstRowCells.forEach((cell, index) => {
+                if (headerCells[index]) {
+                    const width = headerCells[index].offsetWidth;
+                    cell.style.minWidth = `${width}px`;
+                    cell.style.maxWidth = `${width}px`;
+                }
+            });
+        }
+
+        // Проверяем, не вылезает ли содержимое
+        document.querySelectorAll('.day-cell').forEach(cell => {
+            const content = cell.querySelector('.shift-badge');
+            if (content && content.offsetHeight > cell.offsetHeight - 5) {
+                cell.style.overflowY = 'auto';
+            }
+        });
+    };
+
+    // Вызываем при загрузке и при изменении размеров
+    window.addEventListener('load', adjustTableLayout);
+    window.addEventListener('resize', adjustTableLayout);
+
+
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
     // Скрываем элементы управления для пользователей без прав
@@ -940,6 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupCalendarCellHandlers();
         setupFullscreenToggle();
         syncHorizontalScroll();
+        adjustTableLayout();
     };
 
     init();

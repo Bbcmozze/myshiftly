@@ -672,7 +672,7 @@ body.fullscreen-active {
     max-width: 100%;
     margin-bottom: 1rem;
     width: 100%; /* Добавьте это свойство */
-    max-height: calc(8 * 60px); /* 8 строк по высоте ячейки */
+    max-height: calc(10 * 60px); /* 8 строк по высоте ячейки */
     overflow-y: auto;
     position: relative;
     scroll-behavior: smooth;
@@ -697,19 +697,34 @@ body.fullscreen-active {
 }
 
 .calendar-table td {
-    padding: 0.5rem;
+    padding: 4px 8px;
     border: 1px solid #e2e8f0;
     vertical-align: top;
     min-width: 100px;
     height: 60px;
+    position: relative;  /* Для позиционирования внутренних элементов */
+    overflow: hidden;    /* Скрываем вылезающие элементы */
 }
 
 .calendar-table thead {
     position: sticky;
-    top: 0;
-    z-index: 10;
+    top: -1px;
+    z-index: 20;
     background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Ячейки заголовка */
+.calendar-table thead th {
+    padding: 10px 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* Первая ячейка заголовка (с текстом "Коллега") */
+.calendar-table thead th:first-child {
+    z-index: 25;  /* Выше чем остальной заголовок */
+    left: 0;
+    min-width: 150px;
 }
 
 .user-cell {
@@ -722,7 +737,7 @@ body.fullscreen-active {
     background: #f8fafc;
     position: sticky;
     left: 0;
-    z-index: 5;
+    z-index: 15;
 }
 
 .user-cell::after {
@@ -749,13 +764,19 @@ body.fullscreen-active {
 
 .day-cell {
     position: relative;
-    min-height: 80px;
+    min-height: 60px;
+    max-height: 60px;
+    overflow: hidden;
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
 .day-cell:hover {
     background-color: #f8fafc;
+}
+
+.day-cell > * {
+    margin-top: 4px;
 }
 
 /* Стиль скроллбара */
@@ -778,7 +799,7 @@ body.fullscreen-active {
     background: #e0f2fe;
     border-radius: 4px;
     padding: 0.3rem 0.3rem;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     position: relative;
     z-index: 1;
     align-items: center; /* Центрирование по горизонтали */
