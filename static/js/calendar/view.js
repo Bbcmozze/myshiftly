@@ -156,9 +156,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTable = doc.querySelector('.calendar-table');
 
             if (newTable) {
+                // Сохраняем текущие позиции пользователей
+                const currentPositions = {};
+                document.querySelectorAll('.user-row').forEach(row => {
+                    const userId = row.querySelector('.day-cell').dataset.userId;
+                    const position = row.querySelector('.day-cell').dataset.position;
+                    currentPositions[userId] = parseInt(position);
+                });
+
+                // Сортируем новые строки (владелец всегда первый)
+                const newRows = Array.from(newTable.querySelectorAll('.user-row'));
+                newRows.sort((a, b) => {
+                    const aUserId = a.querySelector('.day-cell').dataset.userId;
+                    const bUserId = b.querySelector('.day-cell').dataset.userId;
+                    const calendarOwnerId = document.body.dataset.calendarOwnerId;
+
+                    // Владелец всегда первый
+                    if (aUserId === calendarOwnerId) return -1;
+                    if (bUserId === calendarOwnerId) return 1;
+
+                    // Остальные по позициям
+                    const aPos = currentPositions[aUserId] || 9999;
+                    const bPos = currentPositions[bUserId] || 9999;
+                    return aPos - bPos;
+                });
+
+                // Очищаем и добавляем отсортированные строки
+                const tbody = newTable.querySelector('tbody');
+                tbody.innerHTML = '';
+                newRows.forEach(row => tbody.appendChild(row));
+
                 const tableContainer = document.querySelector('.calendar-table-container');
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
+
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
             }
@@ -468,6 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (createTemplateBtn) {
             createTemplateBtn.addEventListener('click', () => {
                 templateModal.style.display = 'flex';
+                document.getElementById("templateTitle").focus();
             });
         }
 
@@ -813,12 +845,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 e.preventDefault();
 
+                const shiftId = e.target.dataset.shiftId;
+                const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
+                const userId = shiftBadge.closest('.day-cell').dataset.userId;
+                const isOwner = document.body.dataset.calendarOwnerId === document.body.dataset.currentUserId;
+                const currentUserId = parseInt(document.body.dataset.currentUserId);
+
                 if (!isOwner) {
                     showToast('Только создатель календаря может удалять смены', 'warning');
                     return;
                 }
 
-                const shiftId = e.target.dataset.shiftId;
+                // Проверяем права: владелец или это своя смена
+                if (!isOwner && parseInt(userId) !== currentUserId) {
+                    showToast('Вы можете удалять только свои смены', 'warning');
+                    return;
+                }
+
                 try {
                     const response = await fetch(`/shift/${shiftId}/delete`, {
                         method: 'POST',
@@ -833,13 +876,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const data = await response.json();
                         if (data.success) {
                             showToast('Смена успешно удалена', 'success');
-                            const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
-                            if (shiftBadge) {
-                                const cell = shiftBadge.closest('.day-cell');
-                                shiftBadge.remove();
-                                if (cell && !cell.querySelector('.shift-badge')) {
-                                    cell.classList.remove('has-shift');
-                                }
+                            shiftBadge.remove();
+                            const cell = shiftBadge.closest('.day-cell');
+                            if (cell && !cell.querySelector('.shift-badge')) {
+                                cell.classList.remove('has-shift');
                             }
                         }
                     } else {

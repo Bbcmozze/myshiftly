@@ -12,7 +12,8 @@
       data-current-month="{{ current_month.strftime('%Y-%m-01') }}"
       data-is-owner="{{ 'true' if calendar.owner_id == current_user.id else 'false' }}"
       data-is-member="{{ 'true' if current_user in calendar.members else 'false' }}"
-      data-current-user-id="{{ current_user.id }}"{% endif %}>
+      data-calendar-owner-id="{{ calendar.owner_id if calendar else '' }}"
+      data-current-user-id="{{ current_user.id if current_user.is_authenticated else '' }}"{% endif %}>
     <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

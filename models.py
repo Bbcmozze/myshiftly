@@ -73,9 +73,10 @@ class Shift(db.Model):
 
 # Ассоциативная таблица для участников календаря
 calendar_members = db.Table('calendar_members',
-                            db.Column('calendar_id', db.Integer, db.ForeignKey('calendar.id'), primary_key=True),
-                            db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
-                            )
+    db.Column('calendar_id', db.Integer, db.ForeignKey('calendar.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('position', db.Integer)  # Новое поле для порядка
+)
 
 
 class ShiftTemplate(db.Model):

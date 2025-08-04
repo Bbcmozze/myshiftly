@@ -147,65 +147,31 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Владелец календаря -->
-                        <tr class="user-row">
-                            <td class="user-cell sticky-cell">
-                                <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
-                                     onerror="this.src='/static/images/default_avatar.svg'">
-                                {{ calendar.owner.username }} {% if calendar.owner_id == current_user.id %}(Вы){% endif %}
-                            </td>
-                            {% for day in days_in_month %}
-                            <td class="day-cell editable"
-                            data-date="{{ day.strftime('%Y-%m-%d') }}"
-                            data-user-id="{{ calendar.owner.id }}">
-                                {% for shift in shifts if shift.user_id == calendar.owner.id and shift.date == day %}
-                                <div class="shift-badge" data-shift-id="{{ shift.id }}">
-                                    {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
-                                    {% if calendar.owner_id == current_user.id or current_user.id == shift.user_id %}
-                                    <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                                {% if calendar.owner_id == current_user.id %}  <!-- Изменено: убрано условие для участников -->
-                                <div class="add-shift-area">
-                                    Добавить смену
-                                </div>
-                                {% endif %}
-                            </td>
-                            {% endfor %}
-                        </tr>
-
-                        <!-- Участники календаря (уникальные) -->
-                        {% for member in calendar.members|unique %}
-                        <tr class="user-row">
-                            <td class="user-cell">
-                                <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
-                                     onerror="this.src='/static/images/default_avatar.svg'">
-                                {{ member.username }} {% if member.id == current_user.id %}(Вы){% endif %}
-                            </td>
-                            {% for day in days_in_month %}
-                            <td class="day-cell editable"
+                    {% for member in members_sorted %}
+                    <tr class="user-row">
+                        <td class="user-cell">
+                            <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
+                                 onerror="this.src='/static/images/default_avatar.svg'">
+                            {{ member.username }}
+                            {% if member.id == current_user.id %}(Вы){% endif %}
+                        </td>
+                        {% for day in days_in_month %}
+                        <td class="day-cell"
                             data-date="{{ day.strftime('%Y-%m-%d') }}"
                             data-user-id="{{ member.id }}">
-                                {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
-                                <div class="shift-badge"
-                                     data-shift-id="{{ shift.id }}"
-                                     data-template-id="{{ shift.template_id if shift.template_id else '' }}">
-                                    {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
-                                    {% if calendar.owner_id == current_user.id %}
-                                    <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                                {% if calendar.owner_id == current_user.id %}  <!-- Изменено: убрано условие для участников -->
-                                <div class="add-shift-area">
-                                    Добавить смену
-                                </div>
+                            {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
+                            <div class="shift-badge" data-shift-id="{{ shift.id }}">
+                                {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
+                                <!-- Кнопка удаления ТОЛЬКО для создателя календаря -->
+                                {% if calendar.owner_id == current_user.id %}
+                                <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
                                 {% endif %}
-                            </td>
+                            </div>
                             {% endfor %}
-                        </tr>
+                        </td>
                         {% endfor %}
+                    </tr>
+                    {% endfor %}
                     </tbody>
                 </table>
             </div>

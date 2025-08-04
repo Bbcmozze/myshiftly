@@ -730,7 +730,7 @@ body.fullscreen-active {
 /* Первая ячейка заголовка (с текстом "Коллега") */
 .calendar-table thead th:first-child {
     z-index: 25;  /* Выше чем остальной заголовок */
-    left: 0;
+    left: -1px;
     min-width: 150px;
 }
 
@@ -743,7 +743,7 @@ body.fullscreen-active {
     padding: 0.5rem;
     background: #f8fafc;
     position: sticky;
-    left: 0;
+    left: -1px;
     z-index: 15;
 }
 

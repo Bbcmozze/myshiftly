@@ -222,7 +222,6 @@ def register_routes(app):
 
         return render_template('calendar/create_calendar.html')
 
-
     @app.route('/calendar/<int:calendar_id>')
     @login_required
     def view_calendar(calendar_id):
@@ -247,6 +246,29 @@ def register_routes(app):
         last_day = next_month - timedelta(days=next_month.day)
         days_in_month = [current_month.replace(day=day) for day in range(1, last_day.day + 1)]
 
+        # Получаем участников с позициями
+        members_with_positions = []
+
+        # Добавляем владельца с позицией 0
+        owner = User.query.get(calendar.owner_id)
+        members_with_positions.append((owner, 0))
+
+        # Добавляем остальных участников с их позициями
+        other_members = db.session.query(
+            User,
+            calendar_members.c.position
+        ).join(
+            calendar_members,
+            (calendar_members.c.user_id == User.id) &
+            (calendar_members.c.calendar_id == calendar.id)
+        ).order_by(calendar_members.c.position).all()
+
+        members_with_positions.extend(other_members)
+
+        # Создаем списки для передачи в шаблон
+        members_sorted = [m[0] for m in members_with_positions]
+        member_positions = {m[0].id: m[1] for m in members_with_positions}
+
         # Получаем смены
         shifts = Shift.query.filter(
             Shift.calendar_id == calendar.id,
@@ -257,29 +279,19 @@ def register_routes(app):
         # Получаем шаблоны
         shift_templates = ShiftTemplate.query.filter_by(calendar_id=calendar.id).all()
 
-        # Получаем друзей для добавления в календарь
-        friends = current_user.friends.all()
-
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return render_template(
-                'calendar/_calendar_table.html',  # Создайте этот шаблон с только таблицей
-                calendar=calendar,
-                shifts=shifts,
-                current_month=current_month,
-                days_in_month=days_in_month,
-                datetime=datetime
-            )
-        else:
-            return render_template(
-                'calendar/view_calendar.html',
-                calendar=calendar,
-                shifts=shifts,
-                shift_templates=shift_templates,
-                friends=friends,
-                current_month=current_month,
-                days_in_month=days_in_month,
-                datetime=datetime
-            )
+        return render_template(
+            'calendar/view_calendar.html',
+            calendar=calendar,
+            current_user=current_user,
+            shifts=shifts,
+            shift_templates=shift_templates,
+            current_month=current_month,
+            days_in_month=days_in_month,
+            datetime=datetime,
+            members_sorted=members_sorted,
+            member_positions=member_positions,
+            is_owner=(calendar.owner_id == current_user.id)
+        )
 
 
     @app.route('/calendar/<int:calendar_id>/add-shift', methods=['POST'])
@@ -325,14 +337,26 @@ def register_routes(app):
         user_ids = data.get('user_ids', [])
         added_members = []
 
+        # Получаем текущую максимальную позицию
+        max_position = db.session.query(db.func.max(calendar_members.c.position)).filter(
+            calendar_members.c.calendar_id == calendar.id
+        ).scalar() or 0
+
         for user_id in user_ids:
             user = User.query.get(user_id)
             if user and user not in calendar.members and user.id != calendar.owner_id:
-                calendar.members.append(user)
+                max_position += 1
+                # Добавляем с указанием позиции
+                db.session.execute(calendar_members.insert().values(
+                    calendar_id=calendar.id,
+                    user_id=user.id,
+                    position=max_position
+                ))
                 added_members.append({
                     'id': user.id,
                     'username': user.username,
-                    'avatar': user.avatar
+                    'avatar': user.avatar,
+                    'position': max_position
                 })
 
         db.session.commit()
