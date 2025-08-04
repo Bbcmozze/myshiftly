@@ -125,9 +125,11 @@
                     <button id="todayBtn" class="btn btn-outline">
                         <i class="bi bi-calendar-event"></i> Сегодня
                     </button>
-                    <button id="clearAllShiftsBtn" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i> Очистить все
-                    </button>
+                    {% if calendar.owner_id == current_user.id %}
+                        <button id="clearAllShiftsBtn" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Очистить все
+                        </button>
+                    {% endif %}
                 </div>
                 <div class="calendar-controls">
                     <button id="toggleFullscreenBtn" class="btn btn-sm btn-outline">

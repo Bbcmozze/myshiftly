@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addMembersModal: document.getElementById('addMembersModal'),
             confirmAddMembers: document.getElementById('confirmAddMembers'),
             memberList: document.getElementById('memberList'),
-            clearAllShiftsBtn: document.getElementById('clearAllShiftsBtn'),
+            clearAllShiftsBtn: isOwner ? document.getElementById('clearAllShiftsBtn') : null,
             confirmClearAllModal: document.getElementById('confirmClearAllModal'),
             confirmClearAllBtn: document.getElementById('confirmClearAllBtn'),
             friendsSelectList: document.getElementById('friendsSelectList')
@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Обработчик для кнопки очистки
-        if (clearAllShiftsBtn) {
+        if (clearAllShiftsBtn) {  // Только если кнопка существует (для создателя)
             clearAllShiftsBtn.addEventListener('click', () => {
                 confirmClearAllModal.style.display = 'flex';
             });
