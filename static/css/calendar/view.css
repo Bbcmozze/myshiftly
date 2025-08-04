@@ -737,6 +737,9 @@ body.fullscreen-active {
 .user-cell {
     font-size: 0.8rem;
     min-width: 150px;
+    max-width: 150px;
+    min-height: 60px;
+    max-height: 60px;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -766,13 +769,16 @@ body.fullscreen-active {
 }
 
 .user-row {
-    height: 60px;
+    min-height: 60px;
+    max-height: 60px;
 }
 
 .day-cell {
     position: relative;
     min-height: 60px;
     max-height: 60px;
+    min-width: 100px;
+    max-width: 100px;
     overflow: hidden;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -802,6 +808,8 @@ body.fullscreen-active {
 }
 
 .shift-badge {
+    max-height: 42px;
+    max-width: 84px;
     text-align: center;
     background: #e0f2fe;
     border-radius: 4px;
@@ -926,6 +934,11 @@ body.fullscreen-active {
     font-weight: 500;
     color: #1e293b;
     margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px; /* или другое подходящее значение */
+    display: inline-block;
 }
 
 .template-time {
