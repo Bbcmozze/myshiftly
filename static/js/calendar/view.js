@@ -1013,10 +1013,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', adjustTableLayout);
 
 
-    // Улучшенная версия функции clearAllShifts
     const clearAllShifts = async () => {
         try {
-            // Анимация удаления
             document.querySelectorAll('.shift-badge').forEach(badge => {
                 badge.classList.add('removing');
             });
@@ -1034,10 +1032,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success) {
                 showToast('Все смены успешно удалены', 'success');
-                // Даем время для анимации перед обновлением
                 setTimeout(updateCalendarTable, 300);
             } else {
-                // Отменяем анимацию если была ошибка
                 document.querySelectorAll('.shift-badge').forEach(badge => {
                     badge.classList.remove('removing');
                 });
