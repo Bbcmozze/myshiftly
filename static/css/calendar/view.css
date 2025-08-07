@@ -981,6 +981,25 @@ body.fullscreen-active {
     display: inline-block;
 }
 
+#templateTitle {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+#templateTitle:invalid {
+    border-color: #ef4444;
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
 .template-time {
     font-size: 0.85rem;
     color: #64748b;

@@ -505,12 +505,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Сохранение шаблона
         saveTemplateBtn.addEventListener('click', () => {
-            const title = templateTitle.value;
+            const title = templateTitle.value.trim();
             const start = templateStart.value;
             const end = templateEnd.value;
 
             if (!title || !start || !end) {
                 showToast('Заполните все поля', 'danger');
+                return;
+            }
+
+            if (title.length > 20) {
+                showToast('Название должно быть не более 20 символов', 'danger');
                 return;
             }
 

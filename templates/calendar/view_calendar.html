@@ -194,7 +194,12 @@
             <form id="templateForm">
                 <div class="form-group">
                     <label for="templateTitle">Название смены</label>
-                    <input type="text" id="templateTitle" required placeholder="Например: Утренняя смена">
+                    <input type="text" id="templateTitle"
+                           maxlength="20"
+                           pattern=".{1,20}"
+                           required
+                           placeholder="Например: Утренняя смена (макс. 20 символов)">
+                    <small class="form-text text-muted">Максимальная длина - 20 символов</small>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
