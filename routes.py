@@ -605,3 +605,29 @@ def register_routes(app):
                 'success': False,
                 'message': str(e)
             }), 500
+
+
+    @app.route('/calendar/<int:calendar_id>/members', methods=['GET'])
+    @login_required
+    def get_calendar_members(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        # Проверка доступа
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            abort(403)
+
+        # Формируем список участников (владелец + члены)
+        members = [{
+            'id': calendar.owner.id,
+            'username': calendar.owner.username,
+            'avatar': calendar.owner.avatar
+        }]
+
+        for member in calendar.members:
+            members.append({
+                'id': member.id,
+                'username': member.username,
+                'avatar': member.avatar
+            })
+
+        return jsonify(members)
