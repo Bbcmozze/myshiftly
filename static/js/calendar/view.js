@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+
     // Проверка прав пользователя
     const isOwner = document.body.dataset.isOwner === 'true';
     const isMember = document.body.dataset.isMember === 'true';
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
             templateStart: document.getElementById('templateStart'),
             templateEnd: document.getElementById('templateEnd'),
             confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            todayBtn: document.getElementById('todayBtn'),
             toggleFullscreenBtn: document.getElementById('toggleFullscreenBtn'),
             calendarMain: document.querySelector('.calendar-main'),
             fullscreenOverlay: document.getElementById('fullscreenOverlay'),
@@ -431,8 +433,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateMonthDisplay();
         });
 
+        todayBtn.addEventListener('click', () => {
+            currentMonth = new Date();
+            updateMonthDisplay();
+        });
+
         // Обработчик для кнопки очистки
-        if (clearAllShiftsBtn) {  // Только если кнопка существует (для создателя)
+        const clearAllShiftsBtn = document.getElementById('clearAllShiftsBtn');
+        if (clearAllShiftsBtn) {
             clearAllShiftsBtn.addEventListener('click', () => {
                 confirmClearAllModal.style.display = 'flex';
             });
@@ -458,10 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', () => {
                 confirmClearAllModal.style.display = 'none';
             });
-        });
-        todayBtn.addEventListener('click', () => {
-            currentMonth = new Date();
-            updateMonthDisplay();
         });
     };
 
