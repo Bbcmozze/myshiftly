@@ -166,7 +166,7 @@
                                  title="{{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})">
                                 {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
                                 <br>
-                                {{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}
+                                {{ shift.start_time.strftime('%H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
                                 {% if calendar.owner_id == current_user.id %}
                                 <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
                                 {% endif %}
