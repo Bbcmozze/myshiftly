@@ -162,9 +162,11 @@
                             data-date="{{ day.strftime('%Y-%m-%d') }}"
                             data-user-id="{{ member.id }}">
                             {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
-                            <div class="shift-badge" data-shift-id="{{ shift.id }}">
-                                {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
-                                <!-- Кнопка удаления ТОЛЬКО для создателя календаря -->
+                            <div class="shift-badge" data-shift-id="{{ shift.id }}"
+                                 title="{{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})">
+                                {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
+                                <br>
+                                {{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}
                                 {% if calendar.owner_id == current_user.id %}
                                 <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
                                 {% endif %}
@@ -265,7 +267,7 @@
             <div class="template-list" id="selectTemplateList">
                 {% for template in shift_templates %}
                 <div class="template-item selectable-template" data-template-id="{{ template.id }}">
-                    <strong class="template-name">{{ template.title }}</strong><br>
+                    <strong class="template-name">{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</strong><br>
                     {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
                 </div>
                 {% endfor %}

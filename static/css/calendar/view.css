@@ -808,17 +808,56 @@ body.fullscreen-active {
 }
 
 .shift-badge {
+    min-height: 42px;
+    min-width: 84px;
     max-height: 42px;
     max-width: 84px;
     text-align: center;
     background: #e0f2fe;
     border-radius: 4px;
-    padding: 0.3rem 0.3rem;
-    font-size: 0.75rem;
     position: relative;
     z-index: 1;
     align-items: center; /* Центрирование по горизонтали */
     justify-content: center; /* Центрирование по вертикали */
+    cursor: help;
+    /* Основные стили */
+    padding: 0.5rem 0.3rem;
+    font-size: 0.65rem;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.shift-badge:hover {
+    z-index: 10;
+    white-space: normal;
+    background: #bae6fd;
+}
+
+.shift-badge::after {
+    content: attr(data-full-title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 10;
+    pointer-events: none;
+    width: max-content;
+    max-width: 200px;
+}
+
+.shift-badge:hover::after {
+    opacity: 1;
+    visibility: visible;
 }
 
 .shift-badge.removing {
@@ -826,16 +865,17 @@ body.fullscreen-active {
 }
 
 .shift-badge .remove-shift-btn {
+    /* Стили кнопки удаления */
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: -5px;
+    right: -5px;
     background: #f87171;
     color: white;
     border: none;
     border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    font-size: 0.7rem;
+    width: 14px;
+    height: 14px;
+    font-size: 0.6rem;
     display: flex;
     align-items: center;
     justify-content: center;

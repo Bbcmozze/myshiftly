@@ -748,10 +748,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const shiftBadge = document.createElement('div');
                     shiftBadge.className = 'shift-badge';
                     shiftBadge.dataset.shiftId = data.shift.id;
-                    shiftBadge.innerHTML = `
-                        ${data.shift.title} (${data.shift.start_time}-${data.shift.end_time})
-                        <button class="remove-shift-btn" data-shift-id="${data.shift.id}">&times;</button>
-                    `;
+                    shiftBadge.title = `${data.shift.title} (${data.shift.start_time}-${data.shift.end_time})`;
+
+                    // Обрезаем название до 8 символов и добавляем время
+                    const shortTitle = data.shift.title.length > 8
+                        ? `${data.shift.title.substring(0, 8)}...`
+                        : data.shift.title;
+                        shiftBadge.innerHTML = `
+                            ${shortTitle}<br>${data.shift.start_time} - ${data.shift.end_time}
+                            <button class="remove-shift-btn" data-shift-id="${data.shift.id}">&times;</button>
+                        `;
                     cell.appendChild(shiftBadge);
                     cell.classList.add('has-shift');
 
