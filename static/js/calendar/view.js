@@ -144,7 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обновление таблицы календаря
     const updateCalendarTable = async () => {
         try {
-            const response = await fetch(window.location.href, {
+            const calendarId = document.body.dataset.calendarId;
+            const month = currentMonth.toISOString().split('T')[0];
+
+            const response = await fetch(`/calendar/${calendarId}?month=${month}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
@@ -158,36 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTable = doc.querySelector('.calendar-table');
 
             if (newTable) {
-                // Сохраняем текущие позиции пользователей
-                const currentPositions = {};
-                document.querySelectorAll('.user-row').forEach(row => {
-                    const userId = row.querySelector('.day-cell').dataset.userId;
-                    const position = row.querySelector('.day-cell').dataset.position;
-                    currentPositions[userId] = parseInt(position);
-                });
-
-                // Сортируем новые строки (владелец всегда первый)
-                const newRows = Array.from(newTable.querySelectorAll('.user-row'));
-                newRows.sort((a, b) => {
-                    const aUserId = a.querySelector('.day-cell').dataset.userId;
-                    const bUserId = b.querySelector('.day-cell').dataset.userId;
-                    const calendarOwnerId = document.body.dataset.calendarOwnerId;
-
-                    // Владелец всегда первый
-                    if (aUserId === calendarOwnerId) return -1;
-                    if (bUserId === calendarOwnerId) return 1;
-
-                    // Остальные по позициям
-                    const aPos = currentPositions[aUserId] || 9999;
-                    const bPos = currentPositions[bUserId] || 9999;
-                    return aPos - bPos;
-                });
-
-                // Очищаем и добавляем отсортированные строки
-                const tbody = newTable.querySelector('tbody');
-                tbody.innerHTML = '';
-                newRows.forEach(row => tbody.appendChild(row));
-
                 const tableContainer = document.querySelector('.calendar-table-container');
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
@@ -197,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);
+            showToast('Не удалось обновить таблицу', 'danger');
         }
     };
 
@@ -206,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const calendarId = document.body.dataset.calendarId;
             const currentUserId = parseInt(document.body.dataset.currentUserId);
 
-            // Запрашиваем текущих участников календаря через API
+            // Запрашиваем текущих участников календаря
             const membersResponse = await fetch(`/calendar/${calendarId}/members`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -232,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const friends = await friendsResponse.json();
 
-            // Фильтруем друзей, исключая уже добавленных и самого себя
+            // Фильтруем друзей
             const availableFriends = friends.filter(friend =>
                 friend.id !== currentUserId &&
                 !currentMembers.some(member => member.id === friend.id)
@@ -242,11 +216,11 @@ document.addEventListener('DOMContentLoaded', () => {
             friendsSelectList.innerHTML = '';
 
             if (availableFriends.length === 0) {
-                friendsSelectList.innerHTML = '<p>Нет доступных коллег для добавления</p>';
+                friendsSelectList.innerHTML = '<p class="text-muted">Нет доступных коллег для добавления</p>';
                 return false;
             }
 
-            // Заполняем список доступных друзей
+            // Заполняем список
             availableFriends.forEach(friend => {
                 const friendItem = document.createElement('div');
                 friendItem.className = 'friend-select-item';
@@ -328,33 +302,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await response.json();
 
-                if (data.success) {
-                    showToast('Участники успешно добавлены', 'success');
-                    closeModal();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Ошибка при добавлении участников');
+                }
 
-                    // Динамически добавляем новых участников
+                // Закрываем модальное окно
+                addMembersModal.style.display = 'none';
+
+                // Обновляем таблицу календаря
+                await updateCalendarTable();
+
+                // Обновляем список участников в сайдбаре (проверяем существование элемента)
+                const memberList = document.getElementById('memberList');
+                if (memberList && data.added_members) {
                     data.added_members.forEach(member => {
                         const memberItem = document.createElement('div');
                         memberItem.className = 'member-item';
                         memberItem.dataset.userId = member.id;
                         memberItem.innerHTML = `
-                            <img src="/static/images/${member.avatar}" 
+                            <img src="/static/images/${member.avatar || 'default_avatar.svg'}" 
                                  onerror="this.src='/static/images/default_avatar.svg'">
                             <span>${member.username}</span>
                         `;
                         memberList.appendChild(memberItem);
                     });
-
-                    // Обновляем список доступных друзей
-                    await updateAvailableFriendsList();
-
-                    // Обновляем таблицу календаря
-                    updateCalendarTable();
-                } else {
-                    showToast(data.message || 'Ошибка при добавлении участников', 'danger');
                 }
+
+                // Очищаем выбранные элементы в модальном окне
+                document.querySelectorAll('#friendsSelectList input:checked').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+
+                // Обновляем список доступных друзей
+                await updateAvailableFriendsList();
+
+                showToast('Участники успешно добавлены', 'success');
+
             } catch (error) {
-                handleError(error, 'Ошибка при добавлении участников');
+                console.error('Error adding members:', error);
+                showToast(error.message || 'Ошибка при добавлении участников', 'danger');
             }
         });
 
@@ -364,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!removeBtn) return;
 
             const userId = removeBtn.dataset.userId;
-            const memberItem = removeBtn.closest('.user-row'); // Изменяем на поиск по user-row
+            const memberItem = removeBtn.closest('.user-row');
 
             try {
                 const response = await fetch(`/calendar/${document.body.dataset.calendarId}/remove-member/${userId}`, {
@@ -378,8 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (data.success) {
-                    showToast('Участник удален', 'success');
-
                     // Удаляем участника из DOM сразу
                     if (memberItem) {
                         memberItem.remove();
@@ -391,8 +375,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         sidebarMember.remove();
                     }
 
-                    // Проверяем, не остался ли список пустым
-                    checkEmptyMembersList();
+                    // Показываем только одно уведомление
+                    showToast('Участник удален', 'success');
+
+                    // Обновляем таблицу календаря
+                    await updateCalendarTable();
                 } else {
                     showToast(data.message || 'Ошибка при удалении участника', 'danger');
                 }
@@ -426,10 +413,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const checkEmptyMembersList = () => {
         const memberList = document.getElementById('memberList');
-        const memberItems = memberList.querySelectorAll('.member-item:not(.owner)');
+        if (!memberList) return;
 
+        const memberItems = memberList.querySelectorAll('.member-item:not(.owner)');
         if (memberItems.length === 0) {
-            showToast(data.message || 'Список участников пуст', 'danger');
+            showToast('Список участников пуст', 'info');
         }
     };
 
