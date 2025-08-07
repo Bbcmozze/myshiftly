@@ -338,9 +338,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <img src="/static/images/${member.avatar}" 
                                  onerror="this.src='/static/images/default_avatar.svg'">
                             <span>${member.username}</span>
-                            <button class="btn-remove-member" data-user-id="${member.id}">
-                                <i class="bi bi-x"></i>
-                            </button>
                         `;
                         memberList.appendChild(memberItem);
                     });
@@ -364,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!removeBtn) return;
 
             const userId = removeBtn.dataset.userId;
-            const memberItem = removeBtn.closest('.member-item');
+            const memberItem = removeBtn.closest('.user-row'); // Изменяем на поиск по user-row
 
             try {
                 const response = await fetch(`/calendar/${document.body.dataset.calendarId}/remove-member/${userId}`, {
@@ -380,14 +377,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     showToast('Участник удален', 'success');
 
-                    // Удаляем участника из списка
-                    memberItem.remove();
+                    // Удаляем участника из DOM сразу
+                    if (memberItem) {
+                        memberItem.remove();
+                    }
 
-                    // Обновляем список доступных друзей в модальном окне
-                    await updateAvailableFriendsList();
+                    // Удаляем участника из списка в сайдбаре
+                    const sidebarMember = document.querySelector(`.member-item[data-user-id="${userId}"]`);
+                    if (sidebarMember) {
+                        sidebarMember.remove();
+                    }
 
-                    // Обновляем таблицу календаря
-                    updateCalendarTable();
+                    // Проверяем, не остался ли список пустым
+                    checkEmptyMembersList();
                 } else {
                     showToast(data.message || 'Ошибка при удалении участника', 'danger');
                 }
@@ -418,6 +420,15 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    const checkEmptyMembersList = () => {
+        const memberList = document.getElementById('memberList');
+        const memberItems = memberList.querySelectorAll('.member-item:not(.owner)');
+
+        if (memberItems.length === 0) {
+            showToast(data.message || 'Список участников пуст', 'danger');
+        }
+    };
 
     // ====================== ОСНОВНЫЕ ФУНКЦИИ ======================
 
