@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearAllShiftsBtn: isOwner ? document.getElementById('clearAllShiftsBtn') : null,
             confirmClearAllModal: document.getElementById('confirmClearAllModal'),
             confirmClearAllBtn: document.getElementById('confirmClearAllBtn'),
+            userRowsContainer: document.querySelector('.calendar-table tbody'),
             friendsSelectList: document.getElementById('friendsSelectList')
         };
     };
@@ -1062,6 +1063,98 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
+    const setupDraggableRows = () => {
+        const tbody = document.querySelector('.calendar-table tbody');
+        if (!tbody) {
+            console.error('Table body not found');
+            return;
+        }
+
+        const draggableRows = tbody.querySelectorAll('.user-row:not(.owner)');
+            if (draggableRows.length === 0) {
+                console.log('No draggable members found');
+                return;
+            }
+
+        new Sortable(tbody, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            handle: '.user-cell',
+            filter: '.owner', // Запрещаем перетаскивание владельца
+            onStart: function(evt) {
+                if (evt.item.classList.contains('owner')) {
+                    evt.preventDefault();
+                }
+            },
+            onEnd: function(evt) {
+                evt.item.style.backgroundColor = '';
+
+                // Пропускаем если это владелец или позиция не изменилась
+                if (evt.item.classList.contains('owner') || evt.oldIndex === evt.newIndex) {
+                    return;
+                }
+
+                updateMemberPositions();
+            }
+        });
+
+        console.log('SortableJS инициализирован');
+    };
+
+    const updateMemberPositions = async () => {
+        const rows = document.querySelectorAll('.user-row:not(.owner)');
+        if (rows.length === 0) {
+            console.error('No members found to reorder');
+            return;
+        }
+
+        const positions = {};
+        const calendarId = document.body.dataset.calendarId;
+        const currentUserId = document.body.dataset.currentUserId;
+
+        rows.forEach((row, index) => {
+            const userId = row.dataset.userId || row.querySelector('.user-cell').dataset.userId;
+            if (!userId) {
+                console.error('Missing user-id in row:', row);
+                return;
+            }
+            positions[userId] = index + 1;
+        });
+
+        // Проверка данных перед отправкой
+        if (Object.keys(positions).length === 0) {
+            showToast('Нет данных для сохранения', 'warning');
+            return;
+        }
+
+        try {
+            console.log('Sending positions:', positions); // Логирование
+            const response = await fetch(`/calendar/${calendarId}/update-positions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ positions })
+            });
+
+            console.log('Response status:', response.status); // Логирование
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Server error:', errorData); // Логирование
+                throw new Error(errorData.error || 'Unknown server error');
+            }
+
+            showToast('Порядок участников сохранён', 'success');
+        } catch (error) {
+            console.error('Full error:', error); // Логирование
+            showToast('Не удалось сохранить порядок: ' + error.message, 'danger');
+            updateCalendarTable();
+        }
+    };
+
+
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
     // Скрываем элементы управления для пользователей без прав
@@ -1085,6 +1178,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setupFullscreenToggle();
         syncHorizontalScroll();
         adjustTableLayout();
+        setTimeout(() => {
+        setupDraggableRows();
+        }, 500);
     };
 
     init();

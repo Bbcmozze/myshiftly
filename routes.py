@@ -1,4 +1,7 @@
+import traceback
+
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
+from sqlalchemy import exists, and_
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members
@@ -631,3 +634,53 @@ def register_routes(app):
             })
 
         return jsonify(members)
+
+
+    @app.route('/calendar/<int:calendar_id>/update-positions', methods=['POST'])
+    @login_required
+    def update_calendar_positions(calendar_id):
+        if not request.is_json:
+            return jsonify({'success': False, 'error': 'Invalid content type'}), 400
+
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Forbidden'}), 403
+
+        try:
+            data = request.get_json()
+            positions = data.get('positions', {})
+
+            if not positions:
+                return jsonify({'success': False, 'error': 'Empty positions data'}), 400
+
+            # Валидация user_ids
+            valid_user_ids = {m.id for m in calendar.members}
+            for user_id in positions.keys():
+                if int(user_id) not in valid_user_ids:
+                    return jsonify({'success': False, 'error': f'Invalid user ID: {user_id}'}), 400
+
+            # Обновляем позиции по одной записи
+            for user_id, position in positions.items():
+                db.session.execute(
+                    calendar_members.update()
+                    .where(calendar_members.c.calendar_id == calendar.id)
+                    .where(calendar_members.c.user_id == user_id)
+                    .values(position=position)
+                )
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': 'Positions updated successfully',
+                'updated_count': len(positions)
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Position update error: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500

@@ -759,6 +759,12 @@ body.fullscreen-active {
     position: relative;
     display: flex;
     align-items: center;
+    cursor: grab;
+    user-select: none;
+}
+
+.user-cell:active {
+    cursor: grabbing;
 }
 
 .user-cell:hover .btn-remove-member {
@@ -793,6 +799,19 @@ body.fullscreen-active {
 .user-row {
     min-height: 60px;
     max-height: 60px;
+}
+
+.user-row.owner .user-cell {
+    cursor: default;
+}
+
+.user-row.sortable-ghost td {
+    visibility: hidden;
+}
+
+.user-row.sortable-ghost {
+    background: #e0f2fe;
+    display: table-row;
 }
 
 .day-cell {
@@ -1417,4 +1436,21 @@ body.fullscreen-active #fullscreenOverlay {
 
 #confirmClearAllModal .modal-closee:hover {
     color: #6b7280;
+}
+
+.sortable-ghost {
+    opacity: 0.7;
+    background: #e0f2fe;
+    border: 2px dashed #3b82f6;
+}
+
+.sortable-chosen {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.sortable-drag {
+    opacity: 1 !important;
+    background: white;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000 !important;
 }

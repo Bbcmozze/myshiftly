@@ -110,7 +110,7 @@
                     </thead>
                     <tbody>
                     {% for member in members_sorted %}
-                    <tr class="user-row">
+                    <tr class="user-row {% if member.id == calendar.owner_id %}owner{% endif %}" data-user-id="{{ member.id }}">
                         <td class="user-cell">
                             <div class="user-cell-content">
                                 <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
@@ -272,5 +272,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/calendar/view.js') }}"></script>
 {% endblock %}
