@@ -907,7 +907,9 @@ body.fullscreen-active {
 }
 
 .shift-badge.removing {
-    animation: fadeOut 0.3s forwards;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .shift-badge .remove-shift-btn {

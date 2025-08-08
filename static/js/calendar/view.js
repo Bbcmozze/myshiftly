@@ -787,46 +787,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     cell.appendChild(shiftBadge);
                     cell.classList.add('has-shift');
+
+                    // Добавьте этот вызов после создания новой смены
+                    setupShiftHandlers();
                 }
 
                 selectTemplateModal.style.display = 'none';
             }
         } catch (error) {
             handleError(error, 'Ошибка при добавлении смены');
-        }
-    };
-
-    // Удаление смены
-    const deleteShift = async (shiftId) => {
-        try {
-            const response = await fetch(`/shift/${shiftId}/delete`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    showToast('Смена успешно удалена', 'success');
-                    const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
-                    if (shiftBadge) {
-                        const cell = shiftBadge.closest('.day-cell');
-                        shiftBadge.remove();
-                        if (cell && !cell.querySelector('.shift-badge')) {
-                            cell.classList.remove('has-shift');
-                        }
-                    }
-                }
-            } else {
-                const error = await response.text();
-                showToast(error || 'Ошибка при удалении смены', 'danger');
-            }
-        } catch (error) {
-            handleError(error, 'Ошибка при удалении смены');
         }
     };
 
