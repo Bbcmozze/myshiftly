@@ -841,7 +841,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const shiftId = e.target.dataset.shiftId;
                 const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
-                const userId = shiftBadge.closest('.day-cell').dataset.userId;
+                const cell = shiftBadge.closest('.day-cell');
+                const userId = cell.dataset.userId;
                 const isOwner = document.body.dataset.calendarOwnerId === document.body.dataset.currentUserId;
                 const currentUserId = parseInt(document.body.dataset.currentUserId);
 
@@ -870,11 +871,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         const data = await response.json();
                         if (data.success) {
                             showToast('Смена успешно удалена', 'success');
-                            shiftBadge.remove();
-                            const cell = shiftBadge.closest('.day-cell');
-                            if (cell && !cell.querySelector('.shift-badge')) {
-                                cell.classList.remove('has-shift');
-                            }
+                            // Добавляем анимацию удаления
+                            shiftBadge.classList.add('removing');
+                            setTimeout(() => {
+                                shiftBadge.remove();
+                                // Удаляем класс has-shift, если в ячейке больше нет смен
+                                if (!cell.querySelector('.shift-badge')) {
+                                    cell.classList.remove('has-shift');
+                                }
+                            }, 300);
                         }
                     } else {
                         const error = await response.text();
@@ -902,7 +907,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     selectedUserId = cell.dataset.userId;
 
                     // Проверяем, есть ли уже смена в этой ячейке
-                    if (!cell.classList.contains('has-shift')) {
+                    const hasShift = cell.querySelector('.shift-badge') !== null;
+                    if (!hasShift) {
                         selectTemplateModal.style.display = 'flex';
                     }
                 });
