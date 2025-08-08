@@ -441,7 +441,6 @@ def register_routes(app):
             flash('Смена успешно удалена', 'success')
             return redirect(url_for('view_calendar', calendar_id=calendar_id))
 
-
     @app.route('/api/create_shift_template', methods=['POST'])
     @login_required
     def create_shift_template():
@@ -457,7 +456,8 @@ def register_routes(app):
                 start_time=datetime.strptime(data['start_time'], '%H:%M').time(),
                 end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
                 calendar_id=data['calendar_id'],
-                owner_id=current_user.id
+                owner_id=current_user.id,
+                show_time=data.get('show_time', True)  # Добавляем параметр show_time
             )
 
             db.session.add(template)
@@ -469,7 +469,8 @@ def register_routes(app):
                     'id': template.id,
                     'title': template.title,
                     'start_time': template.start_time.strftime('%H:%M'),
-                    'end_time': template.end_time.strftime('%H:%M')
+                    'end_time': template.end_time.strftime('%H:%M'),
+                    'show_time': template.show_time  # Добавляем в ответ
                 }
             })
         except Exception as e:
@@ -688,3 +689,20 @@ def register_routes(app):
                 'success': False,
                 'error': str(e)
             }), 500
+
+    @app.route('/api/get_template_info/<int:template_id>', methods=['GET'])
+    @login_required
+    def get_template_info(template_id):
+        template = ShiftTemplate.query.get_or_404(template_id)
+
+        # Проверка прав доступа
+        if template.owner_id != current_user.id and current_user not in template.calendar.members:
+            abort(403)
+
+        return jsonify({
+            'id': template.id,
+            'title': template.title,
+            'start_time': template.start_time.strftime('%H:%M'),
+            'end_time': template.end_time.strftime('%H:%M'),
+            'show_time': template.show_time
+        })
