@@ -175,21 +175,23 @@
                            placeholder="Например: Утренняя смена (макс. 20 символов)">
                     <small class="form-text text-muted">Максимальная длина - 20 символов</small>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="templateStart">Начало</label>
-                        <input type="time" id="templateStart" required value="09:00">
-                    </div>
-                    <div class="form-group">
-                        <label for="templateEnd">Конец</label>
-                        <input type="time" id="templateEnd" required value="18:00">
-                    </div>
-                </div>
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="showTimeCheckbox" checked>
                         Показывать время в смене
                     </label>
+                </div>
+                <div class="time-fields-container" id="timeFieldsContainer">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="templateStart">Начало</label>
+                            <input type="time" id="templateStart" required value="09:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="templateEnd">Конец</label>
+                            <input type="time" id="templateEnd" required value="18:00">
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>

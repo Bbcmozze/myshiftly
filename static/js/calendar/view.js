@@ -505,10 +505,39 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        const showTimeCheckbox = document.getElementById('showTimeCheckbox');
+        const timeFieldsContainer = document.getElementById('timeFieldsContainer');
+
+        if (showTimeCheckbox && timeFieldsContainer) {
+            showTimeCheckbox.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    timeFieldsContainer.classList.remove('hidden');
+                } else {
+                    timeFieldsContainer.classList.add('hidden');
+                }
+            });
+
+            // Инициализируем состояние при открытии модального окна
+            document.getElementById('templateModal').addEventListener('shown', () => {
+                if (!showTimeCheckbox.checked) {
+                    timeFieldsContainer.classList.add('hidden');
+                }
+            });
+        }
+
         // Создание шаблона
         if (createTemplateBtn) {
             createTemplateBtn.addEventListener('click', () => {
                 templateModal.style.display = 'flex';
+                // Сбрасываем форму при каждом открытии
+                templateTitle.value = '';
+                templateStart.value = '09:00';
+                templateEnd.value = '18:00';
+                // Устанавливаем чекбокс в активное состояние и показываем поля времени
+                const showTimeCheckbox = document.getElementById('showTimeCheckbox');
+                showTimeCheckbox.checked = true;
+                const timeFieldsContainer = document.getElementById('timeFieldsContainer');
+                timeFieldsContainer.classList.remove('hidden');
                 document.getElementById("templateTitle").focus();
             });
         }
@@ -519,13 +548,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const start = templateStart.value;
             const end = templateEnd.value;
 
-            if (!title || !start || !end) {
-                showToast('Заполните все поля', 'danger');
+            if (!title) {
+                showToast('Введите название смены', 'danger');
                 return;
             }
 
             if (title.length > 20) {
                 showToast('Название должно быть не более 20 символов', 'danger');
+                return;
+            }
+
+            // Проверяем время только если чекбокс активен
+            const showTime = document.getElementById('showTimeCheckbox').checked;
+            if (showTime && (!start || !end)) {
+                showToast('Заполните время смены', 'danger');
                 return;
             }
 
@@ -548,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     start_time: start,
                     end_time: end,
                     calendar_id: document.body.dataset.calendarId,
-                    show_time: showTime  // Отправляем параметр на сервер
+                    show_time: showTime
                 })
             });
 
@@ -557,10 +593,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 addTemplateToDOM(data.template);
                 templateModal.style.display = 'none';
+                // Полный сброс формы
                 templateTitle.value = '';
                 templateStart.value = '09:00';
                 templateEnd.value = '18:00';
-                document.getElementById('showTimeCheckbox').checked = true; // Сбрасываем чекбокс
+                document.getElementById('showTimeCheckbox').checked = true;
+                document.getElementById('timeFieldsContainer').classList.remove('hidden');
                 showToast('Шаблон успешно создан', 'success');
             } else {
                 showToast(data.error || 'Ошибка при создании шаблона', 'danger');
