@@ -50,7 +50,11 @@
                             <div class="template-info">
                                 <div class="template-title">{{ template.title }}</div>
                                 <div class="template-time">
-                                    {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                                    {% if template.show_time %}
+                                        {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                                    {% else %}
+                                        Без указания времени
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="template-actions">
@@ -127,16 +131,20 @@
                         <td class="day-cell"
                             data-date="{{ day.strftime('%Y-%m-%d') }}"
                             data-user-id="{{ member.id }}">
-                            {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
+                            {% for shift in shifts %}
+                            {% if shift.user_id == member.id and shift.date == day %}
                             <div class="shift-badge" data-shift-id="{{ shift.id }}"
-                                 title="{{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})">
+                                 title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
                                 {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
+                                {% if shift.show_time %}
                                 <br>
-                                {{ shift.start_time.strftime('%H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
+                                {{ shift.start_time }} - {{ shift.end_time }}
+                                {% endif %}
                                 {% if calendar.owner_id == current_user.id %}
                                 <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
                                 {% endif %}
                             </div>
+                            {% endif %}
                             {% endfor %}
                         </td>
                         {% endfor %}
@@ -245,7 +253,11 @@
                 {% for template in shift_templates %}
                 <div class="template-item selectable-template" data-template-id="{{ template.id }}">
                     <strong class="template-name">{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</strong><br>
-                    {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                    {% if template.show_time %}
+                        {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                    {% else %}
+                        Без указания времени
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -255,7 +267,6 @@
         </div>
     </div>
 </div>
-
 <!-- Модальное окно подтверждения очистки -->
 <div class="modal" id="confirmClearAllModal">
     <div class="modal-content" style="max-width: 500px;">

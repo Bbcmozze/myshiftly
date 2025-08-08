@@ -65,6 +65,7 @@ class Shift(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     date = db.Column(db.Date, nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('shift_template.id'))  # Добавлено
+    show_time = db.Column(db.Boolean, default=True)
 
     # Связи
     user = db.relationship('User', backref='shifts')

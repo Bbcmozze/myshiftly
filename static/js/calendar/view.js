@@ -536,8 +536,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Создание нового шаблона смены
     const createTemplate = async (title, start, end) => {
         try {
-
             const showTime = document.getElementById('showTimeCheckbox').checked;
+
             const response = await fetch('/api/create_shift_template', {
                 method: 'POST',
                 headers: {
@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     start_time: start,
                     end_time: end,
                     calendar_id: document.body.dataset.calendarId,
-                    show_time: showTime
+                    show_time: showTime  // Отправляем параметр на сервер
                 })
             });
 
@@ -560,6 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 templateTitle.value = '';
                 templateStart.value = '09:00';
                 templateEnd.value = '18:00';
+                document.getElementById('showTimeCheckbox').checked = true; // Сбрасываем чекбокс
                 showToast('Шаблон успешно создан', 'success');
             } else {
                 showToast(data.error || 'Ошибка при создании шаблона', 'danger');
@@ -574,18 +575,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const templateList = document.getElementById('templateList');
         const selectTemplateList = document.getElementById('selectTemplateList');
 
-        // Если есть сообщение "Нет шаблонов" - удаляем его
+        // Удаляем сообщение "Нет шаблонов", если есть
         const noTemplates = templateList.querySelector('.no-templates');
-        if (noTemplates) {
-            noTemplates.remove();
-        }
+        if (noTemplates) noTemplates.remove();
 
-        // Обновляем отображение времени в списке шаблонов
+        // Формируем отображение времени
         const timeDisplay = template.show_time
             ? `${template.start_time} - ${template.end_time}`
             : 'Без указания времени';
 
-        // Создаем новый элемент шаблона для основного списка
+        // Создаем элемент шаблона
         const templateItem = document.createElement('div');
         templateItem.className = 'template-item';
         templateItem.dataset.templateId = template.id;
@@ -601,31 +600,24 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Добавляем с анимацией
-        templateItem.style.opacity = '0';
-        templateItem.style.transform = 'translateY(10px)';
-        templateList.appendChild(templateItem);
-
         // Создаем элемент для модального окна выбора шаблона
         const selectTemplateItem = document.createElement('div');
         selectTemplateItem.className = 'template-item selectable-template';
         selectTemplateItem.dataset.templateId = template.id;
-
-        const timeDisplayModal = template.show_time
-            ? `<br>${template.start_time} - ${template.end_time}`
-            : '';
-
         selectTemplateItem.innerHTML = `
-            <strong>${template.title}</strong>${timeDisplayModal}
+            <strong>${template.title}</strong><br>
+            ${timeDisplay}
         `;
+
+        // Добавляем элементы в DOM
+        templateList.appendChild(templateItem);
+        selectTemplateList.appendChild(selectTemplateItem);
 
         // Проверяем, есть ли сообщение "Нет шаблонов" в модальном окне
         const noTemplatesInModal = selectTemplateList.querySelector('.no-templates');
         if (noTemplatesInModal) {
             selectTemplateList.innerHTML = ''; // Очищаем сообщение
         }
-
-        selectTemplateList.appendChild(selectTemplateItem);
 
         // Запускаем анимацию
         setTimeout(() => {
@@ -767,16 +759,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Получаем информацию о шаблоне для проверки show_time
-                const templateResponse = await fetch(`/api/get_template_info/${templateId}`);
-                const templateData = await templateResponse.json();
+                // Получаем полную информацию о смене, включая show_time
+                const shiftResponse = await fetch(`/api/get_shift_info/${data.shift.id}`);
+                const shiftData = await shiftResponse.json();
 
-                const showTime = templateData.show_time;
+                const showTime = shiftData.show_time;
                 const timeDisplay = showTime
-                    ? `${data.shift.start_time} - ${data.shift.end_time}`
+                    ? `<br>${data.shift.start_time} - ${data.shift.end_time}`
                     : '';
 
-                // Обновляем отображение смены
                 const cell = document.querySelector(`.day-cell[data-date="${selectedDate}"][data-user-id="${selectedUserId}"]`);
                 if (cell) {
                     const shiftBadge = document.createElement('div');
@@ -784,16 +775,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     shiftBadge.dataset.shiftId = data.shift.id;
                     shiftBadge.title = `${data.shift.title}${showTime ? ` (${data.shift.start_time}-${data.shift.end_time})` : ''}`;
 
-                    // Обрезаем название до 8 символов
                     const shortTitle = data.shift.title.length > 8
                         ? `${data.shift.title.substring(0, 8)}...`
                         : data.shift.title;
 
-                    shiftBadge.innerHTML = shortTitle;
-
-                    if (showTime) {
-                        shiftBadge.innerHTML += `<br>${data.shift.start_time} - ${data.shift.end_time}`;
-                    }
+                    shiftBadge.innerHTML = shortTitle + timeDisplay;
 
                     if (isOwner) {
                         shiftBadge.innerHTML += `<button class="remove-shift-btn" data-shift-id="${data.shift.id}">&times;</button>`;
@@ -801,20 +787,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     cell.appendChild(shiftBadge);
                     cell.classList.add('has-shift');
-
-                    // Назначаем обработчик для новой кнопки удаления
-                    const removeBtn = shiftBadge.querySelector('.remove-shift-btn');
-                    if (removeBtn) {
-                        removeBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            deleteShift(data.shift.id);
-                        });
-                    }
                 }
 
                 selectTemplateModal.style.display = 'none';
-            } else {
-                showToast(data.error || 'Ошибка при добавлении смены', 'danger');
             }
         } catch (error) {
             handleError(error, 'Ошибка при добавлении смены');

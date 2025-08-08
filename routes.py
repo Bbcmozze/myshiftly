@@ -272,12 +272,32 @@ def register_routes(app):
         members_sorted = [m[0] for m in members_with_positions]
         member_positions = {m[0].id: m[1] for m in members_with_positions}
 
-        # Получаем смены
-        shifts = Shift.query.filter(
+        # Получаем смены с информацией о шаблонах
+        shifts_with_templates = db.session.query(
+            Shift,
+            ShiftTemplate.show_time
+        ).outerjoin(
+            ShiftTemplate,
+            Shift.template_id == ShiftTemplate.id
+        ).filter(
             Shift.calendar_id == calendar.id,
             Shift.date >= current_month,
             Shift.date <= last_day
         ).all()
+
+        # Преобразуем смены в удобный формат для шаблона
+        shifts = []
+        for shift, template_show_time in shifts_with_templates:
+            show_time = template_show_time if template_show_time is not None else True
+            shifts.append({
+                'id': shift.id,
+                'title': shift.title,
+                'start_time': shift.start_time.strftime('%H:%M'),
+                'end_time': shift.end_time.strftime('%H:%M'),
+                'date': shift.date,
+                'user_id': shift.user_id,
+                'show_time': show_time  # Используем значение из шаблона
+            })
 
         # Получаем шаблоны
         shift_templates = ShiftTemplate.query.filter_by(calendar_id=calendar.id).all()
@@ -286,7 +306,7 @@ def register_routes(app):
             'calendar/view_calendar.html',
             calendar=calendar,
             current_user=current_user,
-            shifts=shifts,
+            shifts=shifts,  # Теперь передаем список словарей вместо объектов Shift
             shift_templates=shift_templates,
             current_month=current_month,
             days_in_month=days_in_month,
@@ -445,11 +465,13 @@ def register_routes(app):
     @login_required
     def create_shift_template():
         data = request.get_json()
-
         try:
             calendar = Calendar.query.get(data['calendar_id'])
             if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
                 return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+            # Получаем параметр show_time (по умолчанию True)
+            show_time = data.get('show_time', True)
 
             template = ShiftTemplate(
                 title=data['title'],
@@ -457,7 +479,7 @@ def register_routes(app):
                 end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
                 calendar_id=data['calendar_id'],
                 owner_id=current_user.id,
-                show_time=data.get('show_time', True)  # Добавляем параметр show_time
+                show_time=show_time  # Сохраняем параметр
             )
 
             db.session.add(template)
@@ -470,7 +492,7 @@ def register_routes(app):
                     'title': template.title,
                     'start_time': template.start_time.strftime('%H:%M'),
                     'end_time': template.end_time.strftime('%H:%M'),
-                    'show_time': template.show_time  # Добавляем в ответ
+                    'show_time': template.show_time  # Важно: возвращаем параметр
                 }
             })
         except Exception as e:
@@ -500,7 +522,7 @@ def register_routes(app):
             if not user or (user.id != current_user.id and user not in calendar.members):
                 return jsonify({'success': False, 'error': 'Неверный пользователь'}), 400
 
-            # Проверяем, есть ли уже смена в этот день у этого пользователя
+            # Проверяем существующую смену
             existing_shift = Shift.query.filter_by(
                 calendar_id=data['calendar_id'],
                 user_id=data['user_id'],
@@ -519,11 +541,12 @@ def register_routes(app):
                 end_time=template.end_time,
                 date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
                 calendar_id=data['calendar_id'],
-                user_id=data['user_id']
+                user_id=data['user_id'],
+                template_id=template.id  # Сохраняем ссылку на шаблон
             )
 
             db.session.add(shift)
-            db.session.commit()  # Явное сохранение
+            db.session.commit()
 
             return jsonify({
                 'success': True,
@@ -532,7 +555,7 @@ def register_routes(app):
                     'title': shift.title,
                     'start_time': shift.start_time.strftime('%H:%M'),
                     'end_time': shift.end_time.strftime('%H:%M'),
-                    'date': shift.date.strftime('%Y-%m-%d')
+                    'show_time': template.show_time  # Добавляем параметр видимости времени
                 }
             })
         except Exception as e:
@@ -705,4 +728,25 @@ def register_routes(app):
             'start_time': template.start_time.strftime('%H:%M'),
             'end_time': template.end_time.strftime('%H:%M'),
             'show_time': template.show_time
+        })
+
+    @app.route('/api/get_shift_info/<int:shift_id>', methods=['GET'])
+    @login_required
+    def get_shift_info(shift_id):
+        shift = Shift.query.get_or_404(shift_id)
+
+        # Проверка прав доступа
+        if shift.calendar.owner_id != current_user.id and current_user not in shift.calendar.members:
+            abort(403)
+
+        show_time = True
+        if shift.template:
+            show_time = shift.template.show_time
+
+        return jsonify({
+            'id': shift.id,
+            'title': shift.title,
+            'start_time': shift.start_time.strftime('%H:%M'),
+            'end_time': shift.end_time.strftime('%H:%M'),
+            'show_time': show_time
         })
