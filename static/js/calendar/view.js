@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
+                setupDraggableRows();
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);
@@ -336,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Обновляем список доступных друзей
                 await updateAvailableFriendsList();
+                setupDraggableRows();
 
                 showToast('Участники успешно добавлены', 'success');
 
@@ -1076,27 +1078,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+        // Находим строку владельца календаря
+        const ownerRow = tbody.querySelector('.user-row.owner');
+        if (!ownerRow) return;
+
         new Sortable(tbody, {
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            handle: '.user-cell',
-            filter: '.owner', // Запрещаем перетаскивание владельца
-            onStart: function(evt) {
-                if (evt.item.classList.contains('owner')) {
-                    evt.preventDefault();
-                }
-            },
-            onEnd: function(evt) {
-                evt.item.style.backgroundColor = '';
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                handle: '.user-cell',
+                filter: '.owner',
+                draggable: '.user-row:not(.owner)',
 
-                // Пропускаем если это владелец или позиция не изменилась
-                if (evt.item.classList.contains('owner') || evt.oldIndex === evt.newIndex) {
-                    return;
-                }
+                onStart: function(evt) {
+                    if (evt.item.classList.contains('owner')) {
+                        evt.preventDefault();
+                    }
+                },
+                onMove: function(evt) {
+                    // Запрещаем перемещение выше владельца
+                    const ownerIndex = Array.from(tbody.children).indexOf(ownerRow);
+                    const draggedIndex = Array.from(tbody.children).indexOf(evt.dragged);
+                    const targetIndex = Array.from(tbody.children).indexOf(evt.related);
 
-                updateMemberPositions();
-            }
-        });
+                    // Если пытаемся переместить выше владельца - запрещаем
+                    if (targetIndex < ownerIndex) {
+                        return false;
+                    }
+                },
+                onEnd: function(evt) {
+                    evt.item.style.backgroundColor = '';
+                    if (evt.item.classList.contains('owner') || evt.oldIndex === evt.newIndex) return;
+                    updateMemberPositions();
+                }
+            });
 
         console.log('SortableJS инициализирован');
     };

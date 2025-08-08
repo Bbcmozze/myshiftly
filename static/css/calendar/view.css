@@ -801,8 +801,13 @@ body.fullscreen-active {
     max-height: 60px;
 }
 
+.user-row.owner {
+    cursor: default;
+}
+
 .user-row.owner .user-cell {
     cursor: default;
+    font-weight: 500;
 }
 
 .user-row.sortable-ghost td {
