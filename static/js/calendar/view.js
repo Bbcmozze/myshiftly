@@ -135,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
+                setupDraggableRows(); // Добавляем эту строку
             }
         } catch (error) {
             console.error('Ошибка при загрузке календаря:', error);
@@ -1078,6 +1079,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+        if (tbody.sortableInstance) {
+                tbody.sortableInstance.destroy();
+            }
+
         // Находим строку владельца календаря
         const ownerRow = tbody.querySelector('.user-row.owner');
         if (!ownerRow) return;
@@ -1117,32 +1122,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateMemberPositions = async () => {
         const rows = document.querySelectorAll('.user-row:not(.owner)');
-        if (rows.length === 0) {
-            console.error('No members found to reorder');
-            return;
-        }
+        if (rows.length === 0) return;
 
         const positions = {};
         const calendarId = document.body.dataset.calendarId;
-        const currentUserId = document.body.dataset.currentUserId;
 
         rows.forEach((row, index) => {
             const userId = row.dataset.userId || row.querySelector('.user-cell').dataset.userId;
-            if (!userId) {
-                console.error('Missing user-id in row:', row);
-                return;
-            }
-            positions[userId] = index + 1;
+            if (userId) positions[userId] = index + 1;
         });
 
-        // Проверка данных перед отправкой
-        if (Object.keys(positions).length === 0) {
-            showToast('Нет данных для сохранения', 'warning');
-            return;
-        }
-
         try {
-            console.log('Sending positions:', positions); // Логирование
             const response = await fetch(`/calendar/${calendarId}/update-positions`, {
                 method: 'POST',
                 headers: {
@@ -1152,19 +1142,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ positions })
             });
 
-            console.log('Response status:', response.status); // Логирование
-
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Server error:', errorData); // Логирование
-                throw new Error(errorData.error || 'Unknown server error');
+
+                // Обрабатываем ошибку 403 Forbidden
+                if (response.status === 403) {
+                    throw new Error('У вас нет прав на изменение порядка участников!');
+                }
+
+                throw new Error(errorData.error || 'Неизвестная ошибка сервера');
             }
 
             showToast('Порядок участников сохранён', 'success');
         } catch (error) {
-            console.error('Full error:', error); // Логирование
-            showToast('Не удалось сохранить порядок: ' + error.message, 'danger');
-            updateCalendarTable();
+            // Показываем пользовательское сообщение для ошибки 403
+            const errorMessage = error.message.includes('403')
+                ? 'У вас нет прав на изменение порядка участников!'
+                : error.message;
+
+            showToast(`Не удалось сохранить порядок: ${errorMessage}`, 'danger');
+            updateCalendarTable(); // Восстанавливаем предыдущий порядок
         }
     };
 

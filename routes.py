@@ -645,7 +645,11 @@ def register_routes(app):
         calendar = Calendar.query.get_or_404(calendar_id)
 
         if calendar.owner_id != current_user.id:
-            return jsonify({'success': False, 'error': 'Forbidden'}), 403
+                return jsonify({
+                    'success': False,
+                    'error': 'Forbidden',
+                    'message': 'Только владелец календаря может изменять порядок участников'
+                }), 403
 
         try:
             data = request.get_json()
