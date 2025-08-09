@@ -275,7 +275,8 @@ def register_routes(app):
         # Получаем смены с информацией о шаблонах
         shifts_with_templates = db.session.query(
             Shift,
-            ShiftTemplate.show_time
+            ShiftTemplate.show_time,
+            ShiftTemplate.color_class  # Добавьте это поле
         ).outerjoin(
             ShiftTemplate,
             Shift.template_id == ShiftTemplate.id
@@ -287,8 +288,9 @@ def register_routes(app):
 
         # Преобразуем смены в удобный формат для шаблона
         shifts = []
-        for shift, template_show_time in shifts_with_templates:
+        for shift, template_show_time, template_color_class in shifts_with_templates:
             show_time = template_show_time if template_show_time is not None else True
+            color_class = template_color_class if template_color_class else 'badge-color-1'
             shifts.append({
                 'id': shift.id,
                 'title': shift.title,
@@ -296,7 +298,8 @@ def register_routes(app):
                 'end_time': shift.end_time.strftime('%H:%M'),
                 'date': shift.date,
                 'user_id': shift.user_id,
-                'show_time': show_time  # Используем значение из шаблона
+                'show_time': show_time,
+                'color_class': color_class
             })
 
         # Получаем шаблоны
@@ -466,8 +469,6 @@ def register_routes(app):
     def create_shift_template():
         data = request.get_json()
         try:
-            # ... ваша существующая логика ...
-
             template = ShiftTemplate(
                 title=data['title'],
                 start_time=datetime.strptime(data['start_time'], '%H:%M').time(),
@@ -475,7 +476,7 @@ def register_routes(app):
                 calendar_id=data['calendar_id'],
                 owner_id=current_user.id,
                 show_time=data.get('show_time', True),
-                color_class=data.get('color_class', 'badge-color-1')  # Сохраняем цвет
+                color_class=data.get('color_class', 'badge-color-1')  # Убедитесь, что цвет сохраняется
             )
             db.session.add(template)
             db.session.commit()
@@ -488,7 +489,7 @@ def register_routes(app):
                     'start_time': template.start_time.strftime('%H:%M'),
                     'end_time': template.end_time.strftime('%H:%M'),
                     'show_time': template.show_time,
-                    'color_class': template.color_class  # Важно: возвращаем цвет
+                    'color_class': template.color_class  # Возвращаем цвет
                 }
             })
         except Exception as e:
@@ -498,7 +499,6 @@ def register_routes(app):
     @login_required
     def add_shift_from_template():
         data = request.get_json()
-
         try:
             calendar = Calendar.query.get(data['calendar_id'])
             if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
@@ -535,7 +535,7 @@ def register_routes(app):
                 user_id=data['user_id'],
                 template_id=template.id,
                 show_time=template.show_time,
-                color_class=template.color_class  # Передаём цвет из шаблона!
+                color_class=template.color_class  # Передаём цвет из шаблона
             )
 
             db.session.add(shift)

@@ -1,3 +1,38 @@
+/* Цветовые варианты для бейджей */
+.badge-color-1  { background-color: #ffb3b3; color: #7f0000; } /* Роза */
+.badge-color-2  { background-color: #ffd0a8; color: #7f4300; } /* Персик */
+.badge-color-3  { background-color: #fff2b3; color: #7f6a00; } /* Лимон */
+.badge-color-4  { background-color: #f4ffb3; color: #5a6600; } /* Лайм */
+.badge-color-5  { background-color: #e4ffb3; color: #4c6600; } /* Яблоко */
+.badge-color-6  { background-color: #b3ffe1; color: #005f47; } /* Мята */
+.badge-color-7  { background-color: #b3f4ff; color: #004b66; } /* Лёд */
+.badge-color-8  { background-color: #b3d6ff; color: #003166; } /* Небо */
+.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
+.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
+
+/* Цветовые классы должны совпадать с preview-badge */
+.shift-badge.badge-color-1  { background-color: #ffb3b3; color: #7f0000; } /* Роза */
+.shift-badge.badge-color-2  { background-color: #ffd0a8; color: #7f4300; } /* Персик */
+.shift-badge.badge-color-3  { background-color: #fff2b3; color: #7f6a00; } /* Лимон */
+.shift-badge.badge-color-4  { background-color: #f4ffb3; color: #5a6600; } /* Лайм */
+.shift-badge.badge-color-5  { background-color: #e4ffb3; color: #4c6600; } /* Яблоко */
+.shift-badge.badge-color-6  { background-color: #b3ffe1; color: #005f47; } /* Мята */
+.shift-badge.badge-color-7  { background-color: #b3f4ff; color: #004b66; } /* Лёд */
+.shift-badge.badge-color-8  { background-color: #b3d6ff; color: #003166; } /* Небо */
+.shift-badge.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
+.shift-badge.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
+
+.template-item.badge-color-1  { background-color: #ffb3b3; color: #7f0000; } /* Роза */
+.template-item.badge-color-2  { background-color: #ffd0a8; color: #7f4300; } /* Персик */
+.template-item.badge-color-3  { background-color: #fff2b3; color: #7f6a00; } /* Лимон */
+.template-item.badge-color-4  { background-color: #f4ffb3; color: #5a6600; } /* Лайм */
+.template-item.badge-color-5  { background-color: #e4ffb3; color: #4c6600; } /* Яблоко */
+.template-item.badge-color-6  { background-color: #b3ffe1; color: #005f47; } /* Мята */
+.template-item.badge-color-7  { background-color: #b3f4ff; color: #004b66; } /* Лёд */
+.template-item.badge-color-8  { background-color: #b3d6ff; color: #003166; } /* Небо */
+.template-item.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
+.template-item.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
+
 .calendar-creation-container {
     max-width: 1200px;
     margin: 2rem auto;
@@ -875,22 +910,10 @@ body.fullscreen-active {
     transition: all 0.2s;
 }
 
-/* Цветовые классы должны совпадать с preview-badge */
-.shift-badge.badge-color-1 { background-color: #e0f2fe; color: #0369a1; }
-.shift-badge.badge-color-2 { background-color: #dcfce7; color: #166534; }
-.shift-badge.badge-color-3 { background-color: #fef3c7; color: #92400e; }
-.shift-badge.badge-color-4 { background-color: #fee2e2; color: #991b1b; }
-.shift-badge.badge-color-5 { background-color: #ede9fe; color: #5b21b6; }
-.shift-badge.badge-color-6 { background-color: #f0fdf4; color: #166534; }
-.shift-badge.badge-color-7 { background-color: #ffedd5; color: #9a3412; }
-.shift-badge.badge-color-8 { background-color: #ecfdf5; color: #065f46; }
-.shift-badge.badge-color-9 { background-color: #f5f3ff; color: #5b21b6; }
-.shift-badge.badge-color-10 { background-color: #fef9c3; color: #854d0e; }
-
 .shift-badge:hover {
     z-index: 10;
     white-space: normal;
-    background: rgba(255, 255, 255, 0.07);
+    filter: brightness(85%);
 }
 
 .shift-badge::after {
@@ -1006,7 +1029,6 @@ body.fullscreen-active {
     min-height: 75px;
     min-width: 185px;
     max-height: 75px;
-    max-width: 185px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -1034,7 +1056,7 @@ body.fullscreen-active {
 }
 
 .template-item:hover {
-    background: #f8fafc;
+    filter: brightness(90%);
     border-color: #cbd5e1;
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -1046,7 +1068,6 @@ body.fullscreen-active {
 
 .template-title {
     font-weight: 500;
-    color: #1e293b;
     margin-bottom: 0.25rem;
     white-space: nowrap;
     overflow: hidden;
@@ -1550,6 +1571,8 @@ body.fullscreen-active #fullscreenOverlay {
 }
 
 .color-option {
+    text-align: center;
+    font-size: 14px;
     height: 30px;
     border-radius: 4px;
     cursor: pointer;
@@ -1559,20 +1582,9 @@ body.fullscreen-active #fullscreenOverlay {
 
 .color-option:hover {
     transform: scale(1.05);
+    filter: brightness(85%);
 }
 
 .color-option.selected {
-    border-color: #1e293b;
+    border-color: #585a5c;
 }
-
-/* Цветовые варианты для бейджей */
-.badge-color-1 { background-color: #e0f2fe; color: #0369a1; } /* Небесный */
-.badge-color-2 { background-color: #dcfce7; color: #166534; } /* Травяной */
-.badge-color-3 { background-color: #fef3c7; color: #92400e; } /* Солнечный */
-.badge-color-4 { background-color: #fee2e2; color: #991b1b; } /* Розовый */
-.badge-color-5 { background-color: #ede9fe; color: #5b21b6; } /* Лавандовый */
-.badge-color-6 { background-color: #f0fdf4; color: #166534; } /* Мятный */
-.badge-color-7 { background-color: #ffedd5; color: #9a3412; } /* Персиковый */
-.badge-color-8 { background-color: #ecfdf5; color: #065f46; } /* Изумрудный */
-.badge-color-9 { background-color: #f5f3ff; color: #5b21b6; } /* Фиолетовый */
-.badge-color-10 { background-color: #fef9c3; color: #854d0e; } /* Лимонный */

@@ -46,7 +46,8 @@
                 <div class="template-list-container">
                     <div class="template-list" id="templateList">
                         {% for template in shift_templates %}
-                        <div class="template-item" data-template-id="{{ template.id }}">
+                        <div class="template-item {{ template.color_class }}"
+                             data-template-id="{{ template.id }}">
                             <div class="template-info">
                                 <div class="template-title">{{ template.title }}</div>
                                 <div class="template-time">
@@ -133,7 +134,7 @@
                             data-user-id="{{ member.id }}">
                             {% for shift in shifts %}
                             {% if shift.user_id == member.id and shift.date == day %}
-                            <div class="shift-badge {{ shift.color_class if shift.color_class else 'badge-color-1' }}"
+                            <div class="shift-badge {{ shift.color_class }}"
                                  data-shift-id="{{ shift.id }}"
                                  title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
                                 {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
@@ -189,16 +190,16 @@
 
                     <div class="color-preview-title">Выберите цвет:</div>
                     <div class="color-options">
-                        <div class="color-option badge-color-1 selected" data-color-class="badge-color-1" title="Небесный">Небесный</div>
-                        <div class="color-option badge-color-2" data-color-class="badge-color-2" title="Травяной"></div>
-                        <div class="color-option badge-color-3" data-color-class="badge-color-3" title="Солнечный"></div>
-                        <div class="color-option badge-color-4" data-color-class="badge-color-4" title="Розовый"></div>
-                        <div class="color-option badge-color-5" data-color-class="badge-color-5" title="Лавандовый"></div>
-                        <div class="color-option badge-color-6" data-color-class="badge-color-6" title="Мятный"></div>
-                        <div class="color-option badge-color-7" data-color-class="badge-color-7" title="Персиковый"></div>
-                        <div class="color-option badge-color-8" data-color-class="badge-color-8" title="Изумрудный"></div>
-                        <div class="color-option badge-color-9" data-color-class="badge-color-9" title="Фиолетовый"></div>
-                        <div class="color-option badge-color-10" data-color-class="badge-color-10" title="Лимонный"></div>
+                        <div class="color-option badge-color-1 selected" data-color-class="badge-color-1">Роза</div>
+                        <div class="color-option badge-color-2" data-color-class="badge-color-2">Персик</div>
+                        <div class="color-option badge-color-3" data-color-class="badge-color-3">Лимон</div>
+                        <div class="color-option badge-color-4" data-color-class="badge-color-4">Лайм</div>
+                        <div class="color-option badge-color-5" data-color-class="badge-color-5">Яблоко</div>
+                        <div class="color-option badge-color-6" data-color-class="badge-color-6">Мята</div>
+                        <div class="color-option badge-color-7" data-color-class="badge-color-7">Лед</div>
+                        <div class="color-option badge-color-8" data-color-class="badge-color-8">Небо</div>
+                        <div class="color-option badge-color-9" data-color-class="badge-color-9">Сирень</div>
+                        <div class="color-option badge-color-10" data-color-class="badge-color-10">Орхидея</div>
                     </div>
                 </div>
 
@@ -281,8 +282,7 @@
             <div class="template-list" id="selectTemplateList">
                 {% for template in shift_templates %}
                 <div class="template-item selectable-template {{ template.color_class }}"
-                     data-template-id="{{ template.id }}"
-                     style="background-color: inherit;">
+                     data-template-id="{{ template.id }}">
                     <strong>{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</strong><br>
                     {% if template.show_time %}
                         {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}

@@ -736,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Список для выбора шаблона
         const selectTemplateItem = document.createElement('div');
-        selectTemplateItem.className = `template-item selectable-template ${template.color_class}`;
+        selectTemplateItem.className = `template-item ${template.color_class}`;
         selectTemplateItem.dataset.templateId = template.id;
         selectTemplateItem.innerHTML = `
             <strong>${template.title}</strong><br>
