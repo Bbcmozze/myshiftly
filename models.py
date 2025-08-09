@@ -88,6 +88,7 @@ class ShiftTemplate(db.Model):
     calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     show_time = db.Column(db.Boolean, default=True)
+    color_class = db.Column(db.String(20), default='badge-color-1')
 
     calendar = db.relationship('Calendar', back_populates='shift_templates')
     owner = db.relationship('User', backref='shift_templates')

@@ -505,6 +505,60 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Функция для настройки предпросмотра бейджа
+        const setupBadgePreview = () => {
+            const badgePreview = document.getElementById('badgePreview');
+            const templateTitle = document.getElementById('templateTitle');
+            const templateStart = document.getElementById('templateStart');
+            const templateEnd = document.getElementById('templateEnd');
+            const showTimeCheckbox = document.getElementById('showTimeCheckbox');
+            const colorOptions = document.querySelectorAll('.color-option');
+
+            let selectedColorClass = 'badge-color-1';
+
+            // Обработчик изменения названия
+            templateTitle.addEventListener('input', () => {
+                updateBadgePreview();
+            });
+
+            // Обработчик изменения времени
+            templateStart.addEventListener('change', updateBadgePreview);
+            templateEnd.addEventListener('change', updateBadgePreview);
+
+            // Обработчик чекбокса времени
+            showTimeCheckbox.addEventListener('change', updateBadgePreview);
+
+            function updateBadgePreview() {
+                const titleText = templateTitle.value || 'Название';
+                const shortTitle = titleText.length > 8
+                    ? `${titleText.substring(0, 8)}...`
+                    : titleText;
+
+                if (showTimeCheckbox.checked) {
+                    badgePreview.innerHTML = `${shortTitle}<br>${templateStart.value} - ${templateEnd.value}`;
+                } else {
+                    badgePreview.textContent = shortTitle;
+                }
+            }
+
+            // Обработчик выбора цвета
+            colorOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    colorOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedColorClass = option.dataset.colorClass;
+
+                    // Обновляем классы предпросмотра
+                    badgePreview.className = 'preview-badge';
+                    badgePreview.classList.add(selectedColorClass);
+                });
+            });
+
+            // Инициализация предпросмотра
+            badgePreview.className = 'preview-badge badge-color-1';
+            updateBadgePreview();
+        };
+
         const showTimeCheckbox = document.getElementById('showTimeCheckbox');
         const timeFieldsContainer = document.getElementById('timeFieldsContainer');
 
@@ -515,6 +569,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     timeFieldsContainer.classList.add('hidden');
                 }
+                // Обновляем предпросмотр при изменении видимости времени
+                const event = new Event('change');
+                templateStart.dispatchEvent(event);
+                templateEnd.dispatchEvent(event);
             });
 
             // Инициализируем состояние при открытии модального окна
@@ -534,10 +592,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 templateStart.value = '09:00';
                 templateEnd.value = '18:00';
                 // Устанавливаем чекбокс в активное состояние и показываем поля времени
-                const showTimeCheckbox = document.getElementById('showTimeCheckbox');
                 showTimeCheckbox.checked = true;
-                const timeFieldsContainer = document.getElementById('timeFieldsContainer');
                 timeFieldsContainer.classList.remove('hidden');
+
+                // Сбрасываем цвет к первому варианту
+                document.querySelectorAll('.color-option').forEach((opt, i) => {
+                    opt.classList.toggle('selected', i === 0);
+                });
+
+                document.getElementById('badgePreview').className = 'preview-badge badge-color-1';
                 document.getElementById("templateTitle").focus();
             });
         }
@@ -559,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Проверяем время только если чекбокс активен
-            const showTime = document.getElementById('showTimeCheckbox').checked;
+            const showTime = showTimeCheckbox.checked;
             if (showTime && (!start || !end)) {
                 showToast('Заполните время смены', 'danger');
                 return;
@@ -567,44 +630,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
             createTemplate(title, start, end);
         });
+
+        // Инициализация предпросмотра бейджа
+        setupBadgePreview();
     };
 
     // Создание нового шаблона смены
     const createTemplate = async (title, start, end) => {
         try {
             const showTime = document.getElementById('showTimeCheckbox').checked;
+            const selectedColorOption = document.querySelector('.color-option.selected');
+
+            if (!selectedColorOption) {
+                throw new Error('Не выбран цвет для шаблона');
+            }
+
+            const selectedColor = selectedColorOption.dataset.colorClass;
+            const calendarId = document.body.dataset.calendarId;
+
+            if (!calendarId) {
+                throw new Error('Не удалось определить ID календаря');
+            }
+
+            const requestData = {
+                title: title,
+                start_time: start,
+                end_time: end,
+                calendar_id: calendarId,
+                show_time: showTime,
+                color_class: selectedColor
+            };
+
+            console.log('Отправка данных на сервер:', requestData);
 
             const response = await fetch('/api/create_shift_template', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    title: title,
-                    start_time: start,
-                    end_time: end,
-                    calendar_id: document.body.dataset.calendarId,
-                    show_time: showTime
-                })
+                body: JSON.stringify(requestData)
             });
 
-            const data = await response.json();
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
 
-            if (data.success) {
-                addTemplateToDOM(data.template);
+            const responseData = await response.json();
+            console.log('Ответ сервера:', responseData);
+
+            if (responseData.success) {
+                addTemplateToDOM(responseData.template);
                 templateModal.style.display = 'none';
-                // Полный сброс формы
-                templateTitle.value = '';
-                templateStart.value = '09:00';
-                templateEnd.value = '18:00';
-                document.getElementById('showTimeCheckbox').checked = true;
-                document.getElementById('timeFieldsContainer').classList.remove('hidden');
                 showToast('Шаблон успешно создан', 'success');
+                return true;
             } else {
-                showToast(data.error || 'Ошибка при создании шаблона', 'danger');
+                throw new Error(responseData.error || 'Неизвестная ошибка сервера');
             }
         } catch (error) {
-            handleError(error, 'Ошибка при создании шаблона');
+            console.error('Ошибка при создании шаблона:', error);
+            showToast(`Ошибка при создании шаблона: ${error.message}`, 'danger');
+            return false;
         }
     };
 
@@ -872,62 +958,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Установка обработчиков для кнопок удаления смен
     const setupShiftHandlers = () => {
+        // Удаляем старые обработчики
         document.querySelectorAll('.remove-shift-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                e.preventDefault();
+            btn.removeEventListener('click', handleShiftDelete);
+        });
 
-                const shiftId = e.target.dataset.shiftId;
-                const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
-                const cell = shiftBadge.closest('.day-cell');
-                const userId = cell.dataset.userId;
-                const isOwner = document.body.dataset.calendarOwnerId === document.body.dataset.currentUserId;
-                const currentUserId = parseInt(document.body.dataset.currentUserId);
+        // Добавляем новые обработчики
+        document.querySelectorAll('.remove-shift-btn').forEach(btn => {
+            btn.addEventListener('click', handleShiftDelete);
+        });
+    };
 
-                if (!isOwner) {
-                    showToast('Только создатель календаря может удалять смены', 'warning');
-                    return;
-                }
+    const handleShiftDelete = async (e) => {
+        e.stopPropagation();
+        e.preventDefault();
 
-                // Проверяем права: владелец или это своя смена
-                if (!isOwner && parseInt(userId) !== currentUserId) {
-                    showToast('Вы можете удалять только свои смены', 'warning');
-                    return;
-                }
+        const shiftId = e.target.dataset.shiftId;
+        const shiftBadge = document.querySelector(`.shift-badge[data-shift-id="${shiftId}"]`);
+        const cell = shiftBadge?.closest('.day-cell');
+        const userId = cell?.dataset.userId;
+        const isOwner = document.body.dataset.calendarOwnerId === document.body.dataset.currentUserId;
+        const currentUserId = parseInt(document.body.dataset.currentUserId);
 
-                try {
-                    const response = await fetch(`/shift/${shiftId}/delete`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        credentials: 'same-origin'
-                    });
+        if (!isOwner && parseInt(userId) !== currentUserId) {
+            showToast('Вы можете удалять только свои смены', 'warning');
+            return;
+        }
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success) {
-                            showToast('Смена успешно удалена', 'success');
-                            // Добавляем анимацию удаления
-                            shiftBadge.classList.add('removing');
-                            setTimeout(() => {
-                                shiftBadge.remove();
-                                // Удаляем класс has-shift, если в ячейке больше нет смен
-                                if (!cell.querySelector('.shift-badge')) {
-                                    cell.classList.remove('has-shift');
-                                }
-                            }, 300);
-                        }
-                    } else {
-                        const error = await response.text();
-                        showToast(error || 'Ошибка при удалении смены', 'danger');
-                    }
-                } catch (error) {
-                    handleError(error, 'Ошибка при удалении смены');
+        try {
+            const response = await fetch(`/shift/${shiftId}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-        });
+
+            if (!response.ok) {
+                throw new Error(response.status === 404 ? 'Смена не найдена' : 'Ошибка сервера');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                shiftBadge?.classList.add('removing');
+                setTimeout(() => {
+                    shiftBadge?.remove();
+                    if (cell && !cell.querySelector('.shift-badge')) {
+                        cell.classList.remove('has-shift');
+                    }
+                }, 300);
+            }
+        } catch (error) {
+            console.error('Ошибка при удалении смены:', error);
+        }
     };
 
     // Обработка кликов по ячейкам календаря

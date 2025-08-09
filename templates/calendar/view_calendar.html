@@ -133,7 +133,8 @@
                             data-user-id="{{ member.id }}">
                             {% for shift in shifts %}
                             {% if shift.user_id == member.id and shift.date == day %}
-                            <div class="shift-badge" data-shift-id="{{ shift.id }}"
+                            <div class="shift-badge {{ shift.template.color_class if shift.template else 'badge-color-1' }}"
+                                 data-shift-id="{{ shift.id }}"
                                  title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
                                 {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
                                 {% if shift.show_time %}
@@ -158,6 +159,7 @@
 </div>
 
 <!-- Модальное окно создания шаблона смены -->
+<!-- Модальное окно создания шаблона смены -->
 <div class="modal" id="templateModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -175,6 +177,31 @@
                            placeholder="Например: Утренняя смена (макс. 20 символов)">
                     <small class="form-text text-muted">Максимальная длина - 20 символов</small>
                 </div>
+
+                <!-- Добавляем блок предпросмотра -->
+                <div class="color-preview-container">
+                    <div class="color-preview-title">Внешний вид смены</div>
+                    <div class="preview-badge" id="badgePreview">
+                        Название
+                        <br>
+                        09:00 - 18:00
+                    </div>
+
+                    <div class="color-preview-title">Выберите цвет:</div>
+                    <div class="color-options">
+                        <div class="color-option badge-color-1 selected" data-color-class="badge-color-1" title="Небесный">Небесный</div>
+                        <div class="color-option badge-color-2" data-color-class="badge-color-2" title="Травяной"></div>
+                        <div class="color-option badge-color-3" data-color-class="badge-color-3" title="Солнечный"></div>
+                        <div class="color-option badge-color-4" data-color-class="badge-color-4" title="Розовый"></div>
+                        <div class="color-option badge-color-5" data-color-class="badge-color-5" title="Лавандовый"></div>
+                        <div class="color-option badge-color-6" data-color-class="badge-color-6" title="Мятный"></div>
+                        <div class="color-option badge-color-7" data-color-class="badge-color-7" title="Персиковый"></div>
+                        <div class="color-option badge-color-8" data-color-class="badge-color-8" title="Изумрудный"></div>
+                        <div class="color-option badge-color-9" data-color-class="badge-color-9" title="Фиолетовый"></div>
+                        <div class="color-option badge-color-10" data-color-class="badge-color-10" title="Лимонный"></div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="showTimeCheckbox" checked>

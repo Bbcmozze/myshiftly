@@ -1,5 +1,5 @@
 import traceback
-
+import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
 from sqlalchemy import exists, and_
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -465,6 +465,7 @@ def register_routes(app):
     @login_required
     def create_shift_template():
         data = request.get_json()
+        app.logger.info(f"Received data: {data}")  # Логируем входящие данные
         try:
             calendar = Calendar.query.get(data['calendar_id'])
             if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
@@ -479,7 +480,8 @@ def register_routes(app):
                 end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
                 calendar_id=data['calendar_id'],
                 owner_id=current_user.id,
-                show_time=show_time  # Сохраняем параметр
+                show_time=show_time,
+                color_class = data.get('color_class', 'badge-color-1')
             )
 
             db.session.add(template)
@@ -496,6 +498,7 @@ def register_routes(app):
                 }
             })
         except Exception as e:
+            app.logger.error(f"Error creating template: {str(e)}")
             return jsonify({
                 'success': False,
                 'error': str(e)
