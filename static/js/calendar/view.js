@@ -477,13 +477,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Управление модальными окнами
     const setupModals = () => {
+        // Элементы модальных окон
+        const templateModal = document.getElementById('templateModal');
+        const selectTemplateModal = document.getElementById('selectTemplateModal');
+        const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        const addMembersModal = document.getElementById('addMembersModal');
+
+        // Элементы формы
+        const templateTitle = document.getElementById('templateTitle');
+        const templateStart = document.getElementById('templateStart');
+        const templateEnd = document.getElementById('templateEnd');
+        const showTimeCheckbox = document.getElementById('showTimeCheckbox');
+        const timeFieldsContainer = document.getElementById('timeFieldsContainer');
+        const badgePreview = document.getElementById('badgePreview');
+        const colorOptions = document.querySelectorAll('.color-option');
+
+        // Кнопки
+        const createTemplateBtn = document.getElementById('createTemplateBtn');
+        const saveTemplateBtn = document.getElementById('saveTemplateBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        // Закрытие всех модальных окон
         const closeAllModals = () => {
             [templateModal, selectTemplateModal, confirmDeleteModal, addMembersModal].forEach(modal => {
                 modal.style.display = 'none';
             });
         };
 
-        // Закрытие модальных окон
+        // Обработчики закрытия модальных окон
         document.querySelectorAll('.modal-close').forEach(btn => {
             btn.addEventListener('click', closeAllModals);
         });
@@ -495,73 +516,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        window.addEventListener('popstate', () => {
-            const url = new URL(window.location.href);
-            const monthParam = url.searchParams.get('month');
+        // Функция обновления предпросмотра бейджа
+        const updateBadgePreview = () => {
+            const titleText = templateTitle.value || 'Название';
+            const shortTitle = titleText.length > 8
+                ? `${titleText.substring(0, 8)}...`
+                : titleText;
 
-            if (monthParam) {
-                currentMonth = new Date(monthParam);
-                updateMonthDisplay();
+            const selectedColor = document.querySelector('.color-option.selected')?.dataset.colorClass || 'badge-color-1';
+
+            badgePreview.className = `preview-badge ${selectedColor}`;
+
+            if (showTimeCheckbox.checked) {
+                badgePreview.innerHTML = `${shortTitle}<br>${templateStart.value} - ${templateEnd.value}`;
+            } else {
+                badgePreview.textContent = shortTitle;
             }
-        });
+        };
 
-        // Функция для настройки предпросмотра бейджа
+        // Инициализация предпросмотра бейджа
         const setupBadgePreview = () => {
-            const badgePreview = document.getElementById('badgePreview');
-            const templateTitle = document.getElementById('templateTitle');
-            const templateStart = document.getElementById('templateStart');
-            const templateEnd = document.getElementById('templateEnd');
-            const showTimeCheckbox = document.getElementById('showTimeCheckbox');
-            const colorOptions = document.querySelectorAll('.color-option');
-
-            let selectedColorClass = 'badge-color-1';
-
-            // Обработчик изменения названия
-            templateTitle.addEventListener('input', () => {
-                updateBadgePreview();
-            });
-
-            // Обработчик изменения времени
+            // Обработчики изменений
+            templateTitle.addEventListener('input', updateBadgePreview);
             templateStart.addEventListener('change', updateBadgePreview);
             templateEnd.addEventListener('change', updateBadgePreview);
-
-            // Обработчик чекбокса времени
             showTimeCheckbox.addEventListener('change', updateBadgePreview);
 
-            function updateBadgePreview() {
-                const titleText = templateTitle.value || 'Название';
-                const shortTitle = titleText.length > 8
-                    ? `${titleText.substring(0, 8)}...`
-                    : titleText;
-
-                if (showTimeCheckbox.checked) {
-                    badgePreview.innerHTML = `${shortTitle}<br>${templateStart.value} - ${templateEnd.value}`;
-                } else {
-                    badgePreview.textContent = shortTitle;
-                }
-            }
-
-            // Обработчик выбора цвета
+            // Обработчики выбора цвета
             colorOptions.forEach(option => {
                 option.addEventListener('click', () => {
                     colorOptions.forEach(opt => opt.classList.remove('selected'));
                     option.classList.add('selected');
-                    selectedColorClass = option.dataset.colorClass;
-
-                    // Обновляем классы предпросмотра
-                    badgePreview.className = 'preview-badge';
-                    badgePreview.classList.add(selectedColorClass);
+                    updateBadgePreview();
                 });
             });
 
-            // Инициализация предпросмотра
-            badgePreview.className = 'preview-badge badge-color-1';
+            // Первоначальная настройка
             updateBadgePreview();
         };
 
-        const showTimeCheckbox = document.getElementById('showTimeCheckbox');
-        const timeFieldsContainer = document.getElementById('timeFieldsContainer');
-
+        // Обработчик чекбокса показа времени
         if (showTimeCheckbox && timeFieldsContainer) {
             showTimeCheckbox.addEventListener('change', (e) => {
                 if (e.target.checked) {
@@ -569,69 +563,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     timeFieldsContainer.classList.add('hidden');
                 }
-                // Обновляем предпросмотр при изменении видимости времени
-                const event = new Event('change');
-                templateStart.dispatchEvent(event);
-                templateEnd.dispatchEvent(event);
+                updateBadgePreview();
             });
+        }
 
-            // Инициализируем состояние при открытии модального окна
-            document.getElementById('templateModal').addEventListener('shown', () => {
-                if (!showTimeCheckbox.checked) {
-                    timeFieldsContainer.classList.add('hidden');
+        // Обработчик кнопки создания шаблона
+        if (createTemplateBtn) {
+            createTemplateBtn.addEventListener('click', () => {
+                // Сброс формы
+                templateTitle.value = '';
+                templateStart.value = '09:00';
+                templateEnd.value = '18:00';
+                showTimeCheckbox.checked = true;
+                timeFieldsContainer.classList.remove('hidden');
+
+                // Сброс выбора цвета
+                colorOptions.forEach((opt, i) => {
+                    opt.classList.toggle('selected', i === 0);
+                });
+
+                // Обновление предпросмотра
+                updateBadgePreview();
+
+                // Открытие модального окна
+                templateModal.style.display = 'flex';
+                templateTitle.focus();
+            });
+        }
+
+        // Обработчик кнопки сохранения шаблона
+        if (saveTemplateBtn) {
+            saveTemplateBtn.addEventListener('click', async () => {
+                const title = templateTitle.value.trim();
+                const start = templateStart.value;
+                const end = templateEnd.value;
+
+                if (!title) {
+                    showToast('Введите название смены', 'danger');
+                    return;
+                }
+
+                if (title.length > 20) {
+                    showToast('Название должно быть не более 20 символов', 'danger');
+                    return;
+                }
+
+                const showTime = showTimeCheckbox.checked;
+                if (showTime && (!start || !end)) {
+                    showToast('Заполните время смены', 'danger');
+                    return;
+                }
+
+                try {
+                    const selectedColor = document.querySelector('.color-option.selected')?.dataset.colorClass || 'badge-color-1';
+                    const calendarId = document.body.dataset.calendarId;
+
+                    const response = await fetch('/api/create_shift_template', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            title: title,
+                            start_time: start,
+                            end_time: end,
+                            calendar_id: calendarId,
+                            show_time: showTime,
+                            color_class: selectedColor
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        addTemplateToDOM(data.template);
+                        templateModal.style.display = 'none';
+                        showToast('Шаблон успешно создан', 'success');
+                    } else {
+                        showToast(data.error || 'Ошибка при создании шаблона', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    showToast('Ошибка при создании шаблона', 'danger');
                 }
             });
         }
 
-        // Создание шаблона
-        if (createTemplateBtn) {
-            createTemplateBtn.addEventListener('click', () => {
-                templateModal.style.display = 'flex';
-                // Сбрасываем форму при каждом открытии
-                templateTitle.value = '';
-                templateStart.value = '09:00';
-                templateEnd.value = '18:00';
-                // Устанавливаем чекбокс в активное состояние и показываем поля времени
-                showTimeCheckbox.checked = true;
-                timeFieldsContainer.classList.remove('hidden');
-
-                // Сбрасываем цвет к первому варианту
-                document.querySelectorAll('.color-option').forEach((opt, i) => {
-                    opt.classList.toggle('selected', i === 0);
-                });
-
-                document.getElementById('badgePreview').className = 'preview-badge badge-color-1';
-                document.getElementById("templateTitle").focus();
+        // Обработчик подтверждения удаления
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', () => {
+                if (currentTemplateId) {
+                    deleteTemplate(currentTemplateId);
+                    confirmDeleteModal.style.display = 'none';
+                    currentTemplateId = null;
+                }
             });
         }
 
-        // Сохранение шаблона
-        saveTemplateBtn.addEventListener('click', () => {
-            const title = templateTitle.value.trim();
-            const start = templateStart.value;
-            const end = templateEnd.value;
-
-            if (!title) {
-                showToast('Введите название смены', 'danger');
-                return;
-            }
-
-            if (title.length > 20) {
-                showToast('Название должно быть не более 20 символов', 'danger');
-                return;
-            }
-
-            // Проверяем время только если чекбокс активен
-            const showTime = showTimeCheckbox.checked;
-            if (showTime && (!start || !end)) {
-                showToast('Заполните время смены', 'danger');
-                return;
-            }
-
-            createTemplate(title, start, end);
-        });
-
-        // Инициализация предпросмотра бейджа
+        // Инициализация предпросмотра
         setupBadgePreview();
     };
 
