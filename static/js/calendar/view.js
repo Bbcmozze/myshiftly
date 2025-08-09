@@ -734,39 +734,39 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Список для выбора шаблона
+        // Список для выбора шаблона (в модальном окне)
         const selectTemplateItem = document.createElement('div');
-        selectTemplateItem.className = `template-item ${template.color_class}`;
+        selectTemplateItem.className = `template-item selectable-template ${template.color_class}`;
         selectTemplateItem.dataset.templateId = template.id;
         selectTemplateItem.innerHTML = `
             <strong>${template.title}</strong><br>
             ${timeDisplay}
         `;
 
+        // Добавляем в оба списка
         templateList.appendChild(templateItem);
         selectTemplateList.appendChild(selectTemplateItem);
 
-        // Проверяем, есть ли сообщение "Нет шаблонов" в модальном окне
+        // Удаляем сообщение "Нет шаблонов" из модального окна, если оно есть
         const noTemplatesInModal = selectTemplateList.querySelector('.no-templates');
         if (noTemplatesInModal) {
-            selectTemplateList.innerHTML = ''; // Очищаем сообщение
+            noTemplatesInModal.remove();
         }
 
-        // Запускаем анимацию
+        // Анимация появления
+        templateItem.style.opacity = '0';
+        templateItem.style.transform = 'translateY(10px)';
+        selectTemplateItem.style.opacity = '0';
+        selectTemplateItem.style.transform = 'translateY(10px)';
+
         setTimeout(() => {
             templateItem.style.opacity = '1';
             templateItem.style.transform = 'translateY(0)';
             templateItem.style.transition = 'all 0.3s ease';
 
-            selectTemplateItem.style.opacity = '0';
-            selectTemplateItem.style.transform = 'translateY(10px)';
-            selectTemplateList.appendChild(selectTemplateItem);
-
-            setTimeout(() => {
-                selectTemplateItem.style.opacity = '1';
-                selectTemplateItem.style.transform = 'translateY(0)';
-                selectTemplateItem.style.transition = 'all 0.3s ease';
-            }, 10);
+            selectTemplateItem.style.opacity = '1';
+            selectTemplateItem.style.transform = 'translateY(0)';
+            selectTemplateItem.style.transition = 'all 0.3s ease';
         }, 10);
     };
 
