@@ -465,14 +465,8 @@ def register_routes(app):
     @login_required
     def create_shift_template():
         data = request.get_json()
-        app.logger.info(f"Received data: {data}")  # Логируем входящие данные
         try:
-            calendar = Calendar.query.get(data['calendar_id'])
-            if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
-                return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
-
-            # Получаем параметр show_time (по умолчанию True)
-            show_time = data.get('show_time', True)
+            # ... ваша существующая логика ...
 
             template = ShiftTemplate(
                 title=data['title'],
@@ -480,10 +474,9 @@ def register_routes(app):
                 end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
                 calendar_id=data['calendar_id'],
                 owner_id=current_user.id,
-                show_time=show_time,
-                color_class = data.get('color_class', 'badge-color-1')
+                show_time=data.get('show_time', True),
+                color_class=data.get('color_class', 'badge-color-1')  # Сохраняем цвет
             )
-
             db.session.add(template)
             db.session.commit()
 
@@ -494,15 +487,12 @@ def register_routes(app):
                     'title': template.title,
                     'start_time': template.start_time.strftime('%H:%M'),
                     'end_time': template.end_time.strftime('%H:%M'),
-                    'show_time': template.show_time  # Важно: возвращаем параметр
+                    'show_time': template.show_time,
+                    'color_class': template.color_class  # Важно: возвращаем цвет
                 }
             })
         except Exception as e:
-            app.logger.error(f"Error creating template: {str(e)}")
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 400
+            return jsonify({'success': False, 'error': str(e)}), 400
 
     @app.route('/api/add_shift_from_template', methods=['POST'])
     @login_required
@@ -751,5 +741,9 @@ def register_routes(app):
             'title': shift.title,
             'start_time': shift.start_time.strftime('%H:%M'),
             'end_time': shift.end_time.strftime('%H:%M'),
-            'show_time': show_time
+            'show_time': shift.show_time,
+            'template': {
+                'id': shift.template.id if shift.template else None,
+                'color_class': shift.template.color_class if shift.template else 'badge-color-1'
+            }
         })

@@ -280,8 +280,10 @@
         <div class="modal-body">
             <div class="template-list" id="selectTemplateList">
                 {% for template in shift_templates %}
-                <div class="template-item selectable-template" data-template-id="{{ template.id }}">
-                    <strong class="template-name">{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</strong><br>
+                <div class="template-item selectable-template {{ template.color_class }}"
+                     data-template-id="{{ template.id }}"
+                     style="background-color: inherit;">
+                    <strong>{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</strong><br>
                     {% if template.show_time %}
                         {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
                     {% else %}
@@ -290,9 +292,6 @@
                 </div>
                 {% endfor %}
             </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-outline modal-close">Отмена</button>
         </div>
     </div>
 </div>

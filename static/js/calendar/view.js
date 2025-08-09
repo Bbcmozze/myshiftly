@@ -668,58 +668,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const createTemplate = async (title, start, end) => {
         try {
             const showTime = document.getElementById('showTimeCheckbox').checked;
-            const selectedColorOption = document.querySelector('.color-option.selected');
-
-            if (!selectedColorOption) {
-                throw new Error('Не выбран цвет для шаблона');
-            }
-
-            const selectedColor = selectedColorOption.dataset.colorClass;
-            const calendarId = document.body.dataset.calendarId;
-
-            if (!calendarId) {
-                throw new Error('Не удалось определить ID календаря');
-            }
-
-            const requestData = {
-                title: title,
-                start_time: start,
-                end_time: end,
-                calendar_id: calendarId,
-                show_time: showTime,
-                color_class: selectedColor
-            };
-
-            console.log('Отправка данных на сервер:', requestData);
+            const selectedColor = document.querySelector('.color-option.selected').dataset.colorClass;
 
             const response = await fetch('/api/create_shift_template', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify({
+                    title: title,
+                    start_time: start,
+                    end_time: end,
+                    calendar_id: document.body.dataset.calendarId,
+                    show_time: showTime,
+                    color_class: selectedColor // Важно: передаем выбранный цвет
+                })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
+            const data = await response.json();
 
-            const responseData = await response.json();
-            console.log('Ответ сервера:', responseData);
+            if (data.success) {
+                // Убедимся, что сервер возвращает color_class
+                if (!data.template.color_class) {
+                    data.template.color_class = selectedColor;
+                }
 
-            if (responseData.success) {
-                addTemplateToDOM(responseData.template);
+                addTemplateToDOM(data.template);
                 templateModal.style.display = 'none';
                 showToast('Шаблон успешно создан', 'success');
-                return true;
             } else {
-                throw new Error(responseData.error || 'Неизвестная ошибка сервера');
+                showToast(data.error || 'Ошибка при создании шаблона', 'danger');
             }
         } catch (error) {
-            console.error('Ошибка при создании шаблона:', error);
-            showToast(`Ошибка при создании шаблона: ${error.message}`, 'danger');
-            return false;
+            handleError(error, 'Ошибка при создании шаблона');
         }
     };
 
@@ -732,14 +713,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const noTemplates = templateList.querySelector('.no-templates');
         if (noTemplates) noTemplates.remove();
 
-        // Формируем отображение времени
+        // Формируем отображение с учетом цвета
         const timeDisplay = template.show_time
             ? `${template.start_time} - ${template.end_time}`
             : 'Без указания времени';
 
-        // Создаем элемент шаблона
+        // Основной список шаблонов
         const templateItem = document.createElement('div');
-        templateItem.className = 'template-item';
+        templateItem.className = `template-item ${template.color_class}`;
         templateItem.dataset.templateId = template.id;
         templateItem.innerHTML = `
             <div class="template-info">
@@ -753,16 +734,15 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
 
-        // Создаем элемент для модального окна выбора шаблона
+        // Список для выбора шаблона
         const selectTemplateItem = document.createElement('div');
-        selectTemplateItem.className = 'template-item selectable-template';
+        selectTemplateItem.className = `template-item selectable-template ${template.color_class}`;
         selectTemplateItem.dataset.templateId = template.id;
         selectTemplateItem.innerHTML = `
             <strong>${template.title}</strong><br>
             ${timeDisplay}
         `;
 
-        // Добавляем элементы в DOM
         templateList.appendChild(templateItem);
         selectTemplateList.appendChild(selectTemplateItem);
 
@@ -912,39 +892,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Получаем полную информацию о смене, включая show_time
+                // Получаем полную информацию о смене с цветом
                 const shiftResponse = await fetch(`/api/get_shift_info/${data.shift.id}`);
                 const shiftData = await shiftResponse.json();
-
-                const showTime = shiftData.show_time;
-                const timeDisplay = showTime
-                    ? `<br>${data.shift.start_time} - ${data.shift.end_time}`
-                    : '';
 
                 const cell = document.querySelector(`.day-cell[data-date="${selectedDate}"][data-user-id="${selectedUserId}"]`);
                 if (cell) {
                     const shiftBadge = document.createElement('div');
-                    shiftBadge.className = 'shift-badge';
+                    // Используем цвет из шаблона или дефолтный
+                    const colorClass = shiftData.template?.color_class || 'badge-color-1';
+                    shiftBadge.className = `shift-badge ${colorClass}`;
                     shiftBadge.dataset.shiftId = data.shift.id;
-                    shiftBadge.title = `${data.shift.title}${showTime ? ` (${data.shift.start_time}-${data.shift.end_time})` : ''}`;
 
-                    const shortTitle = data.shift.title.length > 8
-                        ? `${data.shift.title.substring(0, 8)}...`
-                        : data.shift.title;
+                    const showTime = shiftData.show_time;
+                    const title = shiftData.title;
+                    const shortTitle = title.length > 8 ? `${title.substring(0, 8)}...` : title;
 
-                    shiftBadge.innerHTML = shortTitle + timeDisplay;
+                    shiftBadge.innerHTML = shortTitle;
+                    if (showTime) {
+                        shiftBadge.innerHTML += `<br>${shiftData.start_time} - ${shiftData.end_time}`;
+                    }
 
                     if (isOwner) {
                         shiftBadge.innerHTML += `<button class="remove-shift-btn" data-shift-id="${data.shift.id}">&times;</button>`;
                     }
 
                     cell.appendChild(shiftBadge);
-                    cell.classList.add('has-shift');
-
-                    // Добавьте этот вызов после создания новой смены
                     setupShiftHandlers();
                 }
-
                 selectTemplateModal.style.display = 'none';
             }
         } catch (error) {
