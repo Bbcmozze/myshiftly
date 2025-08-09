@@ -892,25 +892,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Получаем полную информацию о смене с цветом
-                const shiftResponse = await fetch(`/api/get_shift_info/${data.shift.id}`);
-                const shiftData = await shiftResponse.json();
-
                 const cell = document.querySelector(`.day-cell[data-date="${selectedDate}"][data-user-id="${selectedUserId}"]`);
                 if (cell) {
                     const shiftBadge = document.createElement('div');
-                    // Используем цвет из шаблона или дефолтный
-                    const colorClass = shiftData.template?.color_class || 'badge-color-1';
+                    const colorClass = data.shift.color_class || 'badge-color-1';  // Используем цвет из ответа
                     shiftBadge.className = `shift-badge ${colorClass}`;
                     shiftBadge.dataset.shiftId = data.shift.id;
 
-                    const showTime = shiftData.show_time;
-                    const title = shiftData.title;
+                    const showTime = data.shift.show_time;
+                    const title = data.shift.title;
                     const shortTitle = title.length > 8 ? `${title.substring(0, 8)}...` : title;
 
                     shiftBadge.innerHTML = shortTitle;
                     if (showTime) {
-                        shiftBadge.innerHTML += `<br>${shiftData.start_time} - ${shiftData.end_time}`;
+                        shiftBadge.innerHTML += `<br>${data.shift.start_time} - ${data.shift.end_time}`;
                     }
 
                     if (isOwner) {

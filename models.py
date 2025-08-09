@@ -64,13 +64,13 @@ class Shift(db.Model):
     calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     date = db.Column(db.Date, nullable=False)
-    template_id = db.Column(db.Integer, db.ForeignKey('shift_template.id'))  # Добавлено
+    template_id = db.Column(db.Integer, db.ForeignKey('shift_template.id'))
     show_time = db.Column(db.Boolean, default=True)
+    color_class = db.Column(db.String(20), default='badge-color-1', nullable=False)  # Важно!
 
-    # Связи
     user = db.relationship('User', backref='shifts')
     calendar = db.relationship('Calendar', back_populates='shifts')
-    template = db.relationship('ShiftTemplate', backref='shifts')  # Добавлено
+    template = db.relationship('ShiftTemplate', backref='shifts')
 
 # Ассоциативная таблица для участников календаря
 calendar_members = db.Table('calendar_members',

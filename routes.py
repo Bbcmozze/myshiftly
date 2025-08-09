@@ -502,14 +502,11 @@ def register_routes(app):
         try:
             calendar = Calendar.query.get(data['calendar_id'])
             if not calendar or (calendar.owner_id != current_user.id and current_user not in calendar.members):
-                return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+                return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
 
             template = ShiftTemplate.query.get(data['template_id'])
             if not template:
                 return jsonify({'success': False, 'error': 'Шаблон не найден'}), 404
-
-            if template.calendar_id != calendar.id:
-                return jsonify({'success': False, 'error': 'Неверный шаблон'}), 400
 
             user = User.query.get(data['user_id'])
             if not user or (user.id != current_user.id and user not in calendar.members):
@@ -525,9 +522,10 @@ def register_routes(app):
             if existing_shift:
                 return jsonify({
                     'success': False,
-                    'error': 'У пользователя уже есть смена в этот день'
+                    'error': 'У пользователя уже есть смену в этот день'
                 }), 400
 
+            # Создаём смену с цветом из шаблона
             shift = Shift(
                 title=template.title,
                 start_time=template.start_time,
@@ -535,7 +533,9 @@ def register_routes(app):
                 date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
                 calendar_id=data['calendar_id'],
                 user_id=data['user_id'],
-                template_id=template.id  # Сохраняем ссылку на шаблон
+                template_id=template.id,
+                show_time=template.show_time,
+                color_class=template.color_class  # Передаём цвет из шаблона!
             )
 
             db.session.add(shift)
@@ -548,15 +548,13 @@ def register_routes(app):
                     'title': shift.title,
                     'start_time': shift.start_time.strftime('%H:%M'),
                     'end_time': shift.end_time.strftime('%H:%M'),
-                    'show_time': template.show_time  # Добавляем параметр видимости времени
+                    'show_time': shift.show_time,
+                    'color_class': shift.color_class  # Возвращаем цвет смены
                 }
             })
         except Exception as e:
             db.session.rollback()
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/delete_shift_template/<int:template_id>', methods=['DELETE'])
     @login_required
