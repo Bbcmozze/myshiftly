@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Главная - My Shifts{% endblock %}
+{% block title %}Главная - My Shiftly{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -9,7 +9,7 @@
 {% block content %}
 <div class="welcome-section">
     {% if not current_user.is_authenticated %}
-        <h2>Добро пожаловать в My Shifts</h2>
+        <h2>Добро пожаловать в My Shiftly</h2>
         <p>Удобное управление графиками смен для вашей команды</p>
         <div class="auth-actions">
             <a href="{{ url_for('login') }}" class="btn btn-primary">Войти</a>

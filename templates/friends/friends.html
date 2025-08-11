@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macroc.html" import pluralize %}
 
-{% block title %}Коллеги - My Shifts{% endblock %}
+{% block title %}Коллеги - My Shiftly{% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/friends.css') }}">
@@ -16,7 +16,7 @@
                 <i class="bi bi-list"></i>
             </button>
             {% endif %}
-            <h1><a href="/">My Shifts</a></h1>
+            <h1><a href="/">My Shiftly</a></h1>
         </div>
         <div class="nav-links" style="display: flex; align-items: center; gap: 1.5rem;">
             {% if current_user.is_authenticated %}
