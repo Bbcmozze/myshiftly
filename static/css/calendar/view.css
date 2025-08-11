@@ -900,7 +900,6 @@ body.fullscreen-active {
     z-index: 1;
     align-items: center; /* Центрирование по горизонтали */
     justify-content: center; /* Центрирование по вертикали */
-    cursor: help;
     padding: 0.5rem 0.3rem;
     font-size: 0.65rem;
     line-height: 1.2;
@@ -908,6 +907,7 @@ body.fullscreen-active {
     word-break: break-word;
     margin: 2px;
     transition: all 0.2s;
+    cursor: help;
 }
 
 .shift-badge:hover {
