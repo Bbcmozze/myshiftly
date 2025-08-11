@@ -35,6 +35,7 @@
     </div>
 
     <div class="calendar-grid-container">
+        {% if calendar.owner_id == current_user.id %}
         <div class="calendar-sidebar">
             {% if calendar.owner_id == current_user.id %}
             <div class="sidebar-section">
@@ -78,6 +79,7 @@
             </div>
             {% endif %}
         </div>
+        {% endif %}
 
         <div class="calendar-main">
             <div class="calendar-toolbar">

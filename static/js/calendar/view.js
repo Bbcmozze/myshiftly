@@ -247,6 +247,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    if (!isOwner) {
+        const calendarMain = document.querySelector('.calendar-main');
+        const gridContainer = document.querySelector('.calendar-grid-container');
+        if (calendarMain && gridContainer) {
+            calendarMain.classList.add('full-width');
+            gridContainer.style.gridTemplateColumns = '1fr';
+        }
+    }
+
     // ====================== УПРАВЛЕНИЕ УЧАСТНИКАМИ ======================
 
     const setupMemberManagement = () => {
