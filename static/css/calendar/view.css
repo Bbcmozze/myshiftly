@@ -1575,9 +1575,13 @@ body.fullscreen-active #fullscreenOverlay {
     margin-top: 1rem;
 }
 
+
 .color-option {
+    font-family: "Caveat", cursive;
+    font-optical-sizing: auto;
+    font-style: normal;
     text-align: center;
-    font-size: 14px;
+    font-size: 1.2rem;
     height: 30px;
     border-radius: 4px;
     cursor: pointer;
