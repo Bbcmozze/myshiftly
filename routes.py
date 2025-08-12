@@ -745,3 +745,66 @@ def register_routes(app):
                 'color_class': shift.template.color_class if shift.template else 'badge-color-1'
             }
         })
+
+    @app.route('/add_test_users')
+    @login_required
+    def add_test_users():
+        try:
+            current_user_id = current_user.id
+            test_users = [
+                {"username": "test_user1", "email": "test1@example.com", "password": "password123"},
+                {"username": "test_user2", "email": "test2@example.com", "password": "password123"},
+                {"username": "test_user3", "email": "test3@example.com", "password": "password123"},
+                {"username": "test_user4", "email": "test4@example.com", "password": "password123"},
+                {"username": "test_user5", "email": "test5@example.com", "password": "password123"},
+                {"username": "test_user6", "email": "test6@example.com", "password": "password123"},
+                {"username": "test_user7", "email": "test7@example.com", "password": "password123"},
+                {"username": "test_user8", "email": "test8@example.com", "password": "password123"},
+                {"username": "test_user9", "email": "test9@example.com", "password": "password123"},
+                {"username": "test_user10", "email": "test10@example.com", "password": "password123"}
+            ]
+
+            added_users = []
+
+            for user_data in test_users:
+                # Проверяем, существует ли пользователь
+                existing_user = User.query.filter(
+                    (User.username == user_data["username"]) |
+                    (User.email == user_data["email"])
+                ).first()
+
+                if not existing_user:
+                    # Создаем нового пользователя
+                    user_id = generate_user_id()
+                    while User.query.get(user_id):
+                        user_id = generate_user_id()
+
+                    hashed_password = generate_password_hash(user_data["password"])
+                    new_user = User(
+                        id=user_id,
+                        username=user_data["username"],
+                        email=user_data["email"],
+                        password_hash=hashed_password
+                    )
+                    db.session.add(new_user)
+                    added_users.append(new_user)
+
+            # Сохраняем всех пользователей
+            db.session.commit()
+
+            # Добавляем друзей для текущего пользователя
+            current_user_obj = User.query.get(current_user_id)
+            for user in added_users:
+                if user not in current_user_obj.friends:
+                    current_user_obj.friends.append(user)
+                    user.friends.append(current_user_obj)
+
+            db.session.commit()
+
+            flash(f"Добавлено {len(added_users)} тестовых пользователей и установлены дружеские связи", "success")
+            return redirect(url_for('friends_page'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка: {str(e)}", "danger")
+            return redirect(url_for('friends_page'))
