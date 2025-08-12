@@ -196,6 +196,8 @@
 
 /* Стили для страницы просмотра календаря */
 .calendar-view-container {
+    min-width: 840px;
+    min-height: 918px;
     max-width: 1400px;
     margin: 0 auto;
     padding: 1rem 2rem;

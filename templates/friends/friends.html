@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% from "macroc.html" import pluralize %}
+{% from "friends/macroc.html" import pluralize %}
 
 {% block title %}Коллеги - My Shiftly{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/friends.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/friends/friends.css') }}">
 {% endblock %}
 
 {% block header %}
@@ -152,6 +152,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/friends.js') }}"></script>
-<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/friends/friends.js') }}"></script>
+<script src="{{ url_for('static', filename='js/friends/search.js') }}"></script>
 {% endblock %}
