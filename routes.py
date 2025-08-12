@@ -746,6 +746,7 @@ def register_routes(app):
             }
         })
 
+    #############УДАЛИТЬ ПОСЛЕ ТЕСТА САЙТА############
     @app.route('/add_test_users')
     @login_required
     def add_test_users():
