@@ -761,7 +761,17 @@ def register_routes(app):
                 {"username": "test_user7", "email": "test7@example.com", "password": "password123"},
                 {"username": "test_user8", "email": "test8@example.com", "password": "password123"},
                 {"username": "test_user9", "email": "test9@example.com", "password": "password123"},
-                {"username": "test_user10", "email": "test10@example.com", "password": "password123"}
+                {"username": "test_user10", "email": "test10@example.com", "password": "password123"},
+                {"username": "test_user11", "email": "test11@example.com", "password": "password123"},
+                {"username": "test_user12", "email": "test12@example.com", "password": "password123"},
+                {"username": "test_user13", "email": "test13@example.com", "password": "password123"},
+                {"username": "test_user14", "email": "test14@example.com", "password": "password123"},
+                {"username": "test_user15", "email": "test15@example.com", "password": "password123"},
+                {"username": "test_user16", "email": "test16@example.com", "password": "password123"},
+                {"username": "test_user17", "email": "test17@example.com", "password": "password123"},
+                {"username": "test_user18", "email": "test18@example.com", "password": "password123"},
+                {"username": "test_user19", "email": "test19@example.com", "password": "password123"},
+                {"username": "test_user20", "email": "test20@example.com", "password": "password123"}
             ]
 
             added_users = []
