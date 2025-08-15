@@ -7,6 +7,29 @@
 {% endblock %}
 
 {% block content %}
+<!-- Модальное окно для подтверждения удаления -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Подтверждение удаления</h3>
+            <button class="modal-close" onclick="closeDeleteModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="delete-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                <p>Вы уверены, что хотите удалить календарь <strong id="calendarNameToDelete"></strong>?</p>
+                <p class="warning-text">Это действие нельзя отменить. Все данные календаря будут безвозвратно удалены.</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Отмена</button>
+            <button class="btn btn-danger" onclick="confirmDelete()">Удалить календарь</button>
+        </div>
+    </div>
+</div>
+
 <div class="calendars-container">
     <div class="calendars-header">
         <h2>Мои календари</h2>
@@ -27,6 +50,11 @@
             <div class="calendar-grid">
                 {% for calendar in personal_calendars %}
                 <div class="calendar-card">
+                    <div class="calendar-header">
+                        <button class="delete-btn" onclick="deleteCalendar({{ calendar.id }}, '{{ calendar.name }}')" title="Удалить календарь">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
                     <div class="calendar-info">
                         <h3>{{ calendar.name }}</h3>
                         <p>Личный календарь</p>
@@ -56,6 +84,11 @@
             <div class="calendar-grid">
                 {% for calendar in team_calendars %}
                 <div class="calendar-card">
+                    <div class="calendar-header">
+                        <button class="delete-btn" onclick="deleteCalendar({{ calendar.id }}, '{{ calendar.name }}')" title="Удалить календарь">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
                     <div class="calendar-info">
                         <h3>{{ calendar.name }}</h3>
                         <p>Командный календарь · {{ calendar.members|length }} участников</p>
@@ -85,6 +118,13 @@
             <div class="calendar-grid">
                 {% for calendar in shared_calendars %}
                 <div class="calendar-card">
+                    {% if calendar.owner_id == current_user.id %}
+                    <div class="calendar-header">
+                        <button class="delete-btn" onclick="deleteCalendar({{ calendar.id }}, '{{ calendar.name }}')" title="Удалить календарь">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                    {% endif %}
                     <div class="calendar-info">
                         <h3>{{ calendar.name }}</h3>
                         <p>Общий календарь · Создатель: {{ calendar.owner.username }}</p>
@@ -131,6 +171,60 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.add('active');
             document.getElementById(`${tabId}-tab`).classList.add('active');
         });
+    });
+});
+
+let currentCalendarId = null;
+
+function deleteCalendar(calendarId, calendarName) {
+    currentCalendarId = calendarId;
+    document.getElementById('calendarNameToDelete').textContent = calendarName;
+    document.getElementById('deleteModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+    document.body.style.overflow = '';
+    currentCalendarId = null;
+}
+
+function confirmDelete() {
+    if (currentCalendarId) {
+        // Создаем форму для отправки POST запроса
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/calendar/${currentCalendarId}/delete`;
+        
+        // Добавляем CSRF токен если он есть
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Закрытие модального окна при клике вне его
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('deleteModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeDeleteModal();
+        }
+    });
+    
+    // Закрытие по Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeDeleteModal();
+        }
     });
 });
 </script>
