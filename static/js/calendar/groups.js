@@ -323,8 +323,8 @@ async function createGroup() {
             closeModal('createGroupModal');
             // Динамически добавляем новую группу в DOM
             addGroupToDOM(data.group);
-            // Обновляем календарь
-            updateCalendarAfterGroupChange();
+            // Динамически обновляем календарь
+            await updateCalendarAfterGroupChange();
         } else {
             toastManager.show(data.error || 'Ошибка создания группы', 'danger');
         }
@@ -398,8 +398,8 @@ async function updateGroup() {
             closeModal('editGroupModal');
             // Динамически обновляем группу в DOM
             updateGroupInDOM(data.group);
-            // Обновляем календарь
-            updateCalendarAfterGroupChange();
+            // Динамически обновляем календарь
+            await updateCalendarAfterGroupChange();
         } else {
             toastManager.show(data.error || 'Ошибка обновления группы', 'danger');
         }
@@ -425,8 +425,8 @@ async function confirmDeleteGroup() {
             closeModal('confirmDeleteGroupModal');
             // Динамически удаляем группу из DOM
             removeGroupFromDOM(groupId);
-            // Обновляем календарь
-            updateCalendarAfterGroupChange();
+            // Динамически обновляем календарь
+            await updateCalendarAfterGroupChange();
         } else {
             toastManager.show(data.error || 'Ошибка удаления группы', 'danger');
         }
@@ -534,7 +534,7 @@ function updateGroupsCount() {
     }
 }
 
-// Функция для обновления календаря после изменения групп
+// Функция для динамического обновления календаря после изменения групп
 async function updateCalendarAfterGroupChange() {
     try {
         // Получаем обновленные данные о группах
@@ -542,13 +542,280 @@ async function updateCalendarAfterGroupChange() {
         const groupsData = await groupsResponse.json();
         
         if (groupsData.success) {
-            // Обновляем календарь - перезагружаем страницу для корректного отображения
-            // Это необходимо, так как календарь имеет сложную структуру с группировкой участников
-            location.reload();
+            // Получаем список всех участников календаря
+            const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`);
+            const members = await membersResponse.json();
+            
+            // Обновляем календарь динамически
+            await updateCalendarTable(groupsData.groups, members);
         }
     } catch (error) {
         console.error('Ошибка обновления календаря:', error);
     }
+}
+
+// Функция для динамического обновления таблицы календаря
+async function updateCalendarTable(groups, members) {
+    try {
+        // Получаем смены для отображения
+        const shiftsResponse = await fetch(`/calendar/${currentCalendarId}/shifts`);
+        const shifts = await shiftsResponse.json();
+        
+        // Создаем карту групп для быстрого поиска
+        const userGroups = new Map();
+        groups.forEach(group => {
+            group.members.forEach(member => {
+                if (!userGroups.has(member.id)) {
+                    userGroups.set(member.id, []);
+                }
+                userGroups.get(member.id).push(group);
+            });
+        });
+        
+        // Группируем участников
+        const groupedMembers = new Map();
+        
+        // Добавляем участников в группы
+        members.forEach(member => {
+            // Получаем ID владельца календаря
+            const ownerElement = document.querySelector('.user-row.owner');
+            const ownerId = ownerElement ? parseInt(ownerElement.dataset.userId) : null;
+            
+            if (member.id !== ownerId) { // Исключаем создателя календаря
+                if (userGroups.has(member.id)) {
+                    // Участник в группе
+                    userGroups.get(member.id).forEach(group => {
+                        if (!groupedMembers.has(group.id)) {
+                            groupedMembers.set(group.id, { group: group, members: [] });
+                        }
+                        groupedMembers.get(group.id).members.push(member);
+                    });
+                } else {
+                    // Участник без группы
+                    if (!groupedMembers.has('ungrouped')) {
+                        groupedMembers.set('ungrouped', { group: null, members: [] });
+                    }
+                    groupedMembers.get('ungrouped').members.push(member);
+                }
+            }
+        });
+        
+        // Обновляем таблицу календаря
+        updateCalendarTableRows(groupedMembers, shifts);
+        
+    } catch (error) {
+        console.error('Ошибка обновления таблицы календаря:', error);
+    }
+}
+
+// Функция для обновления строк таблицы календаря
+function updateCalendarTableRows(groupedMembers, shifts) {
+    const tbody = document.querySelector('.calendar-table tbody');
+    if (!tbody) return;
+    
+    // Удаляем все строки кроме первой (создатель календаря)
+    const ownerRow = tbody.querySelector('.user-row.owner');
+    tbody.innerHTML = '';
+    if (ownerRow) {
+        tbody.appendChild(ownerRow);
+    }
+    
+    // Добавляем новые строки для групп и участников
+    groupedMembers.forEach((groupData, groupId) => {
+        if (groupId === 'ungrouped') {
+            // Заголовок для участников без группы
+            addGroupHeaderRow(tbody, null, 'Без группы');
+        } else {
+            // Заголовок группы
+            addGroupHeaderRow(tbody, groupData.group, groupData.group.name);
+        }
+        
+        // Добавляем строки участников
+        groupData.members.forEach(member => {
+            addUserRow(tbody, member, groupData.group, shifts);
+        });
+    });
+}
+
+// Функция для добавления заголовка группы
+function addGroupHeaderRow(tbody, group, title) {
+    const headerRow = document.createElement('tr');
+    headerRow.className = 'group-header-row';
+    
+    const headerCell = document.createElement('td');
+    headerCell.className = 'group-header-cell';
+    headerCell.colSpan = getDaysInMonthCount() + 1;
+    
+    const headerContent = document.createElement('div');
+    headerContent.className = 'group-header-content';
+    
+    if (group) {
+        const colorIndicator = document.createElement('div');
+        colorIndicator.className = `group-color-indicator ${group.color}`;
+        headerContent.appendChild(colorIndicator);
+    }
+    
+    const groupName = document.createElement('span');
+    groupName.className = 'group-name';
+    groupName.textContent = title;
+    headerContent.appendChild(groupName);
+    
+    headerCell.appendChild(headerContent);
+    headerRow.appendChild(headerCell);
+    tbody.appendChild(headerRow);
+}
+
+// Функция для добавления строки участника
+function addUserRow(tbody, member, group, shifts) {
+    const userRow = document.createElement('tr');
+    userRow.className = 'user-row';
+    userRow.dataset.userId = member.id;
+    if (group) {
+        userRow.dataset.groupId = group.id;
+    }
+    
+    // Ячейка с информацией об участнике
+    const userCell = document.createElement('td');
+    userCell.className = 'user-cell';
+    
+    const userCellContent = document.createElement('div');
+    userCellContent.className = 'user-cell-content';
+    
+    const userAvatar = document.createElement('img');
+    userAvatar.src = `/static/images/${member.avatar}`;
+    userAvatar.onerror = "this.src='/static/images/default_avatar.svg'";
+    userCellContent.appendChild(userAvatar);
+    
+    const userName = document.createElement('span');
+    userName.textContent = member.username + (member.id === getCurrentUserId() ? ' (Вы)' : '');
+    userCellContent.appendChild(userName);
+    
+    userCell.appendChild(userCellContent);
+    
+    // Кнопка удаления участника (если пользователь - владелец календаря)
+    if (isCalendarOwner() && member.id !== getCurrentUserId()) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'btn-remove-member';
+        removeBtn.dataset.userId = member.id;
+        removeBtn.title = 'Удалить участника';
+        removeBtn.innerHTML = '<i class="bi bi-x"></i>';
+        userCell.appendChild(removeBtn);
+    }
+    
+    userRow.appendChild(userCell);
+    
+    // Добавляем ячейки для каждого дня месяца
+    const daysInMonth = getDaysInMonthCount();
+    for (let i = 0; i < daysInMonth; i++) {
+        const dayCell = document.createElement('td');
+        dayCell.className = 'day-cell';
+        dayCell.dataset.date = getDateForDayIndex(i);
+        dayCell.dataset.userId = member.id;
+        
+        // Добавляем смены для этого дня и участника
+        const dayShifts = shifts.filter(shift => 
+            shift.user_id === member.id && shift.date === getDateForDayIndex(i)
+        );
+        
+        dayShifts.forEach(shift => {
+            const shiftBadge = createShiftBadge(shift);
+            dayCell.appendChild(shiftBadge);
+        });
+        
+        userRow.appendChild(dayCell);
+    }
+    
+    tbody.appendChild(userRow);
+}
+
+// Функция для создания бейджа смены
+function createShiftBadge(shift) {
+    const shiftBadge = document.createElement('div');
+    shiftBadge.className = `shift-badge ${shift.color_class}`;
+    shiftBadge.dataset.shiftId = shift.id;
+    shiftBadge.title = shift.title + (shift.show_time ? ` (${shift.start_time}-${shift.end_time})` : '');
+    
+    const title = document.createElement('span');
+    title.textContent = shift.title.length > 8 ? shift.title.substring(0, 8) + '...' : shift.title;
+    shiftBadge.appendChild(title);
+    
+    if (shift.show_time) {
+        const timeBreak = document.createElement('br');
+        shiftBadge.appendChild(timeBreak);
+        
+        const time = document.createElement('span');
+        time.textContent = `${shift.start_time} - ${shift.end_time}`;
+        shiftBadge.appendChild(time);
+    }
+    
+    // Кнопка удаления смены (если пользователь - владелец календаря)
+    if (isCalendarOwner()) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-shift-btn';
+        removeBtn.dataset.shiftId = shift.id;
+        removeBtn.innerHTML = '&times;';
+        shiftBadge.appendChild(removeBtn);
+    }
+    
+    return shiftBadge;
+}
+
+// Вспомогательные функции
+function getDaysInMonthCount() {
+    const headerCells = document.querySelectorAll('.calendar-table thead th');
+    return headerCells.length - 1; // Минус колонка "Коллега"
+}
+
+function getDateForDayIndex(dayIndex) {
+    // Получаем дату из заголовка таблицы
+    const headerRow = document.querySelector('.calendar-table thead tr');
+    const dayHeader = headerRow.children[dayIndex + 1]; // +1 для пропуска колонки "Коллега"
+    if (dayHeader) {
+        // Извлекаем дату из атрибута или текста
+        const dateAttr = dayHeader.dataset.date;
+        if (dateAttr) {
+            return dateAttr;
+        }
+        // Если атрибут не найден, пытаемся извлечь дату из текста заголовка
+        const dayText = dayHeader.textContent.trim();
+        const dayMatch = dayText.match(/(\d+)/);
+        if (dayMatch) {
+            const day = parseInt(dayMatch[1]);
+            // Получаем текущий месяц и год
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            return `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    }
+    return '';
+}
+
+function getCurrentUserId() {
+    // Получаем ID текущего пользователя из данных страницы
+    // Ищем элемент с информацией о текущем пользователе
+    const currentUserElement = document.querySelector('.user-row[data-user-id]');
+    if (currentUserElement) {
+        return parseInt(currentUserElement.dataset.userId);
+    }
+    
+    // Альтернативный способ - ищем по классу "owner"
+    const ownerElement = document.querySelector('.user-row.owner');
+    if (ownerElement) {
+        return parseInt(ownerElement.dataset.userId);
+    }
+    
+    return null;
+}
+
+function isCalendarOwner() {
+    // Проверяем, является ли текущий пользователь владельцем календаря
+    const ownerElement = document.querySelector('.user-row.owner');
+    if (ownerElement) {
+        const ownerId = parseInt(ownerElement.dataset.userId);
+        const currentUserId = getCurrentUserId();
+        return ownerId === currentUserId;
+    }
+    return false;
 }
 
 function filterGroups() {

@@ -676,6 +676,46 @@ def register_routes(app):
 
         return jsonify(members)
 
+    @app.route('/calendar/<int:calendar_id>/shifts', methods=['GET'])
+    @login_required
+    def get_calendar_shifts(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        # Проверка доступа
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            abort(403)
+
+        # Получаем смены для текущего месяца
+        current_date = datetime.now()
+        start_of_month = current_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+        shifts = Shift.query.filter(
+            Shift.calendar_id == calendar_id,
+            Shift.date >= start_of_month.date(),
+            Shift.date <= end_of_month.date()
+        ).all()
+
+        # Формируем список смен
+        shifts_data = []
+        for shift in shifts:
+            shift_data = {
+                'id': shift.id,
+                'user_id': shift.user_id,
+                'date': shift.date.strftime('%Y-%m-%d'),
+                'title': shift.title,
+                'color_class': shift.color_class,
+                'show_time': shift.show_time
+            }
+            
+            if shift.show_time and shift.start_time and shift.end_time:
+                shift_data['start_time'] = shift.start_time.strftime('%H:%M')
+                shift_data['end_time'] = shift.end_time.strftime('%H:%M')
+            
+            shifts_data.append(shift_data)
+
+        return jsonify(shifts_data)
+
 
     @app.route('/calendar/<int:calendar_id>/update-positions', methods=['POST'])
     @login_required
