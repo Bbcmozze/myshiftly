@@ -66,7 +66,7 @@ class Shift(db.Model):
     date = db.Column(db.Date, nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('shift_template.id'))
     show_time = db.Column(db.Boolean, default=True)
-    color_class = db.Column(db.String(20), default='badge-color-1', nullable=False)  # Важно!
+    color_class = db.Column(db.String(20), default='badge-color-1', nullable=False)
 
     user = db.relationship('User', backref='shifts')
     calendar = db.relationship('Calendar', back_populates='shifts')

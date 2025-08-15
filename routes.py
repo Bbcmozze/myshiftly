@@ -298,8 +298,8 @@ def register_routes(app):
                 'end_time': shift.end_time.strftime('%H:%M'),
                 'date': shift.date,
                 'user_id': shift.user_id,
-                'show_time': show_time,
-                'color_class': color_class
+                'show_time': shift.show_time,
+                'color_class': shift.color_class
             })
 
         # Получаем шаблоны
@@ -567,18 +567,24 @@ def register_routes(app):
 
         try:
             # Получаем ID связанных смен перед удалением
-            related_shift_ids = [
-                shift.id for shift in
-                Shift.query.filter_by(template_id=template_id).all()
-            ]
+            related_shifts = Shift.query.filter_by(template_id=template_id).all()
+            related_shift_ids = [shift.id for shift in related_shifts]
 
-            # Удаляем шаблон
+            # Обновляем color_class у связанных смен, сохраняя их текущий цвет
+            for shift in related_shifts:
+                shift.color_class = template.color_class  # Сохраняем цвет из шаблона
+                shift.template_id = None  # Отвязываем от шаблона
+
+            db.session.commit()  # Сохраняем изменения в сменах
+
+            # Теперь удаляем шаблон
             db.session.delete(template)
             db.session.commit()
 
             return jsonify({
                 'success': True,
-                'deleted_shift_ids': related_shift_ids  # Отправляем клиенту
+                'deleted_shift_ids': related_shift_ids,
+                'message': 'Шаблон удалён, цвет смен сохранён'
             })
         except Exception as e:
             db.session.rollback()
