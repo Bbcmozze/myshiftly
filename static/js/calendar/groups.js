@@ -5,57 +5,85 @@ let selectedEditGroupColor = 'badge-color-1';
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Groups.js: DOM loaded, initializing...'); // Для отладки
+    
     // Получаем ID календаря из URL
     const urlParts = window.location.pathname.split('/');
     currentCalendarId = parseInt(urlParts[urlParts.length - 1]);
+    console.log('Calendar ID:', currentCalendarId); // Для отладки
     
     initializeGroups();
 });
 
 function initializeGroups() {
+    console.log('Initializing groups...'); // Для отладки
+    
     // Кнопка создания группы
     const createGroupBtn = document.getElementById('createGroupBtn');
     if (createGroupBtn) {
         createGroupBtn.addEventListener('click', openCreateGroupModal);
+        console.log('Create group button found and configured'); // Для отладки
+    } else {
+        console.warn('Create group button not found'); // Для отладки
     }
 
     // Кнопка сохранения группы
     const saveGroupBtn = document.getElementById('saveGroupBtn');
     if (saveGroupBtn) {
         saveGroupBtn.addEventListener('click', createGroup);
+        console.log('Save group button found and configured'); // Для отладки
+    } else {
+        console.warn('Save group button not found'); // Для отладки
     }
 
     // Кнопка обновления группы
     const updateGroupBtn = document.getElementById('updateGroupBtn');
     if (updateGroupBtn) {
         updateGroupBtn.addEventListener('click', updateGroup);
+        console.log('Update group button found and configured'); // Для отладки
+    } else {
+        console.warn('Update group button not found'); // Для отладки
     }
 
     // Кнопка подтверждения удаления группы
     const confirmDeleteGroupBtn = document.getElementById('confirmDeleteGroupBtn');
     if (confirmDeleteGroupBtn) {
         confirmDeleteGroupBtn.addEventListener('click', confirmDeleteGroup);
+        console.log('Confirm delete group button found and configured'); // Для отладки
+    } else {
+        console.warn('Confirm delete group button not found'); // Для отладки
     }
 
     // Поиск по группам
     const searchGroupInput = document.getElementById('searchGroupInput');
     if (searchGroupInput) {
         searchGroupInput.addEventListener('input', filterGroups);
+        console.log('Search group input found and configured'); // Для отладки
+    } else {
+        console.warn('Search group input not found'); // Для отладки
     }
 
     // Обработчики для кнопок редактирования и удаления групп
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('edit-group-btn')) {
-            const groupId = e.target.dataset.groupId;
+        // Проверяем, является ли кликнутый элемент кнопкой или его дочерним элементом
+        const editBtn = e.target.closest('.edit-group-btn');
+        const deleteBtn = e.target.closest('.delete-group-btn');
+        
+        if (editBtn) {
+            const groupId = editBtn.dataset.groupId;
+            console.log('Edit group clicked:', groupId); // Для отладки
             openEditGroupModal(groupId);
-        } else if (e.target.classList.contains('delete-group-btn')) {
-            const groupId = e.target.dataset.groupId;
+        } else if (deleteBtn) {
+            const groupId = deleteBtn.dataset.groupId;
+            console.log('Delete group clicked:', groupId); // Для отладки
             openDeleteGroupModal(groupId);
         }
     });
 
     // Обработчики для выбора цвета в модальных окнах
     setupColorSelection();
+    
+    console.log('Groups initialization completed'); // Для отладки
 }
 
 function setupColorSelection() {
@@ -100,7 +128,12 @@ function openCreateGroupModal() {
 }
 
 function openEditGroupModal(groupId) {
+    console.log('Opening edit modal for group:', groupId); // Для отладки
     const modal = document.getElementById('editGroupModal');
+    if (!modal) {
+        console.error('Edit modal not found!');
+        return;
+    }
     modal.style.display = 'flex';
     
     // Загрузка данных группы
@@ -108,7 +141,12 @@ function openEditGroupModal(groupId) {
 }
 
 function openDeleteGroupModal(groupId) {
+    console.log('Opening delete modal for group:', groupId); // Для отладки
     const modal = document.getElementById('confirmDeleteGroupModal');
+    if (!modal) {
+        console.error('Delete modal not found!');
+        return;
+    }
     modal.style.display = 'flex';
     modal.dataset.groupId = groupId;
 }

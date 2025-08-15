@@ -1433,10 +1433,11 @@ body.fullscreen-active #fullscreenOverlay {
     background: white;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.5rem 0.75rem;
     transition: all 0.2s ease;
     position: relative;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    min-height: 60px;
 }
 
 .group-item:hover {
@@ -1449,6 +1450,7 @@ body.fullscreen-active #fullscreenOverlay {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    padding-right: 80px; /* Место для кнопок справа */
 }
 
 .group-color-indicator {
@@ -1478,31 +1480,43 @@ body.fullscreen-active #fullscreenOverlay {
 }
 
 .group-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
     display: flex;
-    gap: 0.5rem;
-    opacity: 0;
+    flex-direction: column;
+    gap: 0.25rem;
+    opacity: 1;
     transition: opacity 0.2s ease;
-    margin-left: auto;
 }
 
 .group-item:hover .group-actions {
     opacity: 1;
 }
 
+.group-item:hover .edit-group-btn,
+.group-item:hover .delete-group-btn {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .edit-group-btn,
 .delete-group-btn {
     background: none;
     border: none;
-    padding: 0.5rem;
-    border-radius: 6px;
+    padding: 0.25rem;
+    border-radius: 4px;
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    min-height: 32px;
+    min-width: 24px;
+    min-height: 24px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
 }
 
 .edit-group-btn {
@@ -1512,7 +1526,8 @@ body.fullscreen-active #fullscreenOverlay {
 .edit-group-btn:hover {
     background: rgba(59, 130, 246, 0.1);
     color: #2563eb;
-    transform: scale(1.05);
+    transform: scale(1.1);
+    border-color: rgba(59, 130, 246, 0.3);
 }
 
 .delete-group-btn {
@@ -1522,7 +1537,8 @@ body.fullscreen-active #fullscreenOverlay {
 .delete-group-btn:hover {
     background: rgba(239, 68, 68, 0.1);
     color: #dc2626;
-    transform: scale(1.05);
+    transform: scale(1.1);
+    border-color: rgba(239, 68, 68, 0.3);
 }
 
 .no-groups {
@@ -1635,14 +1651,30 @@ body.fullscreen-active #fullscreenOverlay {
 @media (max-width: 768px) {
     .group-actions {
         opacity: 1;
+        top: 0.25rem;
+        right: 0.25rem;
     }
     
     .group-item {
         padding: 0.5rem;
+        min-height: 50px;
     }
     
     .group-header {
         gap: 0.5rem;
+        padding-right: 70px;
+    }
+    
+    .edit-group-btn,
+    .delete-group-btn {
+        min-width: 20px;
+        min-height: 20px;
+        padding: 0.2rem;
+    }
+    
+    .edit-group-btn i,
+    .delete-group-btn i {
+        font-size: 0.7rem;
     }
 }
 
@@ -1687,4 +1719,48 @@ body.fullscreen-active #fullscreenOverlay {
 #createGroupBtn {
     width: 100%;
     margin-bottom: 1rem;
+}
+
+/* Стили для кнопок в модальных окнах групп */
+.modal-footer .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.modal-footer .btn-primary {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.modal-footer .btn-outline {
+    background-color: transparent;
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.modal-footer .btn-outline:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.edit-group-btn i,
+.delete-group-btn i {
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.edit-group-btn:hover i,
+.delete-group-btn:hover i {
+    transform: scale(1.1);
 }
