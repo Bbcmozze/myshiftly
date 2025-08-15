@@ -29,14 +29,25 @@
         <nav class="navbar">
             <div class="brand">
                 {% if current_user.is_authenticated %}
-                <button class="hamburger" id="hamburger">
-                    <i class="bi bi-list"></i>
+                <button class="hamburger" id="hamburger" aria-label="Меню">
+                    <span class="hamburger-box">
+                        <span class="hamburger-inner"></span>
+                        <span class="hamburger-inner"></span>
+                        <span class="hamburger-inner"></span>
+                    </span>
                 </button>
                 {% endif %}
-                <h1><a href="/">My Shiftly</a></h1>
+                <h1 class="page-title"><a href="/">My Shiftly</a></h1>
             </div>
             <div class="nav-links" style="display: flex; align-items: center; gap: 1.5rem;">
                 {% if current_user.is_authenticated %}
+                    <div class="search-container">
+                        <input type="text" id="userSearch" placeholder="Добавить пользователя..."
+                               class="search-friends" autocomplete="off">
+                        <div id="searchResults" class="search-results">
+                            <div class="no-results">Начните вводить имя пользователя</div>
+                        </div>
+                    </div>
                     <!-- Колокольчик -->
                     <div class="dropdown-bell">
                         <button id="bellToggle" class="dropdown-bell-btn" type="button" title="Заявки в друзья">
@@ -111,15 +122,15 @@
             <p>{{ current_user.email }}</p>
         </div>
         <ul class="sidebar-nav">
-            <li><a href="{{ url_for('my_calendars') }}"><i class="bi bi-calendar-week"></i> Мои календари</a></li>
+            <li class="menu-list"><a href="{{ url_for('my_calendars') }}"><i class="bi bi-calendar-week"></i> Мои календари</a></li>
             <hr class="sidebar-separator">
-            <li><a href="{{ url_for('create_calendar') }}"><i class="bi bi-calendar-plus-fill"></i> Создать календарь</a></li>
-            <li><a href="{{ url_for('friends_page') }}"><i class="bi bi-person-plus-fill"></i> Коллеги</a></li>
+            <li class="menu-list"><a href="{{ url_for('create_calendar') }}"><i class="bi bi-calendar-plus-fill"></i> Создать календарь</a></li>
+            <li class="menu-list"><a href="{{ url_for('friends_page') }}"><i class="bi bi-person-plus-fill"></i> Коллеги</a></li>
             <hr class="sidebar-separator">
-            <li><a href="#"><i class="bi bi-clipboard-data-fill"></i> Статистика и Анализ</a></li>
-            <li><a href="#"><i class="bi bi-gear-wide-connected"></i> Настройки</a></li>
+            <li class="menu-list"><a href="#"><i class="bi bi-clipboard-data-fill"></i> Статистика и Анализ</a></li>
+            <li class="menu-list"><a href="#"><i class="bi bi-gear-wide-connected"></i> Настройки</a></li>
             <hr class="sidebar-separator">
-            <li><a href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-left"></i> Выйти</a></li>
+            <li class="menu-list"><a href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-left"></i> Выйти</a></li>
         </ul>
     </aside>
 

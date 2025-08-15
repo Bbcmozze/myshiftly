@@ -51,6 +51,15 @@ a {
     gap: 1rem;
 }
 
+.page-title {
+    transition: transform 0.3s ease;
+    transform: scale(1);
+}
+
+.page-title:hover {
+    transform: scale(1.05);
+}
+
 .brand h1 a {
     color: var(--primary-color);
     font-size: 1.5rem;
@@ -60,15 +69,76 @@ a {
 .hamburger {
     background: none;
     border: none;
-    font-size: 1.5rem;
-    color: var(--text-color);
     cursor: pointer;
+    padding: 0.5rem;
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    transition: all 0.5s ease;
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hamburger:hover {
+    transform: scale(1.2) rotate(180deg);
+}
+
+.hamburger:focus {
+    outline: none;
+}
+
+.hamburger-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.hamburger-inner {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: var(--text-color);
+    border-radius: 1px;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+    transform-origin: center;
+}
+
+/* Анимация при активном состоянии */
+.hamburger.active .hamburger-inner:nth-child(1) {
+    transform: translateY(0.45rem) rotate(45deg);
+}
+
+.hamburger.active .hamburger-inner:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.hamburger.active .hamburger-inner:nth-child(3) {
+    transform: translateY(-0.45rem) rotate(-45deg);
+}
+
+/* Эффект при наведении */
+.hamburger:hover .hamburger-inner {
+    background-color: var(--primary-color);
 }
 
 .nav-links {
     display: flex;
     gap: 1.5rem;
     align-items: center;
+}
+
+.menu-list {
+    transition: all 0.3s ease;
+}
+
+.menu-list:hover {
+    transform: translateY(-5px) scale(1.05);
 }
 
 /* Buttons */
@@ -111,18 +181,19 @@ main {
 /* Sidebar */
 .sidebar {
     position: fixed;
-    left: -100%;
+    left: 0;
     top: 0;
     height: 100vh;
     width: var(--sidebar-width);
     background-color: var(--bg-color);
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    transition: left 0.3s ease;
-    z-index: 90;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 99;
 }
 
 .sidebar.active {
-    left: 0;
+    transform: translateX(0);
 }
 
 .sidebar-separator {
@@ -135,7 +206,7 @@ main {
     text-align: center;
     padding: 2rem 1rem;
     border-bottom: 1px solid #eee;
-    margin-top: 60px;
+    margin-top: 4rem;
 }
 
 .avatar {
@@ -185,7 +256,7 @@ main {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 80;
+    z-index: 50;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -470,4 +541,98 @@ main {
     align-items: center;
     justify-content: center;
     border: 2px solid white;
+}
+
+/* Поле поиска */
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+.search-friends {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 2px solid #e2e8f0;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    transition: all 0.2s;
+    background-color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+.search-friends:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    display: none;
+    margin-top: 0.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: #f8fafc;
+}
+
+.search-result-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+
+.search-result-info {
+    flex: 1;
+    margin-left: 0.75rem;
+    overflow: hidden;
+}
+
+.search-result-username {
+    font-weight: 500;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-actions {
+    margin-left: 1rem;
+}
+
+.no-results {
+    padding: 1rem;
+    color: #64748b;
+    text-align: center;
+}
+
+.search-result-already-friends {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-style: italic;
 }
