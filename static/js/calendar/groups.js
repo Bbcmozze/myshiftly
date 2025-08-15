@@ -63,7 +63,7 @@ function initializeGroups() {
         console.warn('Search group input not found'); // Для отладки
     }
 
-    // Обработчики для кнопок редактирования и удаления групп
+    // Обработчики для кнопок редактирования и удаления групп (делегирование событий)
     document.addEventListener('click', function(e) {
         // Проверяем, является ли кликнутый элемент кнопкой или его дочерним элементом
         const editBtn = e.target.closest('.edit-group-btn');
@@ -178,7 +178,7 @@ async function loadGroupData(groupId) {
         }
     } catch (error) {
         console.error('Ошибка загрузки данных группы:', error);
-        showNotification('Ошибка загрузки данных группы', 'error');
+        toastManager.show('Ошибка загрузки данных группы', 'danger');
     }
 }
 
@@ -255,7 +255,7 @@ async function loadCalendarMembers(containerId, selectedMemberIds = []) {
         }
     } catch (error) {
         console.error('Ошибка загрузки участников:', error);
-        showNotification('Ошибка загрузки участников', 'error');
+        toastManager.show('Ошибка загрузки участников', 'danger');
         
         const container = document.getElementById(containerId);
         container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 1rem;">Ошибка загрузки участников</div>';
@@ -265,7 +265,7 @@ async function loadCalendarMembers(containerId, selectedMemberIds = []) {
 async function createGroup() {
     const name = document.getElementById('groupName').value.trim();
     if (!name) {
-        showNotification('Введите название группы', 'error');
+        toastManager.show('Введите название группы', 'danger');
         return;
     }
     
@@ -273,7 +273,7 @@ async function createGroup() {
         .map(checkbox => parseInt(checkbox.value));
     
     if (selectedMembers.length === 0) {
-        showNotification('Выберите хотя бы одного участника для группы', 'error');
+        toastManager.show('Выберите хотя бы одного участника для группы', 'danger');
         return;
     }
     
@@ -292,13 +292,13 @@ async function createGroup() {
             
             const conflictingUsers = selectedMembers.filter(userId => usersInGroups.has(userId));
             if (conflictingUsers.length > 0) {
-                showNotification('Некоторые выбранные участники уже состоят в других группах', 'error');
+                toastManager.show('Некоторые выбранные участники уже состоят в других группах', 'danger');
                 return;
             }
         }
     } catch (error) {
         console.error('Ошибка проверки участников:', error);
-        showNotification('Ошибка проверки участников', 'error');
+        toastManager.show('Ошибка проверки участников', 'danger');
         return;
     }
     
@@ -319,15 +319,18 @@ async function createGroup() {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Группа успешно создана', 'success');
+            toastManager.show('Группа успешно создана', 'success');
             closeModal('createGroupModal');
-            location.reload(); // Перезагружаем страницу для обновления отображения
+            // Динамически добавляем новую группу в DOM
+            addGroupToDOM(data.group);
+            // Обновляем календарь
+            updateCalendarAfterGroupChange();
         } else {
-            showNotification(data.error || 'Ошибка создания группы', 'error');
+            toastManager.show(data.error || 'Ошибка создания группы', 'danger');
         }
     } catch (error) {
         console.error('Ошибка создания группы:', error);
-        showNotification('Ошибка создания группы', 'error');
+        toastManager.show('Ошибка создания группы', 'danger');
     }
 }
 
@@ -336,7 +339,7 @@ async function updateGroup() {
     const name = document.getElementById('editGroupName').value.trim();
     
     if (!name) {
-        showNotification('Введите название группы', 'error');
+        toastManager.show('Введите название группы', 'danger');
         return;
     }
     
@@ -344,7 +347,7 @@ async function updateGroup() {
         .map(checkbox => parseInt(checkbox.value));
     
     if (selectedMembers.length === 0) {
-        showNotification('Выберите хотя бы одного участника для группы', 'error');
+        toastManager.show('Выберите хотя бы одного участника для группы', 'danger');
         return;
     }
     
@@ -365,13 +368,13 @@ async function updateGroup() {
             
             const conflictingUsers = selectedMembers.filter(userId => usersInOtherGroups.has(userId));
             if (conflictingUsers.length > 0) {
-                showNotification('Некоторые выбранные участники уже состоят в других группах', 'error');
+                toastManager.show('Некоторые выбранные участники уже состоят в других группах', 'danger');
                 return;
             }
         }
     } catch (error) {
         console.error('Ошибка проверки участников:', error);
-        showNotification('Ошибка проверки участников', 'error');
+        toastManager.show('Ошибка проверки участников', 'danger');
         return;
     }
     
@@ -391,15 +394,18 @@ async function updateGroup() {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Группа успешно обновлена', 'success');
+            toastManager.show('Группа успешно обновлена', 'success');
             closeModal('editGroupModal');
-            location.reload(); // Перезагружаем страницу для обновления отображения
+            // Динамически обновляем группу в DOM
+            updateGroupInDOM(data.group);
+            // Обновляем календарь
+            updateCalendarAfterGroupChange();
         } else {
-            showNotification(data.error || 'Ошибка обновления группы', 'error');
+            toastManager.show(data.error || 'Ошибка обновления группы', 'danger');
         }
     } catch (error) {
         console.error('Ошибка обновления группы:', error);
-        showNotification('Ошибка обновления группы', 'error');
+        toastManager.show('Ошибка обновления группы', 'danger');
     }
 }
 
@@ -415,15 +421,133 @@ async function confirmDeleteGroup() {
         const data = await response.json();
         
         if (data.success) {
-            showNotification('Группа успешно удалена', 'success');
+            toastManager.show('Группа успешно удалена', 'success');
             closeModal('confirmDeleteGroupModal');
-            location.reload(); // Перезагружаем страницу для обновления отображения
+            // Динамически удаляем группу из DOM
+            removeGroupFromDOM(groupId);
+            // Обновляем календарь
+            updateCalendarAfterGroupChange();
         } else {
-            showNotification(data.error || 'Ошибка удаления группы', 'error');
+            toastManager.show(data.error || 'Ошибка удаления группы', 'danger');
         }
     } catch (error) {
         console.error('Ошибка удаления группы:', error);
-        showNotification('Ошибка удаления группы', 'error');
+        toastManager.show('Ошибка удаления группы', 'danger');
+    }
+}
+
+// Функция для динамического добавления группы в DOM
+function addGroupToDOM(group) {
+    try {
+        const groupList = document.getElementById('groupList');
+        if (!groupList) return;
+        
+        // Скрываем сообщение "нет групп" если оно есть
+        const noGroupsElement = groupList.querySelector('.no-groups');
+        if (noGroupsElement) {
+            noGroupsElement.remove();
+        }
+        
+        const groupElement = document.createElement('div');
+        groupElement.className = 'group-item';
+        groupElement.dataset.groupId = group.id;
+        
+        groupElement.innerHTML = `
+            <div class="group-header">
+                <div class="group-color-indicator ${group.color}"></div>
+                <div class="group-info">
+                    <div class="group-title">${group.name}</div>
+                    <div class="group-members-count">${group.members.length} участников</div>
+                </div>
+            </div>
+            <div class="group-actions">
+                <button class="edit-group-btn" data-group-id="${group.id}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="delete-group-btn" data-group-id="${group.id}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        // Добавляем в начало списка
+        groupList.insertBefore(groupElement, groupList.firstChild);
+        
+        // Обновляем счетчик групп
+        updateGroupsCount();
+        
+    } catch (error) {
+        console.error('Ошибка добавления группы в DOM:', error);
+    }
+}
+
+// Функция для динамического обновления группы в DOM
+function updateGroupInDOM(group) {
+    try {
+        const groupElement = document.querySelector(`[data-group-id="${group.id}"]`);
+        if (!groupElement) return;
+        
+        // Обновляем содержимое группы
+        groupElement.querySelector('.group-title').textContent = group.name;
+        groupElement.querySelector('.group-members-count').textContent = `${group.members.length} участников`;
+        groupElement.querySelector('.group-color-indicator').className = `group-color-indicator ${group.color}`;
+        
+    } catch (error) {
+        console.error('Ошибка обновления группы в DOM:', error);
+    }
+}
+
+// Функция для динамического удаления группы из DOM
+function removeGroupFromDOM(groupId) {
+    const groupElement = document.querySelector(`[data-group-id="${groupId}"]`);
+    if (groupElement) {
+        groupElement.remove();
+        
+        // Проверяем, остались ли группы
+        const groupList = document.getElementById('groupList');
+        if (groupList && groupList.children.length === 0) {
+            // Если групп не осталось, показываем сообщение "нет групп"
+            const noGroupsElement = document.createElement('div');
+            noGroupsElement.className = 'no-groups';
+            noGroupsElement.innerHTML = `
+                <i class="bi bi-people"></i>
+                <p>Нет созданных групп</p>
+            `;
+            groupList.appendChild(noGroupsElement);
+        }
+        
+        // Обновляем счетчик групп
+        updateGroupsCount();
+    }
+}
+
+// Функция для обновления счетчика групп
+function updateGroupsCount() {
+    const groupList = document.getElementById('groupList');
+    if (groupList) {
+        const groupCount = groupList.children.length;
+        // Если есть элемент с количеством групп в заголовке, обновляем его
+        const countElement = document.querySelector('.groups-count');
+        if (countElement) {
+            countElement.textContent = groupCount;
+        }
+    }
+}
+
+// Функция для обновления календаря после изменения групп
+async function updateCalendarAfterGroupChange() {
+    try {
+        // Получаем обновленные данные о группах
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsData = await groupsResponse.json();
+        
+        if (groupsData.success) {
+            // Обновляем календарь - перезагружаем страницу для корректного отображения
+            // Это необходимо, так как календарь имеет сложную структуру с группировкой участников
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Ошибка обновления календаря:', error);
     }
 }
 
@@ -446,47 +570,6 @@ function closeModal(modalId) {
     modal.style.display = 'none';
 }
 
-function showNotification(message, type = 'info') {
-    // Создаем уведомление
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    
-    // Добавляем стили
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-    `;
-    
-    // Цвета для разных типов уведомлений
-    if (type === 'success') {
-        notification.style.backgroundColor = '#10b981';
-    } else if (type === 'error') {
-        notification.style.backgroundColor = '#ef4444';
-    } else {
-        notification.style.backgroundColor = '#3b82f6';
-    }
-    
-    document.body.appendChild(notification);
-    
-    // Удаляем через 3 секунды
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
-}
-
 // Закрытие модальных окон при клике вне их
 window.addEventListener('click', function(e) {
     const modals = document.querySelectorAll('.modal');
@@ -506,31 +589,4 @@ document.addEventListener('click', function(e) {
         }
     }
 });
-
-// CSS анимации для уведомлений
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
 
