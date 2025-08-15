@@ -51,7 +51,7 @@
                 {% for calendar in personal_calendars %}
                 <div class="calendar-card">
                     <div class="calendar-header">
-                        <button class="delete-btn" onclick="deleteCalendar({{ calendar.id }}, '{{ calendar.name }}')" title="Удалить календарь">
+                        <button class="delete-btn" data-calendar-id="{{ calendar.id }}" data-calendar-name="{{ calendar.name }}" title="Удалить календарь">
                             <i class="bi bi-trash3"></i>
                         </button>
                     </div>
@@ -85,7 +85,7 @@
                 {% for calendar in team_calendars %}
                 <div class="calendar-card">
                     <div class="calendar-header">
-                        <button class="delete-btn" onclick="deleteCalendar({{ calendar.id }}, '{{ calendar.name }}')" title="Удалить календарь">
+                        <button class="delete-btn" data-calendar-id="{{ calendar.id }}" data-calendar-name="{{ calendar.name }}" title="Удалить календарь">
                             <i class="bi bi-trash3"></i>
                         </button>
                     </div>
@@ -120,7 +120,7 @@
                 <div class="calendar-card">
                     {% if calendar.owner_id == current_user.id %}
                     <div class="calendar-header">
-                        <button class="delete-btn" onclick="deleteCalendar({{ calendar.id }}, '{{ calendar.name }}')" title="Удалить календарь">
+                        <button class="delete-btn" data-calendar-id="{{ calendar.id }}" data-calendar-name="{{ calendar.name }}" title="Удалить календарь">
                             <i class="bi bi-trash3"></i>
                         </button>
                     </div>
@@ -154,78 +154,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/friends/search.js') }}"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabId = btn.getAttribute('data-tab');
-            
-            // Убираем активные классы у всех кнопок и контента
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-            
-            // Добавляем активные классы к выбранной кнопке и контенту
-            btn.classList.add('active');
-            document.getElementById(`${tabId}-tab`).classList.add('active');
-        });
-    });
-});
-
-let currentCalendarId = null;
-
-function deleteCalendar(calendarId, calendarName) {
-    currentCalendarId = calendarId;
-    document.getElementById('calendarNameToDelete').textContent = calendarName;
-    document.getElementById('deleteModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('active');
-    document.body.style.overflow = '';
-    currentCalendarId = null;
-}
-
-function confirmDelete() {
-    if (currentCalendarId) {
-        // Создаем форму для отправки POST запроса
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/calendar/${currentCalendarId}/delete`;
-        
-        // Добавляем CSRF токен если он есть
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken.getAttribute('content');
-            form.appendChild(csrfInput);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-// Закрытие модального окна при клике вне его
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('deleteModal');
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeDeleteModal();
-        }
-    });
-    
-    // Закрытие по Escape
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeDeleteModal();
-        }
-    });
-});
-</script>
+<script src="{{ url_for('static', filename='js/calendar/my_calendars.js') }}"></script>
 {% endblock %}

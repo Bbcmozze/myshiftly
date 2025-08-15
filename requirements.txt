@@ -10,7 +10,3 @@ SQLAlchemy==2.0.21
 
 # Security and utilities
 python-dotenv==1.0.0
-
-# Testing dependencies (for test files)
-playwright==1.40.0
-requests==2.31.0

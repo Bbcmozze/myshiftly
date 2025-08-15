@@ -427,6 +427,8 @@ def register_routes(app):
         calendar = Calendar.query.get_or_404(calendar_id)
 
         if calendar.owner_id != current_user.id:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
             abort(403)
 
         try:
@@ -439,13 +441,22 @@ def register_routes(app):
 
             db.session.delete(calendar)
             db.session.commit()
-            flash('Календарь успешно удален', 'success')
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': True, 'message': 'Календарь успешно удален'})
+            else:
+                flash('Календарь успешно удален', 'success')
+                return redirect(url_for('my_calendars'))
+                
         except Exception as e:
             db.session.rollback()
-            flash('Ошибка при удалении календаря', 'danger')
             app.logger.error(f"Error deleting calendar: {str(e)}")
-
-        return redirect(url_for('my_calendars'))
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'Ошибка при удалении календаря'}), 500
+            else:
+                flash('Ошибка при удалении календаря', 'danger')
+                return redirect(url_for('my_calendars'))
 
     @app.route('/shift/<int:shift_id>/delete', methods=['POST'])
     @login_required
