@@ -33,132 +33,6 @@
 .template-item.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
 .template-item.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
 
-.calendar-creation-container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-}
-
-.creation-header {
-    text-align: center;
-    margin-bottom: 3rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.creation-header h2 {
-    font-size: 2.5rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-    font-weight: 700;
-    background: linear-gradient(90deg, #2563eb, #3b82f6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.creation-header p {
-    color: #64748b;
-    font-size: 1.1rem;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.creation-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    margin: 3rem 0;
-}
-
-.creation-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    border: 1px solid #f1f5f9;
-    position: relative;
-    overflow: hidden;
-}
-
-.creation-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #2563eb, #3b82f6);
-}
-
-.creation-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(37, 99, 235, 0.1);
-    border-color: rgba(37, 99, 235, 0.2);
-}
-
-.card-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.2));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    transition: all 0.3s ease;
-}
-
-.card-icon i {
-    font-size: 2rem;
-    color: var(--primary-color);
-}
-
-.creation-card h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #1e293b;
-    font-weight: 600;
-}
-
-.creation-card p {
-    color: #64748b;
-    margin-bottom: 2rem;
-    flex-grow: 1;
-    line-height: 1.6;
-}
-
-.creation-card .btn {
-    width: 100%;
-    padding: 0.75rem;
-    font-weight: 600;
-    border-radius: 12px;
-    transition: all 0.2s;
-}
-
-.creation-form-container {
-    background: white;
-    border-radius: 16px;
-    padding: 2.5rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    margin-top: 2rem;
-    border: 1px solid #f1f5f9;
-}
-
-.creation-form h3 {
-    font-size: 1.75rem;
-    color: #1e293b;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
-}
-
 .form-group {
     margin-bottom: 1.5rem;
 }
@@ -186,13 +60,6 @@
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-}
-
 
 /* Стили для страницы просмотра календаря */
 .calendar-view-container {
@@ -299,30 +166,6 @@
     border-bottom: 1px solid #e2e8f0;
 }
 
-.member-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.5rem;
-}
-
-.member-list-container {
-    max-height: 250px;
-    overflow-y: auto;
-    margin-bottom: 1rem;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-
-.member-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
 .member-item, .template-item {
     transition: all 0.3s ease;
     will-change: transform, opacity;
@@ -330,30 +173,6 @@
 
 .member-item[style*="none"], .template-item[style*="none"] {
     display: none !important;
-}
-
-.member-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #e2e8f0;
-}
-
-.member-name {
-    flex: 1;
-    font-size: 0.95rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.member-item.owner {
-    background-color: rgba(59, 130, 246, 0.05);
-}
-
-.member-item:hover {
-    background-color: #f8fafc;
 }
 
 .member-item img {
@@ -371,32 +190,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.btn-remove-member {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 18px;
-    height: 18px;
-    background: none;
-    border: none;
-    color: #ff0000;
-    cursor: pointer;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    transition: all 0.2s ease;
-    opacity: 0.7;
-}
-
-.btn-remove-member:hover {
-    color: #b60000;
-    background-color: rgba(239, 68, 68, 0.1);
-    opacity: 1;
-    transform: scale(1.1);
 }
 
 /* Кастомный скроллбар */
@@ -423,66 +216,11 @@
     background: #94a3b8;
 }
 
-.add-member-form {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    width: 100%;
-}
-
-.add-member-form select {
-    flex: 1;
-    min-width: 0; /* Позволяет select сжиматься */
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.upcoming-shifts {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.shift-item {
-    background: white;
-    border-radius: 8px;
-    padding: 0.75rem;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f1f5f9;
-}
-
-.shift-time {
-    font-size: 0.85rem;
-    color: #64748b;
-    margin-bottom: 0.25rem;
-}
-
-.shift-title {
-    font-weight: 500;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-}
-
-.shift-user {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-    color: #64748b;
-}
-
 .shift-user img {
     width: 24px;
     height: 24px;
     border-radius: 50%;
     object-fit: cover;
-}
-
-.no-shifts {
-    text-align: center;
-    padding: 1rem;
-    color: #94a3b8;
-    font-size: 0.9rem;
 }
 
 .no-templates {
@@ -558,52 +296,6 @@ body.fullscreen-active {
     gap: 0.5rem;
 }
 
-.shifts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.25rem;
-}
-
-.shift-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.25rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
-    border: 1px solid #f1f5f9;
-    transition: all 0.2s;
-}
-
-.shift-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.1);
-}
-
-.shift-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.75rem;
-}
-
-.shift-header h5 {
-    font-size: 1.1rem;
-    color: #1e293b;
-    font-weight: 600;
-    margin: 0;
-}
-
-.btn-delete-shift {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-delete-shift:hover {
-    color: #dc2626;
-}
-
 .shift-time {
     display: flex;
     align-items: center;
@@ -611,17 +303,6 @@ body.fullscreen-active {
     font-size: 0.9rem;
     color: #64748b;
     margin-bottom: 0.75rem;
-}
-
-.shift-assigned {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: #1e293b;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px dashed #e2e8f0;
 }
 
 .shift-assigned img {
@@ -687,13 +368,6 @@ body.fullscreen-active {
     padding: 1.5rem;
     max-height: 60vh;
     overflow-y: auto;
-}
-
-.modal-body h5 {
-    font-size: 1.1rem;
-    color: #1e293b;
-    margin-bottom: 1rem;
-    font-weight: 600;
 }
 
 .form-row {
@@ -806,6 +480,32 @@ body.fullscreen-active {
 
 .user-cell:hover .btn-remove-member {
     opacity: 1;
+}
+
+.btn-remove-member {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    background: none;
+    border: none;
+    color: #ff0000;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.btn-remove-member:hover {
+    color: #b60000;
+    background-color: rgba(239, 68, 68, 0.1);
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 .user-cell-content {
@@ -968,17 +668,6 @@ body.fullscreen-active {
     cursor: pointer;
 }
 
-.add-shift-btn {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    background: none;
-    border: none;
-    color: #64748b;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
 .add-shift-btn:hover {
     color: var(--primary-color);
 }
@@ -988,27 +677,6 @@ body.fullscreen-active {
     align-items: center;
     gap: 1rem;
     margin-bottom: 1rem;
-}
-
-.add-shift-area {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #64748b;
-    font-size: 0.9rem;
-    text-align: center;
-    width: 100%;
-    pointer-events: none;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.day-cell:hover .add-shift-area {
-    display: flex;
 }
 
 #currentMonth {
@@ -1139,12 +807,6 @@ body.fullscreen-active {
 /* Стили для элементов с правами редактирования */
 .has-edit-rights .day-cell .remove-shift-btn {
     display: block;
-}
-
-/* Анимации */
-.fade-out {
-    opacity: 0;
-    transform: translateX(-20px);
 }
 
 /* Стили для модального окна подтверждения */
@@ -1497,17 +1159,6 @@ body.fullscreen-active #fullscreenOverlay {
     opacity: 0.7;
     background: #e0f2fe;
     border: 2px dashed #3b82f6;
-}
-
-.sortable-chosen {
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.sortable-drag {
-    opacity: 1 !important;
-    background: white;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    z-index: 1000 !important;
 }
 
 .checkbox-label {
