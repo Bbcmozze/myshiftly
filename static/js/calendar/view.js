@@ -209,10 +209,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const friends = await friendsResponse.json();
 
-            // Фильтруем друзей
+            // Запрашиваем список всех групп календаря
+            const groupsResponse = await fetch(`/api/get_calendar_groups/${calendarId}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            let usersInGroups = new Set();
+            if (groupsResponse.ok) {
+                const groupsData = await groupsResponse.json();
+                if (groupsData.success && groupsData.groups) {
+                    groupsData.groups.forEach(group => {
+                        group.members.forEach(member => {
+                            usersInGroups.add(member.id);
+                        });
+                    });
+                }
+            }
+
+            // Фильтруем друзей, исключая тех, кто уже в календаре или в группах
             const availableFriends = friends.filter(friend =>
                 friend.id !== currentUserId &&
-                !currentMembers.some(member => member.id === friend.id)
+                !currentMembers.some(member => member.id === friend.id) &&
+                !usersInGroups.has(friend.id)
             );
 
             const friendsSelectList = document.getElementById('friendsSelectList');

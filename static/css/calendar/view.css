@@ -884,6 +884,31 @@ body.fullscreen-active #fullscreenOverlay {
     flex-direction: column;
     gap: 0.5rem;
     margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+    background: #f8fafc;
+}
+
+/* Кастомный скроллбар для списка друзей */
+.friends-select-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.friends-select-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.friends-select-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.friends-select-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .friend-select-item {
@@ -936,6 +961,94 @@ body.fullscreen-active #fullscreenOverlay {
     flex: 1;
 }
 
+/* Стили для списка участников в группах */
+.members-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
+    background: #f8fafc;
+}
+
+/* Кастомный скроллбар для списка участников групп */
+.members-select-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.members-select-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.members-select-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.members-select-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.member-select-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.member-select-item:hover:not(.disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.member-select-item.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #f1f5f9;
+}
+
+.member-select-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+
+.member-select-item.disabled input[type="checkbox"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.member-select-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+
+.member-select-item span {
+    font-weight: 500;
+    color: #1e293b;
+    flex: 1;
+}
+
+.member-select-item.disabled span {
+    color: #64748b;
+}
+
 /* Анимация появления модального окна */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
@@ -977,6 +1090,8 @@ body.fullscreen-active #fullscreenOverlay {
     transition: all 0.3s ease;
     margin-bottom: 1rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    height: auto;
+    min-height: auto;
 }
 
 .modern-search:hover {
@@ -1003,6 +1118,10 @@ body.fullscreen-active #fullscreenOverlay {
     font-size: 0.95rem;
     padding: 0.25rem 0;
     color: #1e293b;
+    height: auto;
+    min-height: auto;
+    line-height: 1.2;
+    margin: 0;
 }
 
 .modern-search .search-input::placeholder {
@@ -1280,12 +1399,34 @@ body.fullscreen-active #fullscreenOverlay {
     max-height: 300px;
     overflow-y: auto;
     margin-top: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem;
 }
 
 .group-list {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+/* Кастомный скроллбар для групп */
+.group-list-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.group-list-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.group-list-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.group-list-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 .group-item {
@@ -1295,11 +1436,13 @@ body.fullscreen-active #fullscreenOverlay {
     padding: 0.75rem;
     transition: all 0.2s ease;
     position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .group-item:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
 }
 
 .group-header {
@@ -1336,9 +1479,10 @@ body.fullscreen-active #fullscreenOverlay {
 
 .group-actions {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.5rem;
     opacity: 0;
     transition: opacity 0.2s ease;
+    margin-left: auto;
 }
 
 .group-item:hover .group-actions {
@@ -1349,11 +1493,16 @@ body.fullscreen-active #fullscreenOverlay {
 .delete-group-btn {
     background: none;
     border: none;
-    padding: 0.25rem;
-    border-radius: 4px;
+    padding: 0.5rem;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.875rem;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
 }
 
 .edit-group-btn {
@@ -1362,6 +1511,8 @@ body.fullscreen-active #fullscreenOverlay {
 
 .edit-group-btn:hover {
     background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    transform: scale(1.05);
 }
 
 .delete-group-btn {
@@ -1370,6 +1521,8 @@ body.fullscreen-active #fullscreenOverlay {
 
 .delete-group-btn:hover {
     background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    transform: scale(1.05);
 }
 
 .no-groups {
@@ -1491,4 +1644,47 @@ body.fullscreen-active #fullscreenOverlay {
     .group-header {
         gap: 0.5rem;
     }
+}
+
+/* Стили для поиска по группам */
+.search-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    background: white;
+    height: auto;
+    min-height: auto;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-input::placeholder {
+    color: #94a3b8;
+}
+
+.search-input:hover {
+    border-color: #cbd5e1;
+}
+
+/* Стили для заголовка секции групп */
+.groups-section h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* Стили для кнопки создания группы */
+#createGroupBtn {
+    width: 100%;
+    margin-bottom: 1rem;
 }

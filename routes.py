@@ -821,7 +821,8 @@ def register_routes(app):
     @login_required
     def update_group(group_id):
         group = Group.query.get_or_404(group_id)
-        if group.owner_id != current_user.id:
+        # Проверяем, что пользователь является владельцем группы ИЛИ владельцем календаря
+        if group.owner_id != current_user.id and group.calendar.owner_id != current_user.id:
             return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
 
         data = request.get_json()
@@ -861,7 +862,8 @@ def register_routes(app):
     @login_required
     def delete_group(group_id):
         group = Group.query.get_or_404(group_id)
-        if group.owner_id != current_user.id:
+        # Проверяем, что пользователь является владельцем группы ИЛИ владельцем календаря
+        if group.owner_id != current_user.id and group.calendar.owner_id != current_user.id:
             return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
 
         try:

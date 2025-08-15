@@ -146,29 +146,68 @@ async function loadGroupData(groupId) {
 
 async function loadCalendarMembers(containerId, selectedMemberIds = []) {
     try {
-        const response = await fetch(`/calendar/${currentCalendarId}/members`);
-        const data = await response.json();
+        // Получаем список всех участников календаря
+        const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`);
+        const members = await membersResponse.json();
         
-        if (data && data.length > 0) {
+        // Получаем список всех групп календаря
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsData = await groupsResponse.json();
+        
+        if (members && members.length > 0) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             
-            data.forEach(member => {
+            // Собираем ID всех пользователей, которые уже состоят в группах
+            const usersInGroups = new Set();
+            if (groupsData.success && groupsData.groups) {
+                groupsData.groups.forEach(group => {
+                    group.members.forEach(member => {
+                        usersInGroups.add(member.id);
+                    });
+                });
+            }
+            
+            // Фильтруем участников, исключая тех, кто уже в группах
+            const availableMembers = members.filter(member => 
+                !usersInGroups.has(member.id) || selectedMemberIds.includes(member.id)
+            );
+            
+            if (availableMembers.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 1rem;">Нет доступных участников для добавления в группу</div>';
+                return;
+            }
+            
+            availableMembers.forEach(member => {
                 const memberItem = document.createElement('div');
                 memberItem.className = 'member-select-item';
+                
+                // Проверяем, состоит ли пользователь уже в группе
+                const isInGroup = usersInGroups.has(member.id) && !selectedMemberIds.includes(member.id);
+                
+                if (isInGroup) {
+                    memberItem.classList.add('disabled');
+                }
+                
                 memberItem.innerHTML = `
                     <input type="checkbox" id="member_${member.id}" value="${member.id}" 
-                           ${selectedMemberIds.includes(member.id) ? 'checked' : ''}>
+                           ${selectedMemberIds.includes(member.id) ? 'checked' : ''}
+                           ${isInGroup ? 'disabled' : ''}>
                     <img src="/static/images/${member.avatar}" onerror="this.src='/static/images/default_avatar.svg'">
-                    <span>${member.username}</span>
+                    <span>${member.username}${isInGroup ? ' (уже в группе)' : ''}</span>
                 `;
                 
-                memberItem.addEventListener('click', function(e) {
-                    if (e.target.type !== 'checkbox') {
-                        const checkbox = this.querySelector('input[type="checkbox"]');
-                        checkbox.checked = !checkbox.checked;
-                    }
-                });
+                // Если пользователь уже в группе, делаем элемент неактивным
+                if (isInGroup) {
+                    memberItem.style.cursor = 'not-allowed';
+                } else {
+                    memberItem.addEventListener('click', function(e) {
+                        if (e.target.type !== 'checkbox') {
+                            const checkbox = this.querySelector('input[type="checkbox"]');
+                            checkbox.checked = !checkbox.checked;
+                        }
+                    });
+                }
                 
                 container.appendChild(memberItem);
             });
@@ -197,6 +236,31 @@ async function createGroup() {
     
     if (selectedMembers.length === 0) {
         showNotification('Выберите хотя бы одного участника для группы', 'error');
+        return;
+    }
+    
+    // Проверяем, что выбранные участники не состоят в других группах
+    try {
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsData = await groupsResponse.json();
+        
+        if (groupsData.success && groupsData.groups) {
+            const usersInGroups = new Set();
+            groupsData.groups.forEach(group => {
+                group.members.forEach(member => {
+                    usersInGroups.add(member.id);
+                });
+            });
+            
+            const conflictingUsers = selectedMembers.filter(userId => usersInGroups.has(userId));
+            if (conflictingUsers.length > 0) {
+                showNotification('Некоторые выбранные участники уже состоят в других группах', 'error');
+                return;
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка проверки участников:', error);
+        showNotification('Ошибка проверки участников', 'error');
         return;
     }
     
@@ -243,6 +307,33 @@ async function updateGroup() {
     
     if (selectedMembers.length === 0) {
         showNotification('Выберите хотя бы одного участника для группы', 'error');
+        return;
+    }
+    
+    // Проверяем, что выбранные участники не состоят в других группах (кроме текущей)
+    try {
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsData = await groupsResponse.json();
+        
+        if (groupsData.success && groupsData.groups) {
+            const usersInOtherGroups = new Set();
+            groupsData.groups.forEach(group => {
+                if (group.id != groupId) { // Исключаем текущую группу
+                    group.members.forEach(member => {
+                        usersInOtherGroups.add(member.id);
+                    });
+                }
+            });
+            
+            const conflictingUsers = selectedMembers.filter(userId => usersInOtherGroups.has(userId));
+            if (conflictingUsers.length > 0) {
+                showNotification('Некоторые выбранные участники уже состоят в других группах', 'error');
+                return;
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка проверки участников:', error);
+        showNotification('Ошибка проверки участников', 'error');
         return;
     }
     
