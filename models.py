@@ -11,6 +11,12 @@ friends = db.Table('friends',
     db.Column('friend_id', db.Integer, db.ForeignKey('user.id'))
 )
 
+# Ассоциативная таблица для участников групп
+group_members = db.Table('group_members',
+    db.Column('group_id', db.Integer, db.ForeignKey('group.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+)
+
 class FriendRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -54,6 +60,20 @@ class Calendar(db.Model):
     members = db.relationship('User', secondary='calendar_members', backref='shared_calendars')
     shift_templates = db.relationship('ShiftTemplate', back_populates='calendar', lazy='dynamic', cascade='all, delete-orphan')
     shifts = db.relationship('Shift', back_populates='calendar', lazy='dynamic', cascade='all, delete-orphan')
+    groups = db.relationship('Group', back_populates='calendar', lazy='dynamic', cascade='all, delete-orphan')
+
+
+class Group(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    color = db.Column(db.String(20), default='badge-color-1', nullable=False)
+    calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    calendar = db.relationship('Calendar', back_populates='groups')
+    owner = db.relationship('User', backref='created_groups')
+    members = db.relationship('User', secondary=group_members, backref='groups')
 
 
 class Shift(db.Model):

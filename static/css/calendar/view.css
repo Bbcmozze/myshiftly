@@ -33,6 +33,29 @@
 .template-item.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
 .template-item.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
 
+/* Стили для групп */
+.group-item.badge-color-1  { border-left: 4px solid #ffb3b3; } /* Роза */
+.group-item.badge-color-2  { border-left: 4px solid #ffd0a8; } /* Персик */
+.group-item.badge-color-3  { border-left: 4px solid #fff2b3; } /* Лимон */
+.group-item.badge-color-4  { border-left: 4px solid #f4ffb3; } /* Лайм */
+.group-item.badge-color-5  { border-left: 4px solid #e4ffb3; } /* Яблоко */
+.group-item.badge-color-6  { border-left: 4px solid #b3ffe1; } /* Мята */
+.group-item.badge-color-7  { border-left: 4px solid #b3f4ff; } /* Лёд */
+.group-item.badge-color-8  { border-left: 4px solid #b3d6ff; } /* Небо */
+.group-item.badge-color-9  { border-left: 4px solid #d1b3ff; } /* Сирень */
+.group-item.badge-color-10 { border-left: 4px solid #f0b3ff; } /* Орхидея */
+
+.group-color-indicator.badge-color-1  { background-color: #ffb3b3; } /* Роза */
+.group-color-indicator.badge-color-2  { background-color: #ffd0a8; } /* Персик */
+.group-color-indicator.badge-color-3  { background-color: #fff2b3; } /* Лимон */
+.group-color-indicator.badge-color-4  { background-color: #f4ffb3; } /* Лайм */
+.group-color-indicator.badge-color-5  { background-color: #e4ffb3; } /* Яблоко */
+.group-color-indicator.badge-color-6  { background-color: #b3ffe1; } /* Мята */
+.group-color-indicator.badge-color-7  { background-color: #b3f4ff; } /* Лёд */
+.group-color-indicator.badge-color-8  { background-color: #b3d6ff; } /* Небо */
+.group-color-indicator.badge-color-9  { background-color: #d1b3ff; } /* Сирень */
+.group-color-indicator.badge-color-10 { background-color: #f0b3ff; } /* Орхидея */
+
 .form-group {
     margin-bottom: 1.5rem;
 }
@@ -1250,4 +1273,222 @@ body.fullscreen-active #fullscreenOverlay {
 
 .color-option.selected {
     border-color: #585a5c;
+}
+
+/* Стили для групп */
+.group-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+.group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.group-item {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.group-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.group-color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.group-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-title {
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-members-count {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.group-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.group-item:hover .group-actions {
+    opacity: 1;
+}
+
+.edit-group-btn,
+.delete-group-btn {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.edit-group-btn {
+    color: #3b82f6;
+}
+
+.edit-group-btn:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.delete-group-btn {
+    color: #ef4444;
+}
+
+.delete-group-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.no-groups {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #64748b;
+}
+
+.no-groups i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Стили для заголовков групп в календаре */
+.group-header-row {
+    background: #f8fafc;
+}
+
+.group-header-cell {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.group-header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.group-name {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+/* Стили для создателя календаря */
+.user-row.owner {
+    background-color: #f8fafc;
+    border-left: 3px solid #3b82f6;
+    font-weight: 500;
+}
+
+.user-row.owner .user-cell-content span {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Стили для строк пользователей в группах */
+.user-row[data-group-id] {
+    border-left: 3px solid transparent;
+}
+
+.user-row[data-group-id="1"] { border-left-color: #ffb3b3; }
+.user-row[data-group-id="2"] { border-left-color: #ffd0a8; }
+.user-row[data-group-id="3"] { border-left-color: #fff2b3; }
+.user-row[data-group-id="4"] { border-left-color: #f4ffb3; }
+.user-row[data-group-id="5"] { border-left-color: #e4ffb3; }
+.user-row[data-group-id="6"] { border-left-color: #b3ffe1; }
+.user-row[data-group-id="7"] { border-left-color: #b3f4ff; }
+.user-row[data-group-id="8"] { border-left-color: #b3d6ff; }
+.user-row[data-group-id="9"] { border-left-color: #d1b3ff; }
+.user-row[data-group-id="10"] { border-left-color: #f0b3ff; }
+
+/* Стили для списка участников в модальных окнах */
+.members-select-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.member-select-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.member-select-item:hover {
+    background-color: #f1f5f9;
+}
+
+.member-select-item.selected {
+    background-color: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.member-select-item input[type="checkbox"] {
+    margin: 0;
+}
+
+.member-select-item img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.member-select-item span {
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+/* Адаптивность для групп */
+@media (max-width: 768px) {
+    .group-actions {
+        opacity: 1;
+    }
+    
+    .group-item {
+        padding: 0.5rem;
+    }
+    
+    .group-header {
+        gap: 0.5rem;
+    }
 }

@@ -4,7 +4,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, a
 from sqlalchemy import exists, and_
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members
+from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members, Group, group_members
 from datetime import datetime, timedelta
 from config import Config
 from jinja2 import Environment
@@ -305,6 +305,17 @@ def register_routes(app):
         # Получаем шаблоны
         shift_templates = ShiftTemplate.query.filter_by(calendar_id=calendar.id).all()
 
+        # Получаем группы календаря
+        groups = Group.query.filter_by(calendar_id=calendar.id).all()
+        
+        # Создаем словарь для быстрого поиска групп пользователей
+        user_groups = {}
+        for group in groups:
+            for member in group.members:
+                if member.id not in user_groups:
+                    user_groups[member.id] = []
+                user_groups[member.id].append(group)
+
         return render_template(
             'calendar/view_calendar.html',
             calendar=calendar,
@@ -316,7 +327,9 @@ def register_routes(app):
             datetime=datetime,
             members_sorted=members_sorted,
             member_positions=member_positions,
-            is_owner=(calendar.owner_id == current_user.id)
+            is_owner=(calendar.owner_id == current_user.id),
+            groups=groups,
+            user_groups=user_groups
         )
 
 
@@ -651,12 +664,8 @@ def register_routes(app):
         if calendar.owner_id != current_user.id and current_user not in calendar.members:
             abort(403)
 
-        # Формируем список участников (владелец + члены)
-        members = [{
-            'id': calendar.owner.id,
-            'username': calendar.owner.username,
-            'avatar': calendar.owner.avatar
-        }]
+        # Формируем список участников (только члены, без владельца для групп)
+        members = []
 
         for member in calendar.members:
             members.append({
@@ -762,6 +771,153 @@ def register_routes(app):
                 'color_class': shift.template.color_class if shift.template else 'badge-color-1'
             }
         })
+
+    # Маршруты для работы с группами
+    @app.route('/api/create_group', methods=['POST'])
+    @login_required
+    def create_group():
+        data = request.get_json()
+        calendar_id = data.get('calendar_id')
+        name = data.get('name')
+        color = data.get('color', 'badge-color-1')
+        user_ids = data.get('user_ids', [])
+
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        try:
+            group = Group(
+                name=name,
+                color=color,
+                calendar_id=calendar_id,
+                owner_id=current_user.id
+            )
+            db.session.add(group)
+            db.session.flush()  # Получаем ID группы
+
+            # Добавляем участников в группу (исключаем создателя календаря)
+            for user_id in user_ids:
+                user = User.query.get(user_id)
+                if user and user in calendar.members and user.id != calendar.owner_id:
+                    group.members.append(user)
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'group': {
+                    'id': group.id,
+                    'name': group.name,
+                    'color': group.color,
+                    'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/update_group/<int:group_id>', methods=['PUT'])
+    @login_required
+    def update_group(group_id):
+        group = Group.query.get_or_404(group_id)
+        if group.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        data = request.get_json()
+        name = data.get('name')
+        color = data.get('color')
+        user_ids = data.get('user_ids', [])
+
+        try:
+            if name:
+                group.name = name
+            if color:
+                group.color = color
+
+            # Обновляем участников группы (исключаем создателя календаря)
+            group.members.clear()
+            for user_id in user_ids:
+                user = User.query.get(user_id)
+                if user and user in group.calendar.members and user.id != group.calendar.owner_id:
+                    group.members.append(user)
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'group': {
+                    'id': group.id,
+                    'name': group.name,
+                    'color': group.color,
+                    'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/delete_group/<int:group_id>', methods=['DELETE'])
+    @login_required
+    def delete_group(group_id):
+        group = Group.query.get_or_404(group_id)
+        if group.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        try:
+            db.session.delete(group)
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Группа успешно удалена'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/get_calendar_groups/<int:calendar_id>', methods=['GET'])
+    @login_required
+    def get_calendar_groups(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        groups = Group.query.filter_by(calendar_id=calendar_id).all()
+        groups_data = []
+        
+        for group in groups:
+            groups_data.append({
+                'id': group.id,
+                'name': group.name,
+                'color': group.color,
+                'owner_id': group.owner_id,
+                'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
+            })
+
+        return jsonify({'success': True, 'groups': groups_data})
+
+    @app.route('/api/get_user_groups/<int:calendar_id>', methods=['GET'])
+    @login_required
+    def get_user_groups(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        # Получаем всех участников календаря с их группами
+        all_members = [calendar.owner] + list(calendar.members)
+        members_with_groups = []
+
+        for member in all_members:
+            member_groups = Group.query.filter(
+                Group.calendar_id == calendar_id,
+                Group.members.contains(member)
+            ).all()
+            
+            members_with_groups.append({
+                'id': member.id,
+                'username': member.username,
+                'avatar': member.avatar,
+                'groups': [{'id': g.id, 'name': g.name, 'color': g.color} for g in member_groups]
+            })
+
+        return jsonify({'success': True, 'members_with_groups': members_with_groups})
 
     #############УДАЛИТЬ ПОСЛЕ ТЕСТА САЙТА############
     @app.route('/add_test_users')

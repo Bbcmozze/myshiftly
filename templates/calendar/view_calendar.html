@@ -77,6 +77,45 @@
                     </div>
                 </div>
             </div>
+
+            <div class="sidebar-section">
+                <h4>Группы</h4>
+                <button id="createGroupBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                    <i class="bi bi-plus-lg"></i> Создать группу
+                </button>
+                <div class="search-box modern-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchGroupInput" placeholder="Найти группу..." class="search-input">
+                </div>
+                <div class="group-list-container">
+                    <div class="group-list" id="groupList">
+                        {% for group in groups %}
+                        <div class="group-item" data-group-id="{{ group.id }}">
+                            <div class="group-header">
+                                <div class="group-color-indicator {{ group.color }}"></div>
+                                <div class="group-info">
+                                    <div class="group-title">{{ group.name }}</div>
+                                    <div class="group-members-count">{{ group.members|length }} участников</div>
+                                </div>
+                            </div>
+                            <div class="group-actions">
+                                <button class="edit-group-btn" data-group-id="{{ group.id }}" title="Редактировать группу">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="delete-group-btn" data-group-id="{{ group.id }}" title="Удалить группу">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="no-groups">
+                            <i class="bi bi-people"></i>
+                            <p>Нет созданных групп</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
             {% endif %}
         </div>
         {% endif %}
@@ -119,26 +158,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for member in members_sorted %}
-                    <tr class="user-row {% if member.id == calendar.owner_id %}owner{% endif %}" data-user-id="{{ member.id }}">
+                    <!-- Создатель календаря всегда на первой строчке -->
+                    <tr class="user-row owner" data-user-id="{{ calendar.owner.id }}">
                         <td class="user-cell">
                             <div class="user-cell-content">
-                                <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
+                                <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                                      onerror="this.src='/static/images/default_avatar.svg'">
-                                <span>{{ member.username }}{% if member.id == current_user.id %} (Вы){% endif %}</span>
+                                <span>{{ calendar.owner.username }}{% if calendar.owner.id == current_user.id %} (Вы){% endif %}</span>
                             </div>
-                            {% if calendar.owner_id == current_user.id and member.id != calendar.owner_id %}
-                            <button class="btn-remove-member" data-user-id="{{ member.id }}" title="Удалить участника">
-                                <i class="bi bi-x"></i>
-                            </button>
-                            {% endif %}
                         </td>
                         {% for day in days_in_month %}
                         <td class="day-cell"
                             data-date="{{ day.strftime('%Y-%m-%d') }}"
-                            data-user-id="{{ member.id }}">
+                            data-user-id="{{ calendar.owner.id }}">
                             {% for shift in shifts %}
-                            {% if shift.user_id == member.id and shift.date == day %}
+                            {% if shift.user_id == calendar.owner.id and shift.date == day %}
                             <div class="shift-badge {{ shift.color_class }}"
                                  data-shift-id="{{ shift.id }}"
                                  title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
@@ -156,6 +190,88 @@
                         </td>
                         {% endfor %}
                     </tr>
+
+                    {% set grouped_members = {} %}
+                    {% for member in members_sorted %}
+                        {% if member.id != calendar.owner.id %}  {# Исключаем создателя из группировки #}
+                            {% if member.id in user_groups %}
+                                {% for group in user_groups[member.id] %}
+                                    {% if group.id not in grouped_members %}
+                                        {% set _ = grouped_members.update({group.id: {'group': group, 'members': []}}) %}
+                                    {% endif %}
+                                    {% set _ = grouped_members[group.id]['members'].append(member) %}
+                                {% endfor %}
+                            {% else %}
+                                {% if 'ungrouped' not in grouped_members %}
+                                    {% set _ = grouped_members.update({'ungrouped': {'group': None, 'members': []}}) %}
+                                {% endif %}
+                                {% set _ = grouped_members['ungrouped']['members'].append(member) %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {% for group_id, group_data in grouped_members.items() %}
+                        {% if group_data.group %}
+                        <!-- Заголовок группы -->
+                        <tr class="group-header-row">
+                            <td class="group-header-cell" colspan="{{ days_in_month|length + 1 }}">
+                                <div class="group-header-content">
+                                    <div class="group-color-indicator {{ group_data.group.color }}"></div>
+                                    <span class="group-name">{{ group_data.group.name }}</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <!-- Заголовок для участников без группы -->
+                        <tr class="group-header-row">
+                            <td class="group-header-cell" colspan="{{ days_in_month|length + 1 }}">
+                                <div class="group-header-content">
+                                    <span class="group-name">Без группы</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+
+                        {% for member in group_data.members %}
+                        <tr class="user-row" 
+                            data-user-id="{{ member.id }}"
+                            {% if group_data.group %}data-group-id="{{ group_data.group.id }}"{% endif %}>
+                            <td class="user-cell">
+                                <div class="user-cell-content">
+                                    <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
+                                         onerror="this.src='/static/images/default_avatar.svg'">
+                                    <span>{{ member.username }}{% if member.id == current_user.id %} (Вы){% endif %}</span>
+                                </div>
+                                {% if calendar.owner_id == current_user.id and member.id != calendar.owner_id %}
+                                <button class="btn-remove-member" data-user-id="{{ member.id }}" title="Удалить участника">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                            {% for day in days_in_month %}
+                            <td class="day-cell"
+                                data-date="{{ day.strftime('%Y-%m-%d') }}"
+                                data-user-id="{{ member.id }}">
+                                {% for shift in shifts %}
+                                {% if shift.user_id == member.id and shift.date == day %}
+                                <div class="shift-badge {{ shift.color_class }}"
+                                     data-shift-id="{{ shift.id }}"
+                                     title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
+                                    {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
+                                    {% if shift.show_time %}
+                                    <br>
+                                    {{ shift.start_time }} - {{ shift.end_time }}
+                                    {% endif %}
+                                    {% if calendar.owner_id == current_user.id %}
+                                    <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
                     {% endfor %}
                     </tbody>
                 </table>
@@ -317,10 +433,120 @@
 </div>
 
 <div id="fullscreenOverlay"></div>
+
+<!-- Модальное окно создания группы -->
+<div class="modal" id="createGroupModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Создать группу</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createGroupForm">
+                <div class="form-group">
+                    <label for="groupName">Название группы</label>
+                    <input type="text" id="groupName" maxlength="50" required placeholder="Введите название группы">
+                </div>
+
+                <div class="form-group">
+                    <label>Цвет группы</label>
+                    <div class="color-options">
+                        <div class="color-option badge-color-1 selected" data-color-class="badge-color-1">Роза</div>
+                        <div class="color-option badge-color-2" data-color-class="badge-color-2">Персик</div>
+                        <div class="color-option badge-color-3" data-color-class="badge-color-3">Лимон</div>
+                        <div class="color-option badge-color-4" data-color-class="badge-color-4">Лайм</div>
+                        <div class="color-option badge-color-5" data-color-class="badge-color-5">Яблоко</div>
+                        <div class="color-option badge-color-6" data-color-class="badge-color-6">Мята</div>
+                        <div class="color-option badge-color-7" data-color-class="badge-color-7">Лед</div>
+                        <div class="color-option badge-color-8" data-color-class="badge-color-8">Небо</div>
+                        <div class="color-option badge-color-9" data-color-class="badge-color-9">Сирень</div>
+                        <div class="color-option badge-color-10" data-color-class="badge-color-10">Орхидея</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Участники группы</label>
+                    <div class="members-select-list" id="groupMembersSelectList">
+                        <!-- Список будет заполнен через JavaScript -->
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-primary" id="saveGroupBtn">Создать группу</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования группы -->
+<div class="modal" id="editGroupModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Редактировать группу</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editGroupForm">
+                <input type="hidden" id="editGroupId">
+                <div class="form-group">
+                    <label for="editGroupName">Название группы</label>
+                    <input type="text" id="editGroupName" maxlength="50" required placeholder="Введите название группы">
+                </div>
+
+                <div class="form-group">
+                    <label>Цвет группы</label>
+                    <div class="color-options">
+                        <div class="color-option badge-color-1" data-color-class="badge-color-1">Роза</div>
+                        <div class="color-option badge-color-2" data-color-class="badge-color-2">Персик</div>
+                        <div class="color-option badge-color-3" data-color-class="badge-color-3">Лимон</div>
+                        <div class="color-option badge-color-4" data-color-class="badge-color-4">Лайм</div>
+                        <div class="color-option badge-color-5" data-color-class="badge-color-5">Яблоко</div>
+                        <div class="color-option badge-color-6" data-color-class="badge-color-6">Мята</div>
+                        <div class="color-option badge-color-7" data-color-class="badge-color-7">Лед</div>
+                        <div class="color-option badge-color-8" data-color-class="badge-color-8">Небо</div>
+                        <div class="color-option badge-color-9" data-color-class="badge-color-9">Сирень</div>
+                        <div class="color-option badge-color-10" data-color-class="badge-color-10">Орхидея</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Участники группы</label>
+                    <div class="members-select-list" id="editGroupMembersSelectList">
+                        <!-- Список будет заполнен через JavaScript -->
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-primary" id="updateGroupBtn">Сохранить изменения</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления группы -->
+<div class="modal" id="confirmDeleteGroupModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h4>Подтверждение удаления</h4>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Удалить эту группу? Участники группы останутся в календаре, но будут перемещены в раздел "Без группы".</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline modal-close">Отмена</button>
+            <button class="btn btn-danger" id="confirmDeleteGroupBtn">Удалить</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/calendar/view.js') }}"></script>
+<script src="{{ url_for('static', filename='js/calendar/groups.js') }}"></script>
 <script src="{{ url_for('static', filename='js/friends/search.js') }}"></script>
 {% endblock %}
