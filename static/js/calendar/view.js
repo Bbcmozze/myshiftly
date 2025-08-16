@@ -359,38 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error(data.message || 'Ошибка при добавлении участников');
                 }
 
-                // Закрываем модальное окно
+                // Закрываем модальное окно и перезагружаем страницу для консистентности UI
                 addMembersModal.style.display = 'none';
-
-                // Обновляем таблицу календаря
-                await updateCalendarTable();
-
-                // Обновляем список участников в сайдбаре (проверяем существование элемента)
-                const memberList = document.getElementById('memberList');
-                if (memberList && data.added_members) {
-                    data.added_members.forEach(member => {
-                        const memberItem = document.createElement('div');
-                        memberItem.className = 'member-item';
-                        memberItem.dataset.userId = member.id;
-                        memberItem.innerHTML = `
-                            <img src="/static/images/${member.avatar || 'default_avatar.svg'}" 
-                                 onerror="this.src='/static/images/default_avatar.svg'">
-                            <span>${member.username}</span>
-                        `;
-                        memberList.appendChild(memberItem);
-                    });
-                }
-
-                // Очищаем выбранные элементы в модальном окне
-                document.querySelectorAll('#friendsSelectList input:checked').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-
-                // Обновляем список доступных друзей
-                await updateAvailableFriendsList();
-                setupDraggableRows();
-
                 showToast('Участники успешно добавлены', 'success');
+                location.reload();
 
             } catch (error) {
                 console.error('Error adding members:', error);
