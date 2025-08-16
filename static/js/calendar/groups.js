@@ -712,9 +712,12 @@ async function updateCalendarTable(groups, members) {
             sortedGroupedMembers.set(groupId, groupData);
         });
         
+        // Получаем данные "Без группы" один раз
+        const ungroupedData = groupedMembers.get('ungrouped');
+
         // ВСЕГДА в самом конце добавляем участников без группы (только если есть участники)
-        if (groupedMembers.has('ungrouped') && groupedMembers.get('ungrouped').members.length > 0) {
-            sortedGroupedMembers.set('ungrouped', groupedMembers.get('ungrouped'));
+        if (ungroupedData && ungroupedData.members.length > 0) {
+            sortedGroupedMembers.set('ungrouped', ungroupedData);
         }
         
         // Дополнительная проверка: убеждаемся, что ungrouped всегда последний
