@@ -569,13 +569,10 @@ function addGroupToDOM(group) {
         
         // Добавляем в начало списка (новые группы выше по позиции)
         groupList.insertBefore(groupElement, groupList.firstChild);
-        
-        // Инициализируем DnD для заголовков групп
-        setupGroupDragAndDrop();
-        
-        // Инициализируем DnD для участников (если функция доступна)
-        if (typeof setupDraggableRows === 'function') {
-            setupDraggableRows();
+
+        // Переинициализируем объединённый DnD для таблицы, чтобы правила были консистентны
+        if (typeof setupUnifiedDragAndDrop === 'function') {
+            setupUnifiedDragAndDrop();
         }
         
         // Обновляем счетчик групп
@@ -763,9 +760,38 @@ function setupUnifiedDragAndDrop() {
                         return false;
                     }
 
-                    // Ранее мы запрещали таргет на строки участников, что приводило к откату
-                    // Теперь разрешаем таргет и даём Sortable самостоятельно вычислить позицию
-                    // между заголовками групп. Порядок групп мы всё равно собираем по заголовкам.
+                    // Разрешаем таргетировать строки участников ТОЛЬКО если это
+                    // вставка ПОСЛЕ ПОСЛЕДНЕГО участника его группы (между группами)
+                    if (relatedItem && relatedItem.classList.contains('user-row')) {
+                        const relatedGroupId = relatedItem.dataset.groupId || 'ungrouped';
+                        // Никогда не вставляем внутри блока "Без группы"
+                        if (relatedGroupId === 'ungrouped') {
+                            return false;
+                        }
+                        // Движение вверх пытается вставить ПЕРЕД relatedItem — запрещаем,
+                        // допускаем только вставку ПОСЛЕ последнего участника группы
+                        if (!evt.willInsertAfter) {
+                            return false;
+                        }
+                        const next = relatedItem.nextElementSibling;
+                        const isLastInGroup = !next || next.classList.contains('group-header-row');
+                        if (!isLastInGroup) {
+                            return false; // запрет, если это не последний участник своей группы
+                        }
+                    }
+
+                    // Нельзя вставлять сразу ПОСЛЕ заголовка другой группы, ЕСЛИ
+                    // прямо под ним идут её участники. Если под ним другой заголовок
+                    // или конец, то можно.
+                    if (relatedItem && relatedItem.classList.contains('group-header-row')) {
+                        if (evt.willInsertAfter) {
+                            const next = relatedItem.nextElementSibling;
+                            if (next && next.classList.contains('user-row') &&
+                                next.dataset.groupId === relatedItem.dataset.groupId) {
+                                return false;
+                            }
+                        }
+                    }
 
                     // Запрещаем опускать ниже заголовка "Без группы"
                     if (ungroupedHeader) {
