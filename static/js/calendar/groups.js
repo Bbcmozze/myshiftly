@@ -66,8 +66,8 @@ function initializeGroups() {
     // Обработчики для кнопок редактирования и удаления групп (делегирование событий)
     document.addEventListener('click', function(e) {
         // Проверяем, является ли кликнутый элемент кнопкой или его дочерним элементом
-        const editBtn = e.target.closest('.edit-group-btn');
         const deleteBtn = e.target.closest('.delete-group-btn');
+        const editBtn = e.target.closest('.edit-group-btn');
         const removeMemberBtn = e.target.closest('.btn-remove-member');
         
         if (editBtn) {
@@ -504,11 +504,11 @@ function createGroupElement(group) {
             </div>
         </div>
         <div class="group-actions">
-            <button class="edit-group-btn" data-group-id="${group.id}">
-                <i class="bi bi-pencil"></i>
-            </button>
             <button class="delete-group-btn" data-group-id="${group.id}">
                 <i class="bi bi-trash"></i>
+            </button>
+            <button class="edit-group-btn" data-group-id="${group.id}">
+                <i class="bi bi-pencil"></i>
             </button>
         </div>
     `;
@@ -541,11 +541,11 @@ function addGroupToDOM(group) {
                 </div>
             </div>
             <div class="group-actions">
-                <button class="edit-group-btn" data-group-id="${group.id}">
-                    <i class="bi bi-pencil"></i>
-                </button>
                 <button class="delete-group-btn" data-group-id="${group.id}">
                     <i class="bi bi-trash"></i>
+                </button>
+                <button class="edit-group-btn" data-group-id="${group.id}">
+                    <i class="bi bi-pencil"></i>
                 </button>
             </div>
         `;
