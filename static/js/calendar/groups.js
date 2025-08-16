@@ -965,8 +965,30 @@ function updateCalendarTableRows(groupedMembers, shifts) {
     setupGroupDragAndDrop();
     
     // Инициализируем DnD для участников (если функция доступна)
-    if (typeof setupDraggableRows === 'function') {
-        setupDraggableRows();
+    console.log('Checking setupDraggableRows availability:', typeof window.setupDraggableRows);
+    if (typeof window.setupDraggableRows === 'function') {
+        console.log('Calling setupDraggableRows...');
+        window.setupDraggableRows();
+    } else {
+        console.error('setupDraggableRows not available!');
+    }
+    
+    // Настраиваем обработчики ячеек календаря (если функция доступна)
+    console.log('Checking setupCalendarCellHandlers availability:', typeof window.setupCalendarCellHandlers);
+    if (typeof window.setupCalendarCellHandlers === 'function') {
+        console.log('Calling setupCalendarCellHandlers...');
+        window.setupCalendarCellHandlers();
+    } else {
+        console.error('setupCalendarCellHandlers not available!');
+    }
+    
+    // Настраиваем обработчики смен (если функция доступна)
+    console.log('Checking setupShiftHandlers availability:', typeof window.setupShiftHandlers);
+    if (typeof window.setupShiftHandlers === 'function') {
+        console.log('Calling setupShiftHandlers...');
+        window.setupShiftHandlers();
+    } else {
+        console.error('setupShiftHandlers not available!');
     }
 }
 

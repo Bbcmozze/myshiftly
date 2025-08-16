@@ -1077,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Установка обработчиков для кнопок удаления смен
-    const setupShiftHandlers = () => {
+    window.setupShiftHandlers = () => {
         // Удаляем старые обработчики
         document.querySelectorAll('.remove-shift-btn').forEach(btn => {
             btn.removeEventListener('click', handleShiftDelete);
@@ -1134,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Обработка кликов по ячейкам календаря
-    const setupCalendarCellHandlers = () => {
+    window.setupCalendarCellHandlers = () => {
         document.querySelectorAll('.day-cell').forEach(cell => {
             // Проверяем, является ли пользователь владельцем календаря
             const isOwner = document.body.dataset.isOwner === 'true';
@@ -1286,7 +1286,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
 
-    const setupDraggableRows = () => {
+    window.setupDraggableRows = () => {
+        console.log('=== setupDraggableRows called ===');
         const tbody = document.querySelector('.calendar-table tbody');
         if (!tbody) {
             console.error('Table body not found');
@@ -1294,41 +1295,84 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const draggableRows = tbody.querySelectorAll('.user-row:not(.owner)');
-            if (draggableRows.length === 0) {
-                console.log('No draggable members found');
-                return;
-            }
+        console.log('Found draggable rows:', draggableRows.length);
+        draggableRows.forEach((row, i) => {
+            console.log(`Row ${i}:`, row.dataset.userId, row.dataset.groupId || 'ungrouped');
+        });
+        
+        if (draggableRows.length === 0) {
+            console.log('No draggable members found');
+            return;
+        }
 
-        if (tbody.sortableInstance) {
-                tbody.sortableInstance.destroy();
-            }
+        // Уничтожаем только инстанс для пользователей, не трогая групповой
+        if (tbody.userSortableInstance) {
+            console.log('Destroying existing user sortable instance');
+            tbody.userSortableInstance.destroy();
+        }
 
         // Находим строку владельца календаря
         const ownerRow = tbody.querySelector('.user-row.owner');
         if (!ownerRow) return;
 
-        new Sortable(tbody, {
+        console.log('Creating new user sortable instance');
+        tbody.userSortableInstance = Sortable.create(tbody, {
                 animation: 150,
                 ghostClass: 'sortable-ghost',
                 handle: '.user-cell',
-                filter: '.owner',
+                filter: '.owner, .group-header-row',
                 draggable: '.user-row:not(.owner)',
 
                 onStart: function(evt) {
+                    console.log('User drag started:', evt.item.dataset.userId);
                     if (evt.item.classList.contains('owner')) {
                         evt.preventDefault();
                     }
                 },
                 onMove: function(evt) {
+                    console.log('User drag move event:', {
+                        dragged: evt.dragged.dataset.userId,
+                        draggedGroup: evt.dragged.dataset.groupId || 'ungrouped',
+                        target: evt.related?.dataset?.userId || 'unknown',
+                        targetGroup: evt.related?.dataset?.groupId || 'ungrouped',
+                        targetClass: evt.related?.className
+                    });
+
                     // Запрещаем перемещение выше владельца
                     const ownerIndex = Array.from(tbody.children).indexOf(ownerRow);
-                    const draggedIndex = Array.from(tbody.children).indexOf(evt.dragged);
                     const targetIndex = Array.from(tbody.children).indexOf(evt.related);
 
-                    // Если пытаемся переместить выше владельца - запрещаем
                     if (targetIndex < ownerIndex) {
+                        console.log('Move blocked: target above owner');
                         return false;
                     }
+
+                    // Запрещаем перемещение на заголовки групп
+                    if (evt.related && evt.related.classList.contains('group-header-row')) {
+                        console.log('Move blocked: target is group header');
+                        return false;
+                    }
+
+                    // Проверяем, что пользователь перемещается только в пределах своей группы
+                    const draggedRow = evt.dragged;
+                    const targetRow = evt.related;
+                    
+                    if (!targetRow || !targetRow.classList.contains('user-row')) {
+                        console.log('Move blocked: target is not user row');
+                        return false;
+                    }
+
+                    const draggedGroupId = draggedRow.dataset.groupId || 'ungrouped';
+                    const targetGroupId = targetRow.dataset.groupId || 'ungrouped';
+
+                    // Разрешаем перемещение только в пределах одной группы
+                    if (draggedGroupId !== targetGroupId) {
+                        console.log('Move blocked: different groups', draggedGroupId, 'vs', targetGroupId);
+                        return false;
+                    }
+
+                    console.log('Move allowed');
+                    return true;
                 },
                 onEnd: function(evt) {
                     evt.item.style.backgroundColor = '';
