@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
-                setupDraggableRows(); // Добавляем эту строку
+                setupDraggableRows();
             }
         } catch (error) {
             console.error('Ошибка при загрузке календаря:', error);
@@ -176,6 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof updateCalendarAfterGroupChange === 'function') {
                     try {
                         await updateCalendarAfterGroupChange();
+                        // После динамического обновления DOM — переустанавливаем обработчики
+                        setupCalendarCellHandlers();
+                        setupShiftHandlers();
+                        setupDraggableRows();
+                        adjustTableLayout();
                     } catch (e) {
                         console.warn('Не удалось выполнить updateCalendarAfterGroupChange после перерисовки:', e);
                     }
@@ -1348,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ positions })
+                body: JSON.stringify({ positions: positions }) // Backend ожидает формат { positions: { userId: pos, ... } }
             });
 
             if (!response.ok) {
@@ -1469,6 +1474,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof updateCalendarAfterGroupChange === 'function') {
             try {
                 await updateCalendarAfterGroupChange();
+                // После первичной синхронизации — переустанавливаем обработчики
+                setupCalendarCellHandlers();
+                setupShiftHandlers();
+                setupDraggableRows();
+                adjustTableLayout();
             } catch (e) {
                 console.warn('Не удалось выполнить первичную синхронизацию групп:', e);
             }

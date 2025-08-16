@@ -381,21 +381,24 @@ def register_routes(app):
             calendar_members.c.calendar_id == calendar.id
         ).scalar() or 0
 
-        for user_id in user_ids:
+        # Назначаем уникальные возрастающие позиции для каждого добавляемого пользователя
+        for idx, user_id in enumerate(user_ids, start=1):
             user = User.query.get(user_id)
-            if user and user not in calendar.members and user.id != calendar.owner_id:
-                max_position += 1
-                # Добавляем с указанием позиции
+            if not user:
+                return jsonify({'success': False, 'message': f'Пользователь с ID {user_id} не найден'}), 400
+
+            if user not in calendar.members:
+                new_position = max_position + idx
                 db.session.execute(calendar_members.insert().values(
                     calendar_id=calendar.id,
                     user_id=user.id,
-                    position=max_position
+                    position=new_position
                 ))
                 added_members.append({
                     'id': user.id,
                     'username': user.username,
                     'avatar': user.avatar,
-                    'position': max_position
+                    'position': new_position
                 })
 
         db.session.commit()
@@ -546,7 +549,7 @@ def register_routes(app):
             if existing_shift:
                 return jsonify({
                     'success': False,
-                    'error': 'У пользователя уже есть смену в этот день'
+                    'error': 'У пользователя уже есть смена в этот день'
                 }), 400
 
             # Создаём смену с цветом из шаблона
@@ -664,15 +667,24 @@ def register_routes(app):
         if calendar.owner_id != current_user.id and current_user not in calendar.members:
             abort(403)
 
-        # Формируем список участников (только члены, без владельца для групп)
-        members = []
+        # Возвращаем участников с их позицией из calendar_members, отсортированных по позиции (возрастание)
+        # Владелец не включается (для групп он не нужен)
+        rows = (
+            db.session.query(User.id, User.username, User.avatar, calendar_members.c.position)
+            .join(calendar_members, (calendar_members.c.user_id == User.id) & (calendar_members.c.calendar_id == calendar.id))
+            .order_by(calendar_members.c.position.asc(), User.id.asc())
+            .all()
+        )
 
-        for member in calendar.members:
-            members.append({
-                'id': member.id,
-                'username': member.username,
-                'avatar': member.avatar
-            })
+        members = [
+            {
+                'id': r.id,
+                'username': r.username,
+                'avatar': r.avatar,
+                'position': int(r.position) if r.position is not None else None,
+            }
+            for r in rows
+        ]
 
         return jsonify(members)
 
@@ -733,25 +745,31 @@ def register_routes(app):
                 }), 403
 
         try:
-            data = request.get_json()
-            positions = data.get('positions', {})
+            data = request.get_json() or {}
+            # Поддерживаем оба формата: { "positions": {"<uid>": pos} } и {"<uid>": pos}
+            positions = data.get('positions') if isinstance(data, dict) and 'positions' in data else data
 
-            if not positions:
+            if not isinstance(positions, dict) or not positions:
                 return jsonify({'success': False, 'error': 'Empty positions data'}), 400
 
-            # Валидация user_ids
+            # Приводим ключи и значения к int и валидируем
+            try:
+                normalized = {int(uid): int(pos) for uid, pos in positions.items()}
+            except Exception:
+                return jsonify({'success': False, 'error': 'Positions must be a dict of {user_id:int -> position:int}'}), 400
+
             valid_user_ids = {m.id for m in calendar.members}
-            for user_id in positions.keys():
-                if int(user_id) not in valid_user_ids:
-                    return jsonify({'success': False, 'error': f'Invalid user ID: {user_id}'}), 400
+            for uid in normalized.keys():
+                if uid not in valid_user_ids:
+                    return jsonify({'success': False, 'error': f'Invalid user ID: {uid}'}), 400
 
             # Обновляем позиции по одной записи
-            for user_id, position in positions.items():
+            for uid, pos in normalized.items():
                 db.session.execute(
                     calendar_members.update()
                     .where(calendar_members.c.calendar_id == calendar.id)
-                    .where(calendar_members.c.user_id == user_id)
-                    .values(position=position)
+                    .where(calendar_members.c.user_id == uid)
+                    .values(position=pos)
                 )
 
             db.session.commit()
@@ -759,7 +777,7 @@ def register_routes(app):
             return jsonify({
                 'success': True,
                 'message': 'Positions updated successfully',
-                'updated_count': len(positions)
+                'updated_count': len(normalized)
             })
 
         except Exception as e:
