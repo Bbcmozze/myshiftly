@@ -69,6 +69,7 @@ class Group(db.Model):
     color = db.Column(db.String(20), default='badge-color-1', nullable=False)
     calendar_id = db.Column(db.Integer, db.ForeignKey('calendar.id'), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    position = db.Column(db.Integer, nullable=False, default=0)  # Позиция группы в календаре
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     calendar = db.relationship('Calendar', back_populates='groups')

@@ -170,6 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
                 setupDraggableRows();
+                
+                // Обновляем список групп с правильной сортировкой
+                updateGroupsSidebar();
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);
@@ -1388,8 +1391,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                     groupList.appendChild(noGroupsElement);
                 } else {
-                    // Добавляем группы
-                    groupsData.groups.forEach(group => {
+                    // Сортируем группы по позиции в убывающем порядке (новые выше)
+                    const sortedGroups = groupsData.groups.sort((a, b) => b.position - a.position);
+                    
+                    // Добавляем отсортированные группы
+                    sortedGroups.forEach(group => {
                         const groupElement = document.createElement('div');
                         groupElement.className = 'group-item';
                         groupElement.dataset.groupId = group.id;
@@ -1448,6 +1454,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
         setupDraggableRows();
         }, 500);
+        
+        // Инициализируем список групп с правильной сортировкой
+        updateGroupsSidebar();
     };
 
     init();

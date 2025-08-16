@@ -489,6 +489,33 @@ async function removeMemberFromGroup(groupId, userId) {
     }
 }
 
+// Функция для создания DOM-элемента группы
+function createGroupElement(group) {
+    const groupElement = document.createElement('div');
+    groupElement.className = 'group-item';
+    groupElement.dataset.groupId = group.id;
+    
+    groupElement.innerHTML = `
+        <div class="group-header">
+            <div class="group-color-indicator ${group.color}"></div>
+            <div class="group-info">
+                <div class="group-title">${group.name}</div>
+                <div class="group-members-count">${group.members.length} участников</div>
+            </div>
+        </div>
+        <div class="group-actions">
+            <button class="edit-group-btn" data-group-id="${group.id}">
+                <i class="bi bi-pencil"></i>
+            </button>
+            <button class="delete-group-btn" data-group-id="${group.id}">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    return groupElement;
+}
+
 // Функция для динамического добавления группы в DOM
 function addGroupToDOM(group) {
     try {
@@ -523,7 +550,7 @@ function addGroupToDOM(group) {
             </div>
         `;
         
-        // Добавляем в начало списка
+        // Добавляем в начало списка (новые группы выше по позиции)
         groupList.insertBefore(groupElement, groupList.firstChild);
         
         // Обновляем счетчик групп
@@ -661,8 +688,64 @@ async function updateCalendarTable(groups, members) {
             }
         });
         
+        // Сортируем группы по позиции перед передачей в updateCalendarTableRows
+        const sortedGroupedMembers = new Map();
+        
+        // Сначала добавляем все группы (кроме ungrouped) по позиции
+        const groupsOnly = new Map();
+        groupedMembers.forEach((groupData, groupId) => {
+            if (groupId !== 'ungrouped' && groupData.members.length > 0) {
+                groupsOnly.set(groupId, groupData);
+            }
+        });
+        
+        // Сортируем группы по позиции в убывающем порядке (новые выше)
+        const sortedGroupIds = Array.from(groupsOnly.keys()).sort((a, b) => {
+            const groupA = groupsOnly.get(a);
+            const groupB = groupsOnly.get(b);
+            return groupB.group.position - groupA.group.position;
+        });
+        
+        // Добавляем отсортированные группы
+        sortedGroupIds.forEach(groupId => {
+            const groupData = groupsOnly.get(groupId);
+            sortedGroupedMembers.set(groupId, groupData);
+        });
+        
+        // ВСЕГДА в самом конце добавляем участников без группы (только если есть участники)
+        if (groupedMembers.has('ungrouped') && groupedMembers.get('ungrouped').members.length > 0) {
+            sortedGroupedMembers.set('ungrouped', groupedMembers.get('ungrouped'));
+        }
+        
+        // Дополнительная проверка: убеждаемся, что ungrouped всегда последний
+        // Используем массив для гарантированного порядка
+        const finalOrder = [];
+        
+        // Сначала добавляем все группы (кроме ungrouped) в правильном порядке
+        sortedGroupedMembers.forEach((groupData, groupId) => {
+            if (groupId !== 'ungrouped') {
+                finalOrder.push({ groupId, groupData });
+            }
+        });
+        
+        // В самом конце добавляем ungrouped
+        if (ungroupedData && ungroupedData.members.length > 0) {
+            finalOrder.push({ groupId: 'ungrouped', groupData: ungroupedData });
+        }
+        
+        console.log('Финальный порядок (массив):', finalOrder.map(item => item.groupId));
+        
+        // Создаем новый Map с правильным порядком
+        const finalSortedGroupedMembers = new Map();
+        finalOrder.forEach(item => {
+            finalSortedGroupedMembers.set(item.groupId, item.groupData);
+        });
+        
+        console.log('Финальные отсортированные groupedMembers:', finalSortedGroupedMembers);
+        console.log('Проверка порядка в Map:', Array.from(finalSortedGroupedMembers.keys()));
+        
         // Обновляем таблицу календаря
-        updateCalendarTableRows(groupedMembers, shifts);
+        updateCalendarTableRows(finalSortedGroupedMembers, shifts);
         
     } catch (error) {
         console.error('Ошибка обновления таблицы календаря:', error);
@@ -671,6 +754,9 @@ async function updateCalendarTable(groups, members) {
 
 // Функция для обновления строк таблицы календаря
 function updateCalendarTableRows(groupedMembers, shifts) {
+    console.log('=== updateCalendarTableRows ===');
+    console.log('Входные данные groupedMembers:', groupedMembers);
+    
     const tbody = document.querySelector('.calendar-table tbody');
     if (!tbody) return;
     
@@ -681,17 +767,28 @@ function updateCalendarTableRows(groupedMembers, shifts) {
         tbody.appendChild(ownerRow);
     }
     
-    // Добавляем новые строки для групп и участников
-    groupedMembers.forEach((groupData, groupId) => {
+    // Данные уже отсортированы в updateCalendarTable, просто отображаем их
+    console.log('Отображение групп в порядке:', Array.from(groupedMembers.keys()));
+    
+    // Используем массив для гарантированного порядка отображения
+    const displayOrder = Array.from(groupedMembers.keys());
+    console.log('Порядок отображения (массив):', displayOrder);
+    
+    displayOrder.forEach(groupId => {
+        const groupData = groupedMembers.get(groupId);
+        
         // Пропускаем пустые группы
         if (groupData.members.length === 0) {
+            console.log(`Пропускаем пустую группу: ${groupId}`);
             return;
         }
         
         if (groupId === 'ungrouped') {
+            console.log('Добавляем заголовок: Без группы');
             // Заголовок для участников без группы
             addGroupHeaderRow(tbody, null, 'Без группы');
         } else {
+            console.log(`Добавляем группу: ${groupData.group.name} (позиция: ${groupData.group.position})`);
             // Заголовок группы
             addGroupHeaderRow(tbody, groupData.group, groupData.group.name);
         }
@@ -1014,9 +1111,13 @@ async function updateGroupsSidebar() {
                 `;
                 groupList.appendChild(noGroupsElement);
             } else {
-                // Добавляем группы
-                groupsData.groups.forEach(group => {
-                    addGroupToDOM(group);
+                // Сортируем группы по позиции в убывающем порядке (новые выше)
+                const sortedGroups = groupsData.groups.sort((a, b) => b.position - a.position);
+                
+                // Добавляем отсортированные группы в правильном порядке
+                sortedGroups.forEach(group => {
+                    const groupElement = createGroupElement(group);
+                    groupList.appendChild(groupElement);
                 });
             }
             

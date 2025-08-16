@@ -827,11 +827,20 @@ def register_routes(app):
             return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
 
         try:
+            # Получаем максимальную позицию для групп в этом календаре
+            max_position = db.session.query(db.func.max(Group.position)).filter(
+                Group.calendar_id == calendar_id
+            ).scalar() or 0
+            
+            # Новая группа получает позицию на 1 больше максимальной
+            new_position = max_position + 1
+            
             group = Group(
                 name=name,
                 color=color,
                 calendar_id=calendar_id,
-                owner_id=current_user.id
+                owner_id=current_user.id,
+                position=new_position
             )
             db.session.add(group)
             db.session.flush()  # Получаем ID группы
@@ -850,6 +859,7 @@ def register_routes(app):
                     'id': group.id,
                     'name': group.name,
                     'color': group.color,
+                    'position': group.position,
                     'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
                 }
             })
@@ -891,6 +901,7 @@ def register_routes(app):
                     'id': group.id,
                     'name': group.name,
                     'color': group.color,
+                    'position': group.position,
                     'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
                 }
             })
@@ -930,6 +941,7 @@ def register_routes(app):
                 'name': group.name,
                 'color': group.color,
                 'owner_id': group.owner_id,
+                'position': group.position,
                 'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
             })
 
