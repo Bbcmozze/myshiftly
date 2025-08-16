@@ -1572,7 +1572,6 @@ body.fullscreen-active #fullscreenOverlay {
 /* Курсор для перетаскивания заголовков групп */
 .group-header-row .group-header-cell {
     cursor: grab;
-    user-select: none;
 }
 
 /* При зажатии */

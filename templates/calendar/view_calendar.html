@@ -213,7 +213,7 @@
                     {% for group_id, group_data in grouped_members.items() %}
                         {% if group_data.group %}
                         <!-- Заголовок группы -->
-                        <tr class="group-header-row">
+                        <tr class="group-header-row" data-group-id="{{ group_data.group.id }}" draggable="true">
                             <td class="group-header-cell" colspan="{{ days_in_month|length + 1 }}">
                                 <div class="group-header-content">
                                     <div class="group-color-indicator {{ group_data.group.color }}"></div>
@@ -223,7 +223,7 @@
                         </tr>
                         {% else %}
                         <!-- Заголовок для участников без группы -->
-                        <tr class="group-header-row">
+                        <tr class="group-header-row" data-ungrouped="true">
                             <td class="group-header-cell" colspan="{{ days_in_month|length + 1 }}">
                                 <div class="group-header-content">
                                     <span class="group-name">Без группы</span>

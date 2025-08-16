@@ -85,6 +85,26 @@ function initializeGroups() {
     // Обработчики для выбора цвета в модальных окнах
     setupColorSelection();
     
+    // Инициализируем объединенный DnD для групп и участников
+    // Проверяем наличие таблицы календаря
+    const calendarTable = document.querySelector('.calendar-table tbody');
+    if (calendarTable) {
+        console.log('📅 Calendar table found, initializing drag-and-drop...');
+        setupUnifiedDragAndDrop();
+    } else {
+        console.log('⏳ Calendar table not found, will initialize drag-and-drop after table loads');
+        // Попробуем инициализировать через небольшую задержку
+        setTimeout(() => {
+            const tbody = document.querySelector('.calendar-table tbody');
+            if (tbody) {
+                console.log('📅 Calendar table loaded, initializing drag-and-drop...');
+                setupUnifiedDragAndDrop();
+            } else {
+                console.warn('❌ Calendar table still not found after delay');
+            }
+        }, 500);
+    }
+    
     console.log('Groups initialization completed'); // Для отладки
 }
 
@@ -624,119 +644,323 @@ function updateGroupsCount() {
     }
 }
 
-// Инициализация Drag&Drop для заголовков групп в таблице
-function setupGroupDragAndDrop() {
+// Объединенная инициализация Drag&Drop для групп и участников
+function setupUnifiedDragAndDrop() {
     try {
-        // Только владелец календаря может менять порядок групп
-        if (!isCalendarOwner()) return;
+        console.log('=== setupUnifiedDragAndDrop called ===');
+        
         const tbody = document.querySelector('.calendar-table tbody');
-        if (!tbody) return;
+        if (!tbody) {
+            console.log('Table body not found');
+            return;
+        }
 
-        // Разрешаем перетаскивать только строки-заголовки групп (кроме "Без группы")
-        const headers = tbody.querySelectorAll('tr.group-header-row[data-group-id]');
-        if (headers.length === 0) return;
-
-        // Уничтожаем предыдущий инстанс, если есть
+        // Уничтожаем все предыдущие инстансы
         if (tbody.groupSortableInstance) {
             tbody.groupSortableInstance.destroy();
+            tbody.groupSortableInstance = null;
+        }
+        if (tbody.userSortableInstance) {
+            tbody.userSortableInstance.destroy();
+            tbody.userSortableInstance = null;
         }
 
         const ownerRow = tbody.querySelector('.user-row.owner');
         const ungroupedHeader = tbody.querySelector('tr.group-header-row[data-ungrouped="true"]');
+        const isOwner = isCalendarOwner();
 
+        let draggingType = null; // 'group' или 'user'
         let draggingGroupId = null;
         let draggingMemberRows = [];
 
-        tbody.groupSortableInstance = Sortable.create(tbody, {
+        console.log('🔧 Creating unified sortable instance...');
+        
+        // Отладка: проверяем какие элементы найдены селекторами
+        const draggableSelector = isOwner ? 
+            'tr.group-header-row[data-group-id], tr.user-row:not(.owner)' : 
+            'tr.user-row:not(.owner)';
+        const handleSelector = '.group-header-cell, .user-cell';
+        
+        console.log('🔍 Draggable selector:', draggableSelector);
+        console.log('🔍 Handle selector:', handleSelector);
+        
+        const draggableElements = tbody.querySelectorAll(draggableSelector);
+        const handleElements = tbody.querySelectorAll(handleSelector);
+        
+        console.log('🔍 Found draggable elements:', draggableElements.length);
+        draggableElements.forEach((el, i) => {
+            console.log(`   ${i+1}. ${el.className} - dataset:`, el.dataset);
+        });
+        
+        console.log('🔍 Found handle elements:', handleElements.length);
+        handleElements.forEach((el, i) => {
+            console.log(`   ${i+1}. ${el.className} - parent:`, el.parentElement.className);
+        });
+        
+        // Добавляем отладку событий мыши на handle элементы
+        handleElements.forEach(el => {
+            el.addEventListener('mousedown', (e) => {
+                console.log('🖱️ mousedown on handle:', el.className, 'parent:', el.parentElement.className);
+            });
+            el.addEventListener('dragstart', (e) => {
+                console.log('🚀 dragstart on handle:', el.className);
+            });
+        });
+
+        tbody.unifiedSortableInstance = Sortable.create(tbody, {
             animation: 150,
-            handle: '.group-header-cell',
-            draggable: 'tr.group-header-row[data-group-id]',
-            filter: 'tr.user-row, tr.group-header-row[data-ungrouped="true"]',
-            onStart: function(evt) {
-                const row = evt.item;
-                draggingGroupId = row.dataset.groupId || null;
-                // Сохраняем строки участников перетаскиваемой группы
-                draggingMemberRows = Array.from(tbody.querySelectorAll(`.user-row[data-group-id="${draggingGroupId}"]`));
+            ghostClass: 'sortable-ghost',
+            
+            // Определяем селекторы для перетаскиваемых элементов
+            draggable: draggableSelector,
+
+            // Используем универсальный handle - и для групп и для пользователей
+            handle: handleSelector,
+
+            // Определяем тип элемента при выборе
+            onChoose: function(evt) {
+                console.log('🎯 onChoose triggered for:', evt.item.className, 'dataset:', evt.item.dataset);
+                console.log('🎯 Event details:', {
+                    target: evt.target,
+                    originalEvent: evt.originalEvent,
+                    item: evt.item,
+                    from: evt.from
+                });
+                
+                if (evt.item.classList.contains('group-header-row')) {
+                    draggingType = 'group';
+                    draggingGroupId = evt.item.dataset.groupId;
+                    draggingMemberRows = Array.from(tbody.querySelectorAll(`.user-row[data-group-id="${draggingGroupId}"]`));
+                    console.log('🔄 Dragging group:', draggingGroupId, 'with', draggingMemberRows.length, 'members');
+                } else if (evt.item.classList.contains('user-row')) {
+                    draggingType = 'user';
+                    console.log('🔄 Dragging user:', evt.item.dataset.userId);
+                } else {
+                    console.warn('⚠️ Unknown dragging element:', evt.item.className);
+                }
             },
+
+            onStart: function(evt) {
+                console.log('🚀 onStart - draggingType:', draggingType, 'element:', evt.item.className);
+            },
+
             onMove: function(evt) {
-                // Запрещаем перетаскивать над владельцем
+                const draggedItem = evt.dragged;
+                const relatedItem = evt.related;
+
+                // Общие ограничения
                 if (ownerRow) {
                     const ownerIndex = Array.from(tbody.children).indexOf(ownerRow);
-                    const targetIndex = Array.from(tbody.children).indexOf(evt.related);
+                    const targetIndex = Array.from(tbody.children).indexOf(relatedItem);
                     if (targetIndex !== -1 && targetIndex <= ownerIndex) {
                         return false;
                     }
                 }
 
-                // Запрещаем таргет на строки участников — только на другие заголовки
-                if (evt.related && evt.related.classList.contains('user-row')) {
-                    return false;
-                }
-
-                // Запрещаем опускать ниже заголовка "Без группы"
-                if (ungroupedHeader) {
-                    const ungroupedIndex = Array.from(tbody.children).indexOf(ungroupedHeader);
-                    const targetIndex = Array.from(tbody.children).indexOf(evt.related);
-                    if (targetIndex !== -1 && targetIndex > ungroupedIndex) {
+                if (draggingType === 'group') {
+                    // Логика для перетаскивания групп
+                    if (!isOwner) {
                         return false;
                     }
+
+                    // Ранее мы запрещали таргет на строки участников, что приводило к откату
+                    // Теперь разрешаем таргет и даём Sortable самостоятельно вычислить позицию
+                    // между заголовками групп. Порядок групп мы всё равно собираем по заголовкам.
+
+                    // Запрещаем опускать ниже заголовка "Без группы"
+                    if (ungroupedHeader) {
+                        const ungroupedIndex = Array.from(tbody.children).indexOf(ungroupedHeader);
+                        const targetIndex = Array.from(tbody.children).indexOf(relatedItem);
+                        if (targetIndex !== -1 && targetIndex > ungroupedIndex) {
+                            return false;
+                        }
+                    }
+                } else if (draggingType === 'user') {
+                    // Логика для перетаскивания участников
+                    
+                    // Запрещаем перемещение на заголовки групп
+                    if (relatedItem && relatedItem.classList.contains('group-header-row')) {
+                        return false;
+                    }
+
+                    // Проверяем, что участник перемещается только в пределах своей группы
+                    if (relatedItem && relatedItem.classList.contains('user-row')) {
+                        const draggedGroupId = draggedItem.dataset.groupId || 'ungrouped';
+                        const targetGroupId = relatedItem.dataset.groupId || 'ungrouped';
+
+                        if (draggedGroupId !== targetGroupId) {
+                            return false;
+                        }
+                    }
                 }
+
+                return true;
             },
+
             onEnd: async function(evt) {
-                // Возвращаем фон
-                if (!draggingGroupId) return;
+                console.log('🏁 onEnd triggered!');
+                console.log('   - draggingType:', draggingType);
+                console.log('   - oldIndex:', evt.oldIndex, 'newIndex:', evt.newIndex);
+                console.log('   - item:', evt.item.className);
+                console.log('   - item dataset:', evt.item.dataset);
 
-                // Переносим все строки участников за новым положением заголовка
-                const headerAfterDrop = evt.item;
-
-                // Удаляем участника строки из текущего места и вставляем сразу после заголовка
-                const referenceNode = headerAfterDrop.nextSibling; // первая строка после заголовка
-                draggingMemberRows.forEach(row => {
-                    tbody.insertBefore(row, referenceNode);
-                });
-
-                // Собираем новый порядок заголовков групп (до "Без группы")
-                const order = [];
-                const headerRows = Array.from(tbody.querySelectorAll('tr.group-header-row[data-group-id]'));
-                for (const hr of headerRows) {
-                    // Если есть заголовок "Без группы", прекращаем на нем
-                    if (ungroupedHeader && hr === ungroupedHeader) break;
-                    const gid = parseInt(hr.dataset.groupId);
-                    if (!isNaN(gid)) order.push(gid);
-                }
-
-                // Сохраняем порядок на сервере
-                try {
-                    const resp = await fetch(`/api/update_group_positions/${currentCalendarId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ order })
-                    });
-                    if (!resp.ok) {
-                        // В случае 403 или ошибки — восстановить таблицу
-                        console.warn('Не удалось сохранить порядок групп');
-                        await updateCalendarAfterGroupChange();
+                if (draggingType === 'group') {
+                    console.log('📦 Calling handleGroupDrop...');
+                    await handleGroupDrop(evt);
+                } else if (draggingType === 'user') {
+                    if (evt.oldIndex === evt.newIndex) {
+                        console.log('⏭️ No position change for user, skipping');
                         return;
                     }
-                    const data = await resp.json();
-                    if (!data.success) {
-                        console.warn('Сервер отверг обновление порядка групп:', data.error);
-                        await updateCalendarAfterGroupChange();
-                        return;
-                    }
-                    // Перерисуем таблицу с обновленным порядком для консистентности
-                    await updateCalendarAfterGroupChange();
-                } catch (e) {
-                    console.error('Ошибка сохранения порядка групп:', e);
-                    await updateCalendarAfterGroupChange();
-                } finally {
-                    draggingGroupId = null;
-                    draggingMemberRows = [];
+                    console.log('👤 Calling handleUserDrop...');
+                    await handleUserDrop(evt);
+                } else {
+                    console.warn('❓ Unknown draggingType:', draggingType);
                 }
+
+                // Сброс состояния
+                draggingType = null;
+                draggingGroupId = null;
+                draggingMemberRows = [];
             }
         });
+        
+        console.log('✅ Unified sortable instance created successfully');
     } catch (e) {
-        console.error('Не удалось инициализировать DnD для групп:', e);
+        console.error('Не удалось инициализировать объединенный DnD:', e);
+    }
+}
+
+// Обработка завершения перетаскивания группы
+async function handleGroupDrop(evt) {
+    try {
+        console.log('=== GROUP DROP DEBUG ===');
+        console.log('evt.oldIndex:', evt.oldIndex, 'evt.newIndex:', evt.newIndex);
+
+        // Получаем tbody заранее
+        const tbody = document.querySelector('.calendar-table tbody');
+
+        // Определяем заголовок группы и её id из события
+        const headerAfterDrop = evt.item;
+        const groupId = headerAfterDrop?.dataset?.groupId;
+        if (!groupId) {
+            console.error('No groupId found on dropped header!');
+            return;
+        }
+        console.log('groupId (from evt.item):', groupId);
+
+        // Вычисляем строки участников этой группы на момент drop
+        const memberRows = Array.from(tbody.querySelectorAll(`.user-row[data-group-id="${groupId}"]`));
+        console.log('memberRows count (computed):', memberRows.length);
+
+        // Переносим все строки участников за новым положением заголовка
+        const referenceNode = headerAfterDrop.nextSibling;
+        console.log('Moving', memberRows.length, 'member rows after header');
+
+        memberRows.forEach((row, index) => {
+            console.log(`Moving member row ${index}:`, row.dataset.userId);
+            tbody.insertBefore(row, referenceNode);
+        });
+
+        // Собираем новый порядок заголовков групп
+        const ungroupedHeader = tbody.querySelector('tr.group-header-row[data-ungrouped="true"]');
+        const order = [];
+        const headerRows = Array.from(tbody.querySelectorAll('tr.group-header-row[data-group-id]'));
+        
+        console.log('Found header rows:', headerRows.length);
+        console.log('Ungrouped header exists:', !!ungroupedHeader);
+        
+        for (const hr of headerRows) {
+            if (ungroupedHeader && hr === ungroupedHeader) {
+                console.log('Stopping at ungrouped header');
+                break;
+            }
+            const gid = parseInt(hr.dataset.groupId);
+            if (!isNaN(gid)) {
+                order.push(gid);
+                console.log('Added group to order:', gid);
+            }
+        }
+
+        console.log('Final group order:', order);
+
+        // Сохраняем порядок на сервере
+        console.log('Sending request to:', `/api/update_group_positions/${currentCalendarId}`);
+        console.log('Request body:', { order });
+        
+        const resp = await fetch(`/api/update_group_positions/${currentCalendarId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order })
+        });
+        
+        console.log('Response status:', resp.status);
+        
+        if (!resp.ok) {
+            console.error('Server responded with error:', resp.status, resp.statusText);
+            await updateCalendarAfterGroupChange();
+            return;
+        }
+        
+        const data = await resp.json();
+        console.log('Server response:', data);
+        
+        if (!data.success) {
+            console.error('Server rejected group position update:', data.error);
+            await updateCalendarAfterGroupChange();
+            return;
+        }
+        
+        console.log('✅ Group positions saved successfully!');
+        // Не вызываем updateCalendarAfterGroupChange() чтобы не перерисовывать таблицу
+        console.log('=== GROUP DROP COMPLETE ===');
+    } catch (e) {
+        console.error('❌ Error in handleGroupDrop:', e);
+        await updateCalendarAfterGroupChange();
+    }
+}
+
+// Обработка завершения перетаскивания участника
+async function handleUserDrop(evt) {
+    try {
+        const rows = document.querySelectorAll('.user-row:not(.owner)');
+        if (rows.length === 0) return;
+
+        const positions = {};
+        const calendarId = document.body.dataset.calendarId || currentCalendarId;
+
+        rows.forEach((row, index) => {
+            const userId = row.dataset.userId;
+            if (userId) positions[userId] = index + 1;
+        });
+
+        const response = await fetch(`/calendar/${calendarId}/update-positions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ positions: positions })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            if (response.status === 403) {
+                throw new Error('У вас нет прав на изменение порядка участников!');
+            }
+            throw new Error(errorData.error || 'Неизвестная ошибка сервера');
+        }
+
+        if (typeof toastManager !== 'undefined') {
+            toastManager.show('Порядок участников сохранён', 'success');
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения порядка участников:', error);
+        if (typeof toastManager !== 'undefined') {
+            toastManager.show(`Не удалось сохранить порядок: ${error.message}`, 'danger');
+        }
+        // Восстанавливаем предыдущий порядок
+        await updateCalendarAfterGroupChange();
     }
 }
 
@@ -961,17 +1185,8 @@ function updateCalendarTableRows(groupedMembers, shifts) {
         });
     });
     
-    // Инициализируем DnD для заголовков групп
-    setupGroupDragAndDrop();
-    
-    // Инициализируем DnD для участников (если функция доступна)
-    console.log('Checking setupDraggableRows availability:', typeof window.setupDraggableRows);
-    if (typeof window.setupDraggableRows === 'function') {
-        console.log('Calling setupDraggableRows...');
-        window.setupDraggableRows();
-    } else {
-        console.error('setupDraggableRows not available!');
-    }
+    // Инициализируем объединенный DnD для групп и участников
+    setupUnifiedDragAndDrop();
     
     // Настраиваем обработчики ячеек календаря (если функция доступна)
     console.log('Checking setupCalendarCellHandlers availability:', typeof window.setupCalendarCellHandlers);
@@ -1334,4 +1549,3 @@ async function updateGroupsSidebar() {
         console.error('Ошибка обновления списка групп в сайдбаре:', error);
     }
 }
-
