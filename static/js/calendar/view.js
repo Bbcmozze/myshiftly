@@ -1398,8 +1398,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                     groupList.appendChild(noGroupsElement);
                 } else {
-                    // Сортируем группы по позиции в убывающем порядке (новые выше)
-                    const sortedGroups = groupsData.groups.sort((a, b) => b.position - a.position);
+                    // Сортируем группы по позиции (новые выше), при равенстве — по id (новые выше)
+                    const sortedGroups = groupsData.groups.sort((a, b) => (b.position - a.position) || (b.id - a.id));
                     
                     // Добавляем отсортированные группы
                     sortedGroups.forEach(group => {
@@ -1447,7 +1447,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Инициализация всех обработчиков
-    const init = () => {
+    const init = async () => {
         updateMonthDisplay();
         setupMonthNavigation();
         setupModals();
@@ -1463,7 +1463,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 500);
         
         // Инициализируем список групп с правильной сортировкой
-        updateGroupsSidebar();
+        await updateGroupsSidebar();
+
+        // ВАЖНО: после первой загрузки страницы синхронизируем таблицу и счётчики
+        if (typeof updateCalendarAfterGroupChange === 'function') {
+            try {
+                await updateCalendarAfterGroupChange();
+            } catch (e) {
+                console.warn('Не удалось выполнить первичную синхронизацию групп:', e);
+            }
+        }
     };
 
     init();

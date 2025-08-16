@@ -630,6 +630,9 @@ async function updateCalendarAfterGroupChange() {
             // Получаем список всех участников календаря
             const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`);
             const members = await membersResponse.json();
+            console.log('=== DIAG: updateCalendarAfterGroupChange ===');
+            console.log('Groups (raw from API):', groupsData.groups.map(g => ({ id: g.id, name: g.name, pos: g.position, members: g.members.map(m=>m.id) })));
+            console.log('Members (raw from API):', members.map(m => ({ id: m.id, username: m.username })));
             
             // Обновляем календарь динамически
             await updateCalendarTable(groupsData.groups, members);
@@ -648,7 +651,11 @@ async function updateCalendarTable(groups, members) {
         // Получаем смены для отображения
         const shiftsResponse = await fetch(`/calendar/${currentCalendarId}/shifts`);
         const shifts = await shiftsResponse.json();
-        
+        console.log('=== DIAG: updateCalendarTable input ===');
+        console.log('Groups count:', groups.length);
+        console.log('Groups summary:', groups.map(g => ({ id: g.id, name: g.name, pos: g.position, membersCount: g.members.length })));
+        console.log('Members count:', members.length);
+
         // Создаем карту групп для быстрого поиска
         const userGroups = new Map();
         groups.forEach(group => {
@@ -659,6 +666,7 @@ async function updateCalendarTable(groups, members) {
                 userGroups.get(member.id).push(group);
             });
         });
+        console.log('User -> Groups map (ids):', Array.from(userGroups.entries()).map(([uid, gs]) => [uid, gs.map(g => g.id)]));
         
         // Группируем участников
         const groupedMembers = new Map();
@@ -687,7 +695,16 @@ async function updateCalendarTable(groups, members) {
                 }
             }
         });
-        
+        // Диагностика сгруппированных данных
+        const groupedDiag = Array.from(groupedMembers.entries()).map(([gid, data]) => ({
+            groupId: gid,
+            groupName: gid === 'ungrouped' ? 'Без группы' : data.group?.name,
+            position: gid === 'ungrouped' ? null : data.group?.position,
+            members: data.members.map(m => m.id),
+            membersCount: data.members.length
+        }));
+        console.log('GroupedMembers (pre-sort):', groupedDiag);
+
         // Сортируем группы по позиции перед передачей в updateCalendarTableRows
         const sortedGroupedMembers = new Map();
         
@@ -703,8 +720,12 @@ async function updateCalendarTable(groups, members) {
         const sortedGroupIds = Array.from(groupsOnly.keys()).sort((a, b) => {
             const groupA = groupsOnly.get(a);
             const groupB = groupsOnly.get(b);
-            return groupB.group.position - groupA.group.position;
+            const byPos = groupB.group.position - groupA.group.position;
+            if (byPos !== 0) return byPos;
+            // стабильная вторичная сортировка по id: новые выше
+            return groupB.group.id - groupA.group.id;
         });
+        console.log('Sorted group ids by position (desc):', sortedGroupIds);
         
         // Добавляем отсортированные группы
         sortedGroupIds.forEach(groupId => {
@@ -714,6 +735,7 @@ async function updateCalendarTable(groups, members) {
         
         // Получаем данные "Без группы" один раз
         const ungroupedData = groupedMembers.get('ungrouped');
+        console.log('Ungrouped members count:', ungroupedData ? ungroupedData.members.length : 0);
 
         // ВСЕГДА в самом конце добавляем участников без группы (только если есть участники)
         if (ungroupedData && ungroupedData.members.length > 0) {
@@ -789,11 +811,11 @@ function updateCalendarTableRows(groupedMembers, shifts) {
         if (groupId === 'ungrouped') {
             console.log('Добавляем заголовок: Без группы');
             // Заголовок для участников без группы
-            addGroupHeaderRow(tbody, null, 'Без группы');
+            addGroupHeaderRow(tbody, null, 'Без группы', groupData.members.length);
         } else {
-            console.log(`Добавляем группу: ${groupData.group.name} (позиция: ${groupData.group.position})`);
+            console.log(`Добавляем группу: ${groupData.group.name} (позиция: ${groupData.group.position}), участников: ${groupData.members.length}`);
             // Заголовок группы
-            addGroupHeaderRow(tbody, groupData.group, groupData.group.name);
+            addGroupHeaderRow(tbody, groupData.group, groupData.group.name, groupData.members.length);
         }
         
         // Добавляем строки участников
@@ -807,7 +829,7 @@ function updateCalendarTableRows(groupedMembers, shifts) {
 }
 
 // Функция для добавления заголовка группы
-function addGroupHeaderRow(tbody, group, title) {
+function addGroupHeaderRow(tbody, group, title, memberCount = null) {
     const headerRow = document.createElement('tr');
     headerRow.className = 'group-header-row';
     
@@ -828,6 +850,8 @@ function addGroupHeaderRow(tbody, group, title) {
     groupName.className = 'group-name';
     groupName.textContent = title;
     headerContent.appendChild(groupName);
+
+    // По просьбе пользователя скрываем визуальный счетчик участников в заголовке группы
     
     headerCell.appendChild(headerContent);
     headerRow.appendChild(headerCell);
