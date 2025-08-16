@@ -619,6 +619,122 @@ function updateGroupsCount() {
     }
 }
 
+// Инициализация Drag&Drop для заголовков групп в таблице
+function setupGroupDragAndDrop() {
+    try {
+        // Только владелец календаря может менять порядок групп
+        if (!isCalendarOwner()) return;
+        const tbody = document.querySelector('.calendar-table tbody');
+        if (!tbody) return;
+
+        // Разрешаем перетаскивать только строки-заголовки групп (кроме "Без группы")
+        const headers = tbody.querySelectorAll('tr.group-header-row[data-group-id]');
+        if (headers.length === 0) return;
+
+        // Уничтожаем предыдущий инстанс, если есть
+        if (tbody.groupSortableInstance) {
+            tbody.groupSortableInstance.destroy();
+        }
+
+        const ownerRow = tbody.querySelector('.user-row.owner');
+        const ungroupedHeader = tbody.querySelector('tr.group-header-row[data-ungrouped="true"]');
+
+        let draggingGroupId = null;
+        let draggingMemberRows = [];
+
+        tbody.groupSortableInstance = Sortable.create(tbody, {
+            animation: 150,
+            handle: '.group-header-cell',
+            draggable: 'tr.group-header-row[data-group-id]',
+            filter: 'tr.user-row, tr.group-header-row[data-ungrouped="true"]',
+            onStart: function(evt) {
+                const row = evt.item;
+                draggingGroupId = row.dataset.groupId || null;
+                // Сохраняем строки участников перетаскиваемой группы
+                draggingMemberRows = Array.from(tbody.querySelectorAll(`.user-row[data-group-id="${draggingGroupId}"]`));
+            },
+            onMove: function(evt) {
+                // Запрещаем перетаскивать над владельцем
+                if (ownerRow) {
+                    const ownerIndex = Array.from(tbody.children).indexOf(ownerRow);
+                    const targetIndex = Array.from(tbody.children).indexOf(evt.related);
+                    if (targetIndex !== -1 && targetIndex <= ownerIndex) {
+                        return false;
+                    }
+                }
+
+                // Запрещаем таргет на строки участников — только на другие заголовки
+                if (evt.related && evt.related.classList.contains('user-row')) {
+                    return false;
+                }
+
+                // Запрещаем опускать ниже заголовка "Без группы"
+                if (ungroupedHeader) {
+                    const ungroupedIndex = Array.from(tbody.children).indexOf(ungroupedHeader);
+                    const targetIndex = Array.from(tbody.children).indexOf(evt.related);
+                    if (targetIndex !== -1 && targetIndex > ungroupedIndex) {
+                        return false;
+                    }
+                }
+            },
+            onEnd: async function(evt) {
+                // Возвращаем фон
+                if (!draggingGroupId) return;
+
+                // Переносим все строки участников за новым положением заголовка
+                const headerAfterDrop = evt.item;
+
+                // Удаляем участника строки из текущего места и вставляем сразу после заголовка
+                const referenceNode = headerAfterDrop.nextSibling; // первая строка после заголовка
+                draggingMemberRows.forEach(row => {
+                    tbody.insertBefore(row, referenceNode);
+                });
+
+                // Собираем новый порядок заголовков групп (до "Без группы")
+                const order = [];
+                const headerRows = Array.from(tbody.querySelectorAll('tr.group-header-row[data-group-id]'));
+                for (const hr of headerRows) {
+                    // Если есть заголовок "Без группы", прекращаем на нем
+                    if (ungroupedHeader && hr === ungroupedHeader) break;
+                    const gid = parseInt(hr.dataset.groupId);
+                    if (!isNaN(gid)) order.push(gid);
+                }
+
+                // Сохраняем порядок на сервере
+                try {
+                    const resp = await fetch(`/api/update_group_positions/${currentCalendarId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ order })
+                    });
+                    if (!resp.ok) {
+                        // В случае 403 или ошибки — восстановить таблицу
+                        console.warn('Не удалось сохранить порядок групп');
+                        await updateCalendarAfterGroupChange();
+                        return;
+                    }
+                    const data = await resp.json();
+                    if (!data.success) {
+                        console.warn('Сервер отверг обновление порядка групп:', data.error);
+                        await updateCalendarAfterGroupChange();
+                        return;
+                    }
+                    // Перерисуем таблицу с обновленным порядком для консистентности
+                    await updateCalendarAfterGroupChange();
+                } catch (e) {
+                    console.error('Ошибка сохранения порядка групп:', e);
+                    await updateCalendarAfterGroupChange();
+                } finally {
+                    draggingGroupId = null;
+                    draggingMemberRows = [];
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Не удалось инициализировать DnD для групп:', e);
+    }
+}
+
 // Функция для динамического обновления календаря после изменения групп
 async function updateCalendarAfterGroupChange() {
     try {
@@ -826,12 +942,19 @@ function updateCalendarTableRows(groupedMembers, shifts) {
     
     // Обновляем список групп в сайдбаре
     updateGroupsSidebar();
+    // Инициализируем DnD для заголовков групп
+    setupGroupDragAndDrop();
 }
 
 // Функция для добавления заголовка группы
 function addGroupHeaderRow(tbody, group, title, memberCount = null) {
     const headerRow = document.createElement('tr');
     headerRow.className = 'group-header-row';
+    if (group && group.id) {
+        headerRow.dataset.groupId = group.id;
+    } else {
+        headerRow.dataset.ungrouped = 'true';
+    }
     
     const headerCell = document.createElement('td');
     headerCell.className = 'group-header-cell';

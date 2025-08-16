@@ -1569,6 +1569,23 @@ body.fullscreen-active #fullscreenOverlay {
     height: 20px !important;
 }
 
+/* Курсор для перетаскивания заголовков групп */
+.group-header-row .group-header-cell {
+    cursor: grab;
+    user-select: none;
+}
+
+/* При зажатии */
+.group-header-row .group-header-cell:active {
+    cursor: grabbing;
+}
+
+/* Во время перетаскивания (SortableJS добавляет класс на элемент) */
+tr.group-header-row.sortable-chosen .group-header-cell,
+tr.group-header-row.sortable-drag .group-header-cell {
+    cursor: grabbing;
+}
+
 .group-header-content {
     display: flex;
     align-items: center;

@@ -996,6 +996,43 @@ def register_routes(app):
 
         return jsonify({'success': True, 'members': members_with_groups})
 
+    @app.route('/api/update_group_positions/<int:calendar_id>', methods=['POST'])
+    @login_required
+    def update_group_positions(calendar_id):
+        """Обновляет порядок групп в календаре.
+        Ожидает JSON вида { "order": [group_id_top, group_id_next, ...] }
+        Позиции присваиваются так, чтобы первый элемент имел наибольшую позицию (для order_by desc).
+        """
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Изменять порядок групп может только владелец календаря'}), 403
+
+        data = request.get_json(silent=True) or {}
+        order = data.get('order')
+        if not isinstance(order, list) or not all(isinstance(i, int) for i in order):
+            return jsonify({'success': False, 'error': 'Некорректный формат данных'}), 400
+
+        # Получаем все группы календаря
+        groups = Group.query.filter_by(calendar_id=calendar_id).all()
+        group_map = {g.id: g for g in groups}
+
+        # Фильтруем входной порядок только по существующим группам этого календаря
+        filtered_order = [gid for gid in order if gid in group_map]
+        if not filtered_order:
+            return jsonify({'success': False, 'error': 'Список групп пуст или неверен'}), 400
+
+        try:
+            # Максимальная позиция присваивается верхнему элементу
+            max_pos = len(filtered_order)
+            for idx, gid in enumerate(filtered_order):
+                group_map[gid].position = max_pos - idx
+
+            db.session.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     @app.route('/api/remove_member_from_group/<int:group_id>/<int:user_id>', methods=['POST'])
     @login_required
     def remove_member_from_group(group_id, user_id):
