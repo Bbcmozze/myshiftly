@@ -171,8 +171,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupShiftHandlers();
                 setupDraggableRows();
                 
-                // Обновляем список групп с правильной сортировкой
-                updateGroupsSidebar();
+                // Синхронизируем порядок групп и блок "Без группы"
+                // через логику из groups.js после серверной перерисовки
+                if (typeof updateCalendarAfterGroupChange === 'function') {
+                    try {
+                        await updateCalendarAfterGroupChange();
+                    } catch (e) {
+                        console.warn('Не удалось выполнить updateCalendarAfterGroupChange после перерисовки:', e);
+                    }
+                }
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);

@@ -9,7 +9,7 @@
     </thead>
     <tbody>
         <!-- Владелец календаря -->
-        <tr class="user-row">
+        <tr class="user-row owner" data-user-id="{{ calendar.owner.id }}">
             <td class="user-cell">
                 <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                      onerror="this.src='/static/images/default_avatar.svg'">

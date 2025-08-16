@@ -932,7 +932,8 @@ def register_routes(app):
         if calendar.owner_id != current_user.id and current_user not in calendar.members:
             return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
 
-        groups = Group.query.filter_by(calendar_id=calendar_id).all()
+        # Возвращаем группы в порядке позиции (новые выше)
+        groups = Group.query.filter_by(calendar_id=calendar_id).order_by(Group.position.desc()).all()
         groups_data = []
         
         for group in groups:
