@@ -343,10 +343,9 @@ async function createGroup() {
         if (data.success) {
             toastManager.show('Группа успешно создана', 'success');
             closeModal('createGroupModal');
-            // Динамически добавляем новую группу в DOM
-            addGroupToDOM(data.group);
-            // Динамически обновляем календарь
-            await updateCalendarAfterGroupChange();
+            // Обновляем страницу после успешного создания группы
+            // Это гарантирует корректную инициализацию и состояние UI
+            location.reload();
         } else {
             toastManager.show(data.error || 'Ошибка создания группы', 'danger');
         }
