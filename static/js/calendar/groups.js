@@ -1,5 +1,4 @@
-// Глобальные переменные
-let currentCalendarId = null;
+// Глобальные переменные (currentCalendarId определена в view.js)
 let selectedGroupColor = 'badge-color-1';
 let selectedEditGroupColor = 'badge-color-1';
 
@@ -7,10 +6,8 @@ let selectedEditGroupColor = 'badge-color-1';
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Groups.js: DOM loaded, initializing...'); // Для отладки
     
-    // Получаем ID календаря из URL
-    const urlParts = window.location.pathname.split('/');
-    currentCalendarId = parseInt(urlParts[urlParts.length - 1]);
-    console.log('Calendar ID:', currentCalendarId); // Для отладки
+    // currentCalendarId уже определен в view.js
+    console.log('Groups.js using Calendar ID:', currentCalendarId);
     
     initializeGroups();
 });
@@ -553,6 +550,14 @@ function addGroupToDOM(group) {
         // Добавляем в начало списка (новые группы выше по позиции)
         groupList.insertBefore(groupElement, groupList.firstChild);
         
+        // Инициализируем DnD для заголовков групп
+        setupGroupDragAndDrop();
+        
+        // Инициализируем DnD для участников (если функция доступна)
+        if (typeof setupDraggableRows === 'function') {
+            setupDraggableRows();
+        }
+        
         // Обновляем счетчик групп
         updateGroupsCount();
         
@@ -751,18 +756,21 @@ async function updateCalendarAfterGroupChange() {
             console.log('Members (raw from API):', members.map(m => ({ id: m.id, username: m.username })));
             
             // Обновляем календарь динамически
-            await updateCalendarTable(groupsData.groups, members);
+            await rebuildCalendarTableFromData(groupsData.groups, members);
             
             // Обновляем модальное окно добавления участника
             await updateAddMembersModal();
+
+            // Единоразово обновляем сайдбар групп после полной синхронизации
+            await updateGroupsSidebar();
         }
     } catch (error) {
         console.error('Ошибка обновления календаря:', error);
     }
 }
 
-// Функция для динамического обновления таблицы календаря
-async function updateCalendarTable(groups, members) {
+// Функция для динамического обновления таблицы календаря (локальная, чтобы не пересекаться с view.js)
+async function rebuildCalendarTableFromData(groups, members) {
     try {
         // Получаем смены для отображения
         const shiftsResponse = await fetch(`/calendar/${currentCalendarId}/shifts`);
@@ -771,6 +779,12 @@ async function updateCalendarTable(groups, members) {
         console.log('Groups count:', groups.length);
         console.log('Groups summary:', groups.map(g => ({ id: g.id, name: g.name, pos: g.position, membersCount: g.members.length })));
         console.log('Members count:', members.length);
+        
+        // Детальная диагностика позиций групп
+        console.log('=== DETAILED POSITION DEBUG ===');
+        groups.forEach(g => {
+            console.log(`Group "${g.name}": id=${g.id}, position=${g.position} (type: ${typeof g.position})`);
+        });
 
         // Создаем карту групп для быстрого поиска
         const userGroups = new Map();
@@ -832,7 +846,7 @@ async function updateCalendarTable(groups, members) {
             }
         });
         
-        // Сортируем группы по позиции в убывающем порядке (новые выше)
+        // Сортируем группы по позиции в убывающем порядке (новые выше - большая позиция сверху)
         const sortedGroupIds = Array.from(groupsOnly.keys()).sort((a, b) => {
             const groupA = groupsOnly.get(a);
             const groupB = groupsOnly.get(b);
@@ -842,6 +856,13 @@ async function updateCalendarTable(groups, members) {
             return groupB.group.id - groupA.group.id;
         });
         console.log('Sorted group ids by position (desc):', sortedGroupIds);
+        
+        // Детальная диагностика сортировки
+        console.log('=== SORTING DEBUG ===');
+        sortedGroupIds.forEach(groupId => {
+            const groupData = groupsOnly.get(groupId);
+            console.log(`After sort: Group "${groupData.group.name}" (id=${groupData.group.id}, pos=${groupData.group.position})`);
+        });
         
         // Добавляем отсортированные группы
         sortedGroupIds.forEach(groupId => {
@@ -940,10 +961,13 @@ function updateCalendarTableRows(groupedMembers, shifts) {
         });
     });
     
-    // Обновляем список групп в сайдбаре
-    updateGroupsSidebar();
     // Инициализируем DnD для заголовков групп
     setupGroupDragAndDrop();
+    
+    // Инициализируем DnD для участников (если функция доступна)
+    if (typeof setupDraggableRows === 'function') {
+        setupDraggableRows();
+    }
 }
 
 // Функция для добавления заголовка группы
@@ -1261,8 +1285,18 @@ async function updateGroupsSidebar() {
                 `;
                 groupList.appendChild(noGroupsElement);
             } else {
-                // Сортируем группы по позиции в убывающем порядке (новые выше)
-                const sortedGroups = groupsData.groups.sort((a, b) => b.position - a.position);
+                // Сортируем группы по позиции в убывающем порядке (новые выше - большая позиция сверху)
+                console.log('=== SIDEBAR SORTING DEBUG ===');
+                groupsData.groups.forEach(g => {
+                    console.log(`Sidebar Group "${g.name}": id=${g.id}, position=${g.position} (type: ${typeof g.position})`);
+                });
+                
+                const sortedGroups = groupsData.groups.sort((a, b) => {
+                    console.log(`Comparing: "${a.name}" (pos=${a.position}) vs "${b.name}" (pos=${b.position}) => ${b.position - a.position}`);
+                    return b.position - a.position;
+                });
+                
+                console.log('Sidebar sorted order:', sortedGroups.map(g => `${g.name} (pos=${g.position})`));
                 
                 // Добавляем отсортированные группы в правильном порядке
                 sortedGroups.forEach(group => {

@@ -1,4 +1,25 @@
+// Глобальная переменная для ID календаря
+let currentCalendarId = null;
+
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Получаем ID календаря из URL
+    const urlParts = window.location.pathname.split('/');
+    const calendarIndex = urlParts.indexOf('calendar');
+    if (calendarIndex !== -1 && calendarIndex + 1 < urlParts.length) {
+        currentCalendarId = parseInt(urlParts[calendarIndex + 1]);
+    } else {
+        // Fallback: берём последний числовой сегмент
+        for (let i = urlParts.length - 1; i >= 0; i--) {
+            const parsed = parseInt(urlParts[i]);
+            if (!isNaN(parsed) && parsed > 0) {
+                currentCalendarId = parsed;
+                break;
+            }
+        }
+    }
+    
+    console.log('View.js Calendar ID:', currentCalendarId);
 
     // Проверка прав пользователя
     const isOwner = document.body.dataset.isOwner === 'true';
@@ -170,21 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
                 setupDraggableRows();
-                
-                // Синхронизируем порядок групп и блок "Без группы"
-                // через логику из groups.js после серверной перерисовки
-                if (typeof updateCalendarAfterGroupChange === 'function') {
-                    try {
-                        await updateCalendarAfterGroupChange();
-                        // После динамического обновления DOM — переустанавливаем обработчики
-                        setupCalendarCellHandlers();
-                        setupShiftHandlers();
-                        setupDraggableRows();
-                        adjustTableLayout();
-                    } catch (e) {
-                        console.warn('Не удалось выполнить updateCalendarAfterGroupChange после перерисовки:', e);
-                    }
-                }
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);
@@ -1421,11 +1427,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                             <div class="group-actions">
-                                <button class="edit-group-btn" data-group-id="${group.id}">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
                                 <button class="delete-group-btn" data-group-id="${group.id}">
                                     <i class="bi bi-trash"></i>
+                                </button>
+                                <button class="edit-group-btn" data-group-id="${group.id}">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
                             </div>
                         `;
@@ -1463,22 +1469,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setupFullscreenToggle();
         syncHorizontalScroll();
         adjustTableLayout();
-        setTimeout(() => {
-        setupDraggableRows();
-        }, 500);
+        // setupDraggableRows будет вызван после updateCalendarAfterGroupChange()
         
-        // Инициализируем список групп с правильной сортировкой
-        await updateGroupsSidebar();
-
-        // ВАЖНО: после первой загрузки страницы синхронизируем таблицу и счётчики
+        // Единоразовая синхронизация таблицы и сайдбара групп на первичной загрузке
         if (typeof updateCalendarAfterGroupChange === 'function') {
             try {
                 await updateCalendarAfterGroupChange();
-                // После первичной синхронизации — переустанавливаем обработчики
-                setupCalendarCellHandlers();
-                setupShiftHandlers();
-                setupDraggableRows();
-                adjustTableLayout();
             } catch (e) {
                 console.warn('Не удалось выполнить первичную синхронизацию групп:', e);
             }
