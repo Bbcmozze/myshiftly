@@ -68,6 +68,7 @@ function initializeGroups() {
         // Проверяем, является ли кликнутый элемент кнопкой или его дочерним элементом
         const editBtn = e.target.closest('.edit-group-btn');
         const deleteBtn = e.target.closest('.delete-group-btn');
+        const removeMemberBtn = e.target.closest('.btn-remove-member');
         
         if (editBtn) {
             const groupId = editBtn.dataset.groupId;
@@ -77,6 +78,10 @@ function initializeGroups() {
             const groupId = deleteBtn.dataset.groupId;
             console.log('Delete group clicked:', groupId); // Для отладки
             openDeleteGroupModal(groupId);
+        } else if (removeMemberBtn) {
+            // Обработка удаления участника из группы теперь происходит в view.js
+            // Здесь ничего не делаем, чтобы избежать дублирования
+            return;
         }
     });
 
@@ -436,6 +441,54 @@ async function confirmDeleteGroup() {
     }
 }
 
+async function removeMemberFromGroup(groupId, userId) {
+    try {
+        const response = await fetch(`/api/remove_member_from_group/${groupId}/${userId}`, {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            toastManager.show(data.message, 'success');
+            
+            // Удаляем участника из DOM таблицы календаря
+            const userRow = document.querySelector(`.user-row[data-user-id="${userId}"]`);
+            if (userRow) {
+                userRow.remove();
+            }
+            
+            // Обновляем количество участников в группе
+            const groupElement = document.querySelector(`[data-group-id="${groupId}"]`);
+            if (groupElement) {
+                const membersCountElement = groupElement.querySelector('.group-members-count');
+                if (membersCountElement) {
+                    const currentCount = parseInt(membersCountElement.textContent.match(/\d+/)[0]);
+                    const newCount = currentCount - 1;
+                    
+                    if (newCount === 0) {
+                        // Если у группы не осталось участников, удаляем её
+                        removeGroupFromDOM(groupId);
+                    } else {
+                        membersCountElement.textContent = `${newCount} участников`;
+                    }
+                }
+            }
+            
+            // Обновляем модальное окно добавления участника
+            updateAddMembersModal();
+            
+            // Динамически обновляем календарь
+            await updateCalendarAfterGroupChange();
+        } else {
+            toastManager.show(data.error || 'Ошибка удаления участника из группы', 'danger');
+        }
+    } catch (error) {
+        console.error('Ошибка удаления участника из группы:', error);
+        toastManager.show('Ошибка удаления участника из группы', 'danger');
+    }
+}
+
 // Функция для динамического добавления группы в DOM
 function addGroupToDOM(group) {
     try {
@@ -491,6 +544,11 @@ function updateGroupInDOM(group) {
         groupElement.querySelector('.group-title').textContent = group.name;
         groupElement.querySelector('.group-members-count').textContent = `${group.members.length} участников`;
         groupElement.querySelector('.group-color-indicator').className = `group-color-indicator ${group.color}`;
+        
+        // Если у группы не осталось участников, удаляем её
+        if (group.members.length === 0) {
+            removeGroupFromDOM(group.id);
+        }
         
     } catch (error) {
         console.error('Ошибка обновления группы в DOM:', error);
@@ -548,6 +606,9 @@ async function updateCalendarAfterGroupChange() {
             
             // Обновляем календарь динамически
             await updateCalendarTable(groupsData.groups, members);
+            
+            // Обновляем модальное окно добавления участника
+            await updateAddMembersModal();
         }
     } catch (error) {
         console.error('Ошибка обновления календаря:', error);
@@ -622,6 +683,11 @@ function updateCalendarTableRows(groupedMembers, shifts) {
     
     // Добавляем новые строки для групп и участников
     groupedMembers.forEach((groupData, groupId) => {
+        // Пропускаем пустые группы
+        if (groupData.members.length === 0) {
+            return;
+        }
+        
         if (groupId === 'ungrouped') {
             // Заголовок для участников без группы
             addGroupHeaderRow(tbody, null, 'Без группы');
@@ -635,6 +701,9 @@ function updateCalendarTableRows(groupedMembers, shifts) {
             addUserRow(tbody, member, groupData.group, shifts);
         });
     });
+    
+    // Обновляем список групп в сайдбаре
+    updateGroupsSidebar();
 }
 
 // Функция для добавления заголовка группы
@@ -856,4 +925,106 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+
+// Функция для обновления модального окна добавления участника
+async function updateAddMembersModal() {
+    try {
+        // Получаем обновленный список участников календаря
+        const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`);
+        const members = await membersResponse.json();
+        
+        // Получаем обновленный список групп
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsData = await groupsResponse.json();
+        
+        if (members && members.length > 0) {
+            // Собираем ID всех пользователей, которые уже состоят в группах
+            const usersInGroups = new Set();
+            if (groupsData.success && groupsData.groups) {
+                groupsData.groups.forEach(group => {
+                    group.members.forEach(member => {
+                        usersInGroups.add(member.id);
+                    });
+                });
+            }
+            
+            // Фильтруем участников, исключая тех, кто уже в группах
+            const availableMembers = members.filter(member => 
+                !usersInGroups.has(member.id)
+            );
+            
+            // Обновляем список в модальном окне добавления участника
+            const addMembersModal = document.getElementById('addMembersModal');
+            if (addMembersModal) {
+                const friendsSelectList = addMembersModal.querySelector('#friendsSelectList');
+                if (friendsSelectList) {
+                    friendsSelectList.innerHTML = '';
+                    
+                    if (availableMembers.length === 0) {
+                        friendsSelectList.innerHTML = '<div style="text-align: center; color: #64748b; padding: 1rem;">Нет доступных участников для добавления</div>';
+                        return;
+                    }
+                    
+                    availableMembers.forEach(member => {
+                        const memberItem = document.createElement('div');
+                        memberItem.className = 'member-select-item';
+                        memberItem.innerHTML = `
+                            <input type="checkbox" id="member_${member.id}" value="${member.id}">
+                            <img src="/static/images/${member.avatar}" onerror="this.src='/static/images/default_avatar.svg'">
+                            <span>${member.username}</span>
+                        `;
+                        
+                        memberItem.addEventListener('click', function(e) {
+                            if (e.target.type !== 'checkbox') {
+                                const checkbox = this.querySelector('input[type="checkbox"]');
+                                checkbox.checked = !checkbox.checked;
+                            }
+                        });
+                        
+                        friendsSelectList.appendChild(memberItem);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка обновления модального окна добавления участника:', error);
+    }
+}
+
+// Функция для обновления списка групп в сайдбаре
+async function updateGroupsSidebar() {
+    try {
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsData = await groupsResponse.json();
+        
+        if (groupsData.success) {
+            const groupList = document.getElementById('groupList');
+            if (!groupList) return;
+            
+            // Очищаем список групп
+            groupList.innerHTML = '';
+            
+            if (groupsData.groups.length === 0) {
+                // Если групп не осталось, показываем сообщение "нет групп"
+                const noGroupsElement = document.createElement('div');
+                noGroupsElement.className = 'no-groups';
+                noGroupsElement.innerHTML = `
+                    <i class="bi bi-people"></i>
+                    <p>Нет созданных групп</p>
+                `;
+                groupList.appendChild(noGroupsElement);
+            } else {
+                // Добавляем группы
+                groupsData.groups.forEach(group => {
+                    addGroupToDOM(group);
+                });
+            }
+            
+            // Обновляем счетчик групп
+            updateGroupsCount();
+        }
+    } catch (error) {
+        console.error('Ошибка обновления списка групп в сайдбаре:', error);
+    }
+}
 

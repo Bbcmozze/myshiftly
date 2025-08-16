@@ -948,9 +948,8 @@ def register_routes(app):
 
         for member in all_members:
             member_groups = Group.query.filter(
-                Group.calendar_id == calendar_id,
                 Group.members.contains(member)
-            ).all()
+            ).filter_by(calendar_id=calendar_id).all()
             
             members_with_groups.append({
                 'id': member.id,
@@ -959,7 +958,47 @@ def register_routes(app):
                 'groups': [{'id': g.id, 'name': g.name, 'color': g.color} for g in member_groups]
             })
 
-        return jsonify({'success': True, 'members_with_groups': members_with_groups})
+        return jsonify({'success': True, 'members': members_with_groups})
+
+    @app.route('/api/remove_member_from_group/<int:group_id>/<int:user_id>', methods=['POST'])
+    @login_required
+    def remove_member_from_group(group_id, user_id):
+        group = Group.query.get_or_404(group_id)
+        user = User.query.get_or_404(user_id)
+        
+        # Проверяем, что пользователь является владельцем группы ИЛИ владельцем календаря
+        if group.owner_id != current_user.id and group.calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+        
+        # Проверяем, что пользователь состоит в группе
+        if user not in group.members:
+            return jsonify({'success': False, 'error': 'Пользователь не состоит в этой группе'}), 400
+        
+        try:
+            # Удаляем пользователя из группы
+            group.members.remove(user)
+            
+            # Удаляем пользователя из календаря
+            if user in group.calendar.members:
+                group.calendar.members.remove(user)
+                
+                # Удаляем все смены пользователя в этом календаре
+                Shift.query.filter_by(calendar_id=group.calendar.id, user_id=user.id).delete()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'{user.username} удален из группы и календаря',
+                'removed_user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.avatar
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     #############УДАЛИТЬ ПОСЛЕ ТЕСТА САЙТА############
     @app.route('/add_test_users')
