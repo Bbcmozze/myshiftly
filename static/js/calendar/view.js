@@ -126,6 +126,17 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(message, 'danger');
     };
 
+    // Скрыть элементы управления, доступные только владельцу
+    const hideOwnerControlsIfNotOwner = () => {
+        if (document.body.dataset.isOwner !== 'true') {
+            document.querySelectorAll('.remove-shift-btn, .delete-template-btn, .btn-remove-member').forEach(btn => {
+                btn.style.display = 'none';
+            });
+            const createTemplateBtnEl = document.getElementById('createTemplateBtn');
+            if (createTemplateBtnEl) createTemplateBtnEl.style.display = 'none';
+        }
+    };
+
     // Обновление отображения месяца
     const updateMonthDisplay = async () => {
         const monthName = monthNames[currentMonth.getMonth()];
@@ -157,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
                 setupDraggableRows();
+                hideOwnerControlsIfNotOwner();
             }
         } catch (error) {
             console.error('Ошибка при загрузке календаря:', error);
@@ -191,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setupCalendarCellHandlers();
                 setupShiftHandlers();
                 setupDraggableRows();
+                hideOwnerControlsIfNotOwner();
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);
@@ -1371,14 +1384,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
-    // Скрываем элементы управления для пользователей без прав
-    if (!hasEditRights) {
-        document.querySelectorAll('.remove-shift-btn, .delete-template-btn').forEach(btn => {
-            btn.style.display = 'none';
-        });
-
-        if (createTemplateBtn) createTemplateBtn.style.display = 'none';
-    }
+    // Скрываем элементы управления, доступные ТОЛЬКО владельцу календаря
+    hideOwnerControlsIfNotOwner();
 
     // Инициализация всех обработчиков
     const init = async () => {

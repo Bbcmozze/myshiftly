@@ -763,6 +763,10 @@ function setupUnifiedDragAndDrop() {
                     // вставка ПОСЛЕ ПОСЛЕДНЕГО участника его группы (между группами)
                     if (relatedItem && relatedItem.classList.contains('user-row')) {
                         const relatedGroupId = relatedItem.dataset.groupId || 'ungrouped';
+                        // НЕЛЬЗЯ вставлять заголовок группы под её же последнего участника
+                        if (draggingGroupId && relatedGroupId === draggingGroupId) {
+                            return false;
+                        }
                         // Никогда не вставляем внутри блока "Без группы"
                         if (relatedGroupId === 'ungrouped') {
                             return false;
@@ -784,10 +788,21 @@ function setupUnifiedDragAndDrop() {
                     // или конец, то можно.
                     if (relatedItem && relatedItem.classList.contains('group-header-row')) {
                         if (evt.willInsertAfter) {
+                            // Нельзя вставлять сразу ПОСЛЕ заголовка, если под ним его участники
                             const next = relatedItem.nextElementSibling;
                             if (next && next.classList.contains('user-row') &&
                                 next.dataset.groupId === relatedItem.dataset.groupId) {
                                 return false;
+                            }
+                        } else {
+                            // НЕЛЬЗЯ вставлять ПЕРЕД заголовком следующей группы,
+                            // если предыдущая строка — последний участник перетаскиваемой группы
+                            const prev = relatedItem.previousElementSibling;
+                            if (prev && prev.classList.contains('user-row')) {
+                                const prevGroupId = prev.dataset.groupId || 'ungrouped';
+                                if (draggingGroupId && prevGroupId === draggingGroupId) {
+                                    return false;
+                                }
                             }
                         }
                     }
