@@ -459,6 +459,44 @@ body.fullscreen-active {
     overflow: hidden;    /* Скрываем вылезающие элементы */
 }
 
+/* Заголовки групп: делаем контент липким слева как колонка с участниками */
+.group-header-row .group-header-cell {
+    padding: 0;                 /* управляем отступами на внутреннем блоке */
+    overflow: visible;          /* не обрезаем липкий внутренний блок */
+    background: #f8fafc;        /* фон как у левой колонки */
+    border-color: #e2e8f0;
+}
+
+.group-header-content {
+    position: sticky;
+    left: -1px;                 /* выравниваем с левой фикс-колонкой */
+    z-index: 16;                /* выше обычных ячеек, ниже заголовка */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    min-width: 150px;           /* ширина как у .user-cell */
+    max-width: 150px;           /* фиксируем, чтобы текст не расползался */
+    padding: 6px 10px;
+    background: #f8fafc;        /* сплошной фон под текстом */
+    border-right: 1px solid #e2e8f0; /* аккуратный разделитель с сеткой */
+}
+
+.group-header-content .group-color-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.group-header-content .group-name {
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;            /* чтобы имя не перекрывало scrollbar */
+}
+
 .calendar-table thead {
     position: sticky;
     top: -1px;
@@ -537,17 +575,6 @@ body.fullscreen-active {
     align-items: center;
     gap: 0.5rem;
     padding-right: 20px; /* место для кнопки */
-}
-
-.user-cell::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: -8px;
-    width: 8px;
-    height: 100%;
-    background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
-    pointer-events: none;
 }
 
 .user-cell img {
