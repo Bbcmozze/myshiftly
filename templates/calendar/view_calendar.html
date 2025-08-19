@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% from "friends/macroc.html" import pluralize %}
+
 {% block title %}{{ calendar.name }} - My Shiftly{% endblock %}
 
 {% block styles %}
@@ -18,7 +20,7 @@
                 <span class="badge {{ 'badge-team' if calendar.is_team else 'badge-personal' }}">
                     {{ 'Командный' if calendar.is_team else 'Личный' }}
                 </span>
-                <span><i class="bi bi-person-fill"></i> {{ calendar.members|length + 1 }} участников</span>
+                <span><i class="bi bi-person-fill"></i> {{ pluralize(calendar.members|length + 1, 'участник', 'участника', 'участников') }}</span>
                 <span><i class="bi bi-calendar3"></i> Создан {{ calendar.created_at.strftime('%d.%m.%Y') }}</span>
             </div>
         </div>
