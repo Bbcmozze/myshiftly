@@ -159,6 +159,7 @@
 
 .header-actions .btn-danger:hover {
     background: #fecaca;
+    transform: translateY(-1px);
 }
 
 .calendar-content {
@@ -884,7 +885,7 @@ body.fullscreen-active #fullscreenOverlay {
     flex-direction: column;
     gap: 0.5rem;
     margin-top: 0.5rem;
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
@@ -909,6 +910,219 @@ body.fullscreen-active #fullscreenOverlay {
 
 .friends-select-list::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* Стили для поля поиска в модальном окне добавления участников */
+.search-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+/* Унифицированный стиль поиска как у "Найти шаблон" и "Найти группу" */
+.search-container .modern-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    transition: all 0.3s ease;
+    margin-bottom: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    height: auto;
+    min-height: auto;
+}
+
+.search-container .modern-search:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-container .modern-search:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-container .modern-search i.bi-search {
+    color: #94a3b8;
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+.search-container .modern-search .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.95rem;
+    padding: 0.25rem 0;
+    color: #1e293b;
+    height: auto;
+    min-height: auto;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.search-container .modern-search .search-input::placeholder {
+    color: #94a3b8;
+}
+
+/* Старые стили для совместимости */
+.search-input {
+    width: 100%;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+}
+
+/* Стили для кнопок управления выделением */
+.selection-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.btn-selection {
+    flex: 1;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-selection:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-selection:active {
+    background: #f1f5f9;
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-selection i {
+    font-size: 1rem;
+    color: #64748b;
+}
+
+.btn-selection:hover i {
+    color: #475569;
+}
+
+/* Специальные стили для кнопки "Выбрать всех" */
+#selectAllFriends {
+    border-color: #10b981;
+    color: #059669;
+}
+
+#selectAllFriends:hover {
+    background: #ecfdf5;
+    border-color: #059669;
+    color: #047857;
+}
+
+#selectAllFriends i {
+    color: #10b981;
+}
+
+#selectAllFriends:hover i {
+    color: #047857;
+}
+
+/* Специальные стили для кнопки "Снять выделение" */
+#deselectAllFriends {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+#deselectAllFriends:hover {
+    background: #fffbeb;
+    border-color: #d97706;
+    color: #b45309;
+}
+
+#deselectAllFriends i {
+    color: #f59e0b;
+}
+
+#deselectAllFriends:hover i {
+    color: #b45309;
+}
+
+/* Стили для скрытых элементов при поиске */
+.friend-select-item.hidden {
+    display: none !important;
+}
+
+/* Стили для сообщения "Участники не найдены" */
+.no-friends-found {
+    display: none;
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #64748b;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border: 1px solid #e2e8f0;
+}
+
+.no-results-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.no-results-content i {
+    font-size: 2rem;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+}
+
+.no-results-content p {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #475569;
+    margin: 0;
+}
+
+.no-results-content small {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
 }
 
 .friend-select-item {
@@ -1759,6 +1973,10 @@ tr.group-header-row.sortable-drag .group-header-cell {
     background-color: #3b82f6;
     color: white;
     border-color: #3b82f6;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
 }
 
 .modal-footer .btn-primary:hover {

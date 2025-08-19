@@ -377,6 +377,25 @@
             <p style="color: #64748b; margin-bottom: 1rem;">
                 Выберите друзей, которых хотите добавить в календарь.
             </p>
+            
+            <!-- Поле поиска -->
+            <div class="search-container">
+                <div class="modern-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="friendsSearchInput" class="search-input" placeholder="Поиск пользователей...">
+                </div>
+            </div>
+            
+            <!-- Кнопки управления выделением -->
+            <div class="selection-controls">
+                <button type="button" id="selectAllFriends" class="btn-selection">
+                    <i class="bi bi-check-all"></i> Выбрать всех
+                </button>
+                <button type="button" id="deselectAllFriends" class="btn-selection">
+                    <i class="bi bi-x-square"></i> Снять выделение
+                </button>
+            </div>
+            
             <div class="friends-select-list" id="friendsSelectList">
                 <!-- Список будет заполнен через JavaScript -->
             </div>

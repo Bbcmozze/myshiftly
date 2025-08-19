@@ -281,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             availableFriends.forEach(friend => {
                 const friendItem = document.createElement('div');
                 friendItem.className = 'friend-select-item';
+                friendItem.dataset.username = friend.username.toLowerCase(); // Для поиска
                 friendItem.innerHTML = `
                     <label>
                         <input type="checkbox" name="selected_friends" value="${friend.id}">
@@ -293,12 +294,91 @@ document.addEventListener('DOMContentLoaded', () => {
                 friendsSelectList.appendChild(friendItem);
             });
 
+            // Настраиваем поиск и управление выделением после создания списка
+            setupFriendsSearchAndSelection();
+
             return true;
         } catch (error) {
             console.error('Ошибка при обновлении списка друзей:', error);
             showToast('Не удалось загрузить список друзей', 'danger');
             return false;
         }
+    };
+
+    // Функция для настройки поиска и управления выделением друзей
+    const setupFriendsSearchAndSelection = () => {
+        const searchInput = document.getElementById('friendsSearchInput');
+        const selectAllBtn = document.getElementById('selectAllFriends');
+        const deselectAllBtn = document.getElementById('deselectAllFriends');
+        const friendsSelectList = document.getElementById('friendsSelectList');
+
+        if (!searchInput || !selectAllBtn || !deselectAllBtn || !friendsSelectList) return;
+
+        // Динамический поиск
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const friendItems = friendsSelectList.querySelectorAll('.friend-select-item');
+            let visibleCount = 0;
+
+            friendItems.forEach(item => {
+                const username = item.dataset.username || '';
+                const isVisible = username.includes(searchTerm);
+                
+                if (isVisible) {
+                    item.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // Управление сообщением "Участники не найдены"
+            let noResultsMessage = friendsSelectList.querySelector('.no-friends-found');
+            
+            if (visibleCount === 0 && searchTerm.length > 0) {
+                // Показать сообщение если нет результатов и есть поисковый запрос
+                if (!noResultsMessage) {
+                    noResultsMessage = document.createElement('div');
+                    noResultsMessage.className = 'no-friends-found';
+                    noResultsMessage.innerHTML = `
+                        <div class="no-results-content">
+                            <i class="bi bi-search"></i>
+                            <p>Участники не найдены</p>
+                            <small>Попробуйте изменить поисковый запрос</small>
+                        </div>
+                    `;
+                    friendsSelectList.appendChild(noResultsMessage);
+                }
+                noResultsMessage.style.display = 'block';
+            } else {
+                // Скрыть сообщение если есть результаты или поиск пустой
+                if (noResultsMessage) {
+                    noResultsMessage.style.display = 'none';
+                }
+            }
+        });
+
+        // Выбрать всех видимых пользователей
+        selectAllBtn.addEventListener('click', () => {
+            const visibleItems = friendsSelectList.querySelectorAll('.friend-select-item:not(.hidden)');
+            visibleItems.forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+        });
+
+        // Снять выделение со всех пользователей
+        deselectAllBtn.addEventListener('click', () => {
+            const allCheckboxes = friendsSelectList.querySelectorAll('input[type="checkbox"]');
+            allCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        });
+
+        // Очистка поиска при открытии модального окна
+        searchInput.value = '';
     };
 
     if (!isOwner) {
