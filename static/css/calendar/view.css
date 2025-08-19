@@ -419,14 +419,14 @@ body.fullscreen-active {
     max-width: 100%;
     margin-bottom: 1rem;
     width: 100%;
-    max-height: calc(8 * 60px); /* 8 строк по 60px */
+    max-height: calc(10 * 60px); /* 8 строк по 60px */
     overflow-y: auto;
     position: relative;
     scroll-behavior: smooth;
 }
 
 .calendar-main.fullscreen .calendar-table-container {
-    max-height: calc(10 * 60px); /* 10 строк по 60px */
+    max-height: calc(12 * 60px); /* 10 строк по 60px */
 }
 
 .calendar-table {
@@ -1785,4 +1785,12 @@ tr.group-header-row.sortable-drag .group-header-cell {
 .edit-group-btn:hover i,
 .delete-group-btn:hover i {
     transform: scale(1.1);
+}
+
+/* Мгновенное скрытие элементов владельца для не-владельцев (без ожидания JS) */
+body[data-is-owner="false"] .remove-shift-btn,
+body[data-is-owner="false"] .delete-template-btn,
+body[data-is-owner="false"] .btn-remove-member,
+body[data-is-owner="false"] #createTemplateBtn {
+  display: none !important;
 }
