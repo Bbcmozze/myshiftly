@@ -863,6 +863,36 @@ body.fullscreen-active {
     background-color: #dc2626;
 }
 
+/* Стили для модального окна подтверждения удаления группы — как у удаления шаблона */
+#confirmDeleteGroupModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+#confirmDeleteGroupModal .modal-body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+#confirmDeleteGroupModal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+#confirmDeleteGroupBtn {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+}
+
+#confirmDeleteGroupBtn:hover {
+    background-color: #dc2626;
+}
+
 #fullscreenOverlay {
     position: fixed;
     inset: 0;
@@ -914,6 +944,11 @@ body.fullscreen-active #fullscreenOverlay {
 
 /* Стили для поля поиска в модальном окне добавления участников */
 .search-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.friends-search-container {
     position: relative;
     margin-bottom: 1rem;
 }
