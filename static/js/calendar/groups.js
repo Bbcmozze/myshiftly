@@ -1408,14 +1408,19 @@ function getDateForDayIndex(dayIndex) {
 }
 
 function getCurrentUserId() {
-    // Получаем ID текущего пользователя из данных страницы
-    // Ищем элемент с информацией о текущем пользователе
+    // Получаем ID текущего пользователя из атрибута body (наиболее надежный способ)
+    const currentUserId = document.body.dataset.currentUserId;
+    if (currentUserId && currentUserId !== '') {
+        return parseInt(currentUserId);
+    }
+    
+    // Альтернативный способ - ищем элемент с информацией о текущем пользователе
     const currentUserElement = document.querySelector('.user-row[data-user-id]');
     if (currentUserElement) {
         return parseInt(currentUserElement.dataset.userId);
     }
     
-    // Альтернативный способ - ищем по классу "owner"
+    // Еще один альтернативный способ - ищем по классу "owner"
     const ownerElement = document.querySelector('.user-row.owner');
     if (ownerElement) {
         return parseInt(ownerElement.dataset.userId);
