@@ -1044,42 +1044,42 @@ body.fullscreen-active #fullscreenOverlay {
 
 /* Специальные стили для кнопки "Выбрать всех" */
 #selectAllFriends {
-    border-color: #10b981;
-    color: #059669;
+    border-color: #3b82f6;
+    color: #3b82f6;
 }
 
 #selectAllFriends:hover {
-    background: #ecfdf5;
-    border-color: #059669;
-    color: #047857;
+    background-color: #2563eb;
+    border-color: #2563eb;
+    background-color: rgba(37, 99, 235, 0.1);
 }
 
 #selectAllFriends i {
-    color: #10b981;
+    color: #3b82f6;
 }
 
 #selectAllFriends:hover i {
-    color: #047857;
+    color: #2563eb;
 }
 
 /* Специальные стили для кнопки "Снять выделение" */
 #deselectAllFriends {
-    border-color: #f59e0b;
-    color: #d97706;
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 #deselectAllFriends:hover {
-    background: #fffbeb;
-    border-color: #d97706;
-    color: #b45309;
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #b91c1c;
 }
 
 #deselectAllFriends i {
-    color: #f59e0b;
+    color: #dc2626;
 }
 
 #deselectAllFriends:hover i {
-    color: #b45309;
+    color: #b91c1c;
 }
 
 /* Стили для скрытых элементов при поиске */
