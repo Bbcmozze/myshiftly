@@ -675,6 +675,12 @@ function setupUnifiedDragAndDrop() {
         const ungroupedHeader = tbody.querySelector('tr.group-header-row[data-ungrouped="true"]');
         const isOwner = isCalendarOwner();
 
+        // Если пользователь не владелец — полностью отключаем DnD
+        if (!isOwner) {
+            console.log('🔒 DnD отключён: текущий пользователь не является владельцем календаря');
+            return;
+        }
+
         let draggingType = null; // 'group' или 'user'
         let draggingGroupId = null;
         let draggingMemberRows = [];
