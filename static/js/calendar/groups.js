@@ -660,6 +660,16 @@ function setupUnifiedDragAndDrop() {
             tbody.userSortableInstance.destroy();
             tbody.userSortableInstance = null;
         }
+        // ВАЖНО: также уничтожаем объединённый инстанс,
+        // чтобы не оставались старые обработчики с другими правилами
+        if (tbody.unifiedSortableInstance) {
+            try {
+                tbody.unifiedSortableInstance.destroy();
+            } catch (e) {
+                console.warn('Failed to destroy previous unifiedSortableInstance:', e);
+            }
+            tbody.unifiedSortableInstance = null;
+        }
 
         const ownerRow = tbody.querySelector('.user-row.owner');
         const ungroupedHeader = tbody.querySelector('tr.group-header-row[data-ungrouped="true"]');
@@ -794,16 +804,6 @@ function setupUnifiedDragAndDrop() {
                                 next.dataset.groupId === relatedItem.dataset.groupId) {
                                 return false;
                             }
-                        } else {
-                            // НЕЛЬЗЯ вставлять ПЕРЕД заголовком следующей группы,
-                            // если предыдущая строка — последний участник перетаскиваемой группы
-                            const prev = relatedItem.previousElementSibling;
-                            if (prev && prev.classList.contains('user-row')) {
-                                const prevGroupId = prev.dataset.groupId || 'ungrouped';
-                                if (draggingGroupId && prevGroupId === draggingGroupId) {
-                                    return false;
-                                }
-                            }
                         }
                     }
 
@@ -818,19 +818,16 @@ function setupUnifiedDragAndDrop() {
                 } else if (draggingType === 'user') {
                     // Логика для перетаскивания участников
                     
-                    // Запрещаем перемещение на заголовки групп
-                    if (relatedItem && relatedItem.classList.contains('group-header-row')) {
+                    // Разрешаем таргетировать ТОЛЬКО другие строки участников
+                    if (!relatedItem || !relatedItem.classList.contains('user-row')) {
                         return false;
                     }
 
                     // Проверяем, что участник перемещается только в пределах своей группы
-                    if (relatedItem && relatedItem.classList.contains('user-row')) {
-                        const draggedGroupId = draggedItem.dataset.groupId || 'ungrouped';
-                        const targetGroupId = relatedItem.dataset.groupId || 'ungrouped';
-
-                        if (draggedGroupId !== targetGroupId) {
-                            return false;
-                        }
+                    const draggedGroupId = draggedItem.dataset.groupId || 'ungrouped';
+                    const targetGroupId = relatedItem.dataset.groupId || 'ungrouped';
+                    if (draggedGroupId !== targetGroupId) {
+                        return false;
                     }
                 }
 
