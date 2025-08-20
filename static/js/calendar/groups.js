@@ -681,6 +681,38 @@ function setupUnifiedDragAndDrop() {
             return;
         }
 
+        // === Автопрокрутка календаря при DnD ===
+        const scrollContainer = document.querySelector('.calendar-table-container');
+        let autoScrollActive = false;
+        let autoScrollRAF = null;
+        let docMouseMoveHandler = null;
+        let pointerClientY = 0;
+        const EDGE_THRESHOLD = 60; // px от края контейнера
+        const MAX_SCROLL_SPEED = 20; // px на кадр для комфортной скорости
+
+        function autoScrollTick() {
+            if (!autoScrollActive || !scrollContainer) return;
+            const rect = scrollContainer.getBoundingClientRect();
+            let delta = 0;
+
+            // Вверх
+            if (pointerClientY < rect.top + EDGE_THRESHOLD) {
+                const dist = Math.max(0, (rect.top + EDGE_THRESHOLD) - pointerClientY);
+                delta = -Math.ceil((dist / EDGE_THRESHOLD) * MAX_SCROLL_SPEED);
+            }
+            // Вниз
+            else if (pointerClientY > rect.bottom - EDGE_THRESHOLD) {
+                const dist = Math.max(0, pointerClientY - (rect.bottom - EDGE_THRESHOLD));
+                delta = Math.ceil((dist / EDGE_THRESHOLD) * MAX_SCROLL_SPEED);
+            }
+
+            if (delta !== 0) {
+                scrollContainer.scrollTop += delta;
+            }
+
+            autoScrollRAF = requestAnimationFrame(autoScrollTick);
+        }
+
         let draggingType = null; // 'group' или 'user'
         let draggingGroupId = null;
         let draggingMemberRows = [];
@@ -722,6 +754,8 @@ function setupUnifiedDragAndDrop() {
         tbody.unifiedSortableInstance = Sortable.create(tbody, {
             animation: 150,
             ghostClass: 'sortable-ghost',
+            // Отключаем встроенный автоскролл Sortable, используем собственный для лучшего UX
+            scroll: false,
             
             // Определяем селекторы для перетаскиваемых элементов
             draggable: draggableSelector,
@@ -754,6 +788,27 @@ function setupUnifiedDragAndDrop() {
 
             onStart: function(evt) {
                 console.log('🚀 onStart - draggingType:', draggingType, 'element:', evt.item.className);
+                // Включаем автопрокрутку при начале перетаскивания
+                if (scrollContainer) {
+                    autoScrollActive = true;
+                    pointerClientY = (evt.originalEvent && evt.originalEvent.clientY) || 0;
+                    if (docMouseMoveHandler) {
+                        document.removeEventListener('mousemove', docMouseMoveHandler);
+                        document.removeEventListener('touchmove', docMouseMoveHandler);
+                    }
+                    docMouseMoveHandler = (e) => {
+                        if (e.touches && e.touches.length) {
+                            pointerClientY = e.touches[0].clientY;
+                        } else if (typeof e.clientY === 'number') {
+                            pointerClientY = e.clientY;
+                        }
+                    };
+                    document.addEventListener('mousemove', docMouseMoveHandler, { passive: true });
+                    document.addEventListener('touchmove', docMouseMoveHandler, { passive: true });
+                    if (!autoScrollRAF) {
+                        autoScrollRAF = requestAnimationFrame(autoScrollTick);
+                    }
+                }
             },
 
             onMove: function(evt) {
@@ -846,6 +901,18 @@ function setupUnifiedDragAndDrop() {
                 console.log('   - oldIndex:', evt.oldIndex, 'newIndex:', evt.newIndex);
                 console.log('   - item:', evt.item.className);
                 console.log('   - item dataset:', evt.item.dataset);
+
+                // Отключаем автопрокрутку и чистим обработчики
+                autoScrollActive = false;
+                if (autoScrollRAF) {
+                    cancelAnimationFrame(autoScrollRAF);
+                    autoScrollRAF = null;
+                }
+                if (docMouseMoveHandler) {
+                    document.removeEventListener('mousemove', docMouseMoveHandler);
+                    document.removeEventListener('touchmove', docMouseMoveHandler);
+                    docMouseMoveHandler = null;
+                }
 
                 if (draggingType === 'group') {
                     console.log('📦 Calling handleGroupDrop...');
