@@ -1368,6 +1368,13 @@ function addUserRow(tbody, member, group, shifts) {
     const userCellContent = document.createElement('div');
     userCellContent.className = 'user-cell-content';
     
+    // Цветная вертикальная полоска слева внутри ячейки пользователя
+    if (group && group.color) {
+        const colorStrip = document.createElement('div');
+        colorStrip.className = `user-color-strip ${group.color}`; // например, badge-color-3
+        userCell.appendChild(colorStrip);
+    }
+    
     const userAvatar = document.createElement('img');
     userAvatar.src = `/static/images/${member.avatar}`;
     userAvatar.onerror = "this.src='/static/images/default_avatar.svg'";

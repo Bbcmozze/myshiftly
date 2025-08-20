@@ -576,6 +576,13 @@ body.fullscreen-active {
     padding-right: 20px; /* место для кнопки */
 }
 
+.user-color-strip {
+    width: 4px;             /* толщина полоски */
+    align-self: stretch;    /* растягиваем по высоте содержимого */
+    border-radius: 2px;     /* слегка скруглим края */
+    flex-shrink: 0;         /* не сжимать при нехватке места */
+}
+
 .user-cell img {
     width: 20px;
     height: 20px;
