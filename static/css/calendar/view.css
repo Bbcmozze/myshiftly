@@ -474,12 +474,12 @@ body.fullscreen-active {
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 36px;
-    min-width: 150px;           /* ширина как у .user-cell */
-    max-width: 150px;           /* фиксируем, чтобы текст не расползался */
+    min-height: 30px;
+    nax-height: 30px;
+    min-width: 500px;           /* ширина как у .user-cell */
+    max-width: 500px;           /* фиксируем, чтобы текст не расползался */
     padding: 6px 10px;
     background: #f8fafc;        /* сплошной фон под текстом */
-    border-right: 1px solid #e2e8f0; /* аккуратный разделитель с сеткой */
 }
 
 .group-header-content .group-color-indicator {
@@ -489,12 +489,11 @@ body.fullscreen-active {
 }
 
 .group-header-content .group-name {
-    font-weight: 600;
+    font-weight: 500;
     color: #334155;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 220px;            /* чтобы имя не перекрывало scrollbar */
 }
 
 .calendar-table thead {
@@ -1868,9 +1867,8 @@ tr.group-header-row.sortable-drag .group-header-cell {
 }
 
 .group-name {
-    font-weight: 600;
     color: #374151;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 /* Стили для создателя календаря */
