@@ -165,9 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
 
-                setupCalendarCellHandlers();
-                setupShiftHandlers();
-                setupDraggableRows();
+                // После загрузки новой таблицы нормализуем порядок групп и переинициализируем DnD через groups.js
+                if (typeof window.updateCalendarAfterGroupChange === 'function') {
+                    await window.updateCalendarAfterGroupChange();
+                } else {
+                    console.warn('updateCalendarAfterGroupChange is not available; falling back to local handlers');
+                    setupCalendarCellHandlers();
+                    setupShiftHandlers();
+                    setupDraggableRows();
+                }
                 hideOwnerControlsIfNotOwner();
             }
         } catch (error) {
@@ -200,9 +206,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
 
-                setupCalendarCellHandlers();
-                setupShiftHandlers();
-                setupDraggableRows();
+                // После обновления таблицы нормализуем порядок групп и инициализируем DnD через groups.js
+                if (typeof window.updateCalendarAfterGroupChange === 'function') {
+                    await window.updateCalendarAfterGroupChange();
+                } else {
+                    console.warn('updateCalendarAfterGroupChange is not available; falling back to local handlers');
+                    setupCalendarCellHandlers();
+                    setupShiftHandlers();
+                    setupDraggableRows();
+                }
                 hideOwnerControlsIfNotOwner();
             }
         } catch (error) {
