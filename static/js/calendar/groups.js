@@ -1008,6 +1008,9 @@ async function handleGroupDrop(evt) {
         
         if (!resp.ok) {
             console.error('Server responded with error:', resp.status, resp.statusText);
+            if (typeof toastManager !== 'undefined') {
+                toastManager.show(`Не удалось сохранить порядок групп: ${resp.status} ${resp.statusText}`, 'danger');
+            }
             await updateCalendarAfterGroupChange();
             return;
         }
@@ -1017,15 +1020,24 @@ async function handleGroupDrop(evt) {
         
         if (!data.success) {
             console.error('Server rejected group position update:', data.error);
+            if (typeof toastManager !== 'undefined') {
+                toastManager.show(data.error || 'Ошибка сохранения порядка групп', 'danger');
+            }
             await updateCalendarAfterGroupChange();
             return;
         }
         
         console.log('✅ Group positions saved successfully!');
+        if (typeof toastManager !== 'undefined') {
+            toastManager.show('Порядок групп сохранён', 'success');
+        }
         // Не вызываем updateCalendarAfterGroupChange() чтобы не перерисовывать таблицу
         console.log('=== GROUP DROP COMPLETE ===');
     } catch (e) {
         console.error('❌ Error in handleGroupDrop:', e);
+        if (typeof toastManager !== 'undefined') {
+            toastManager.show(`Ошибка сохранения порядка групп: ${e.message}`, 'danger');
+        }
         await updateCalendarAfterGroupChange();
     }
 }
