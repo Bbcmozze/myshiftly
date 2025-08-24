@@ -1329,6 +1329,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Проверяем, есть ли уже смена в этой ячейке
                     const hasShift = cell.querySelector('.shift-badge') !== null;
                     if (!hasShift) {
+                        // Динамически показываем сообщение, если шаблонов нет
+                        if (typeof checkEmptyTemplatesList === 'function') {
+                            checkEmptyTemplatesList();
+                        } else {
+                            // Fallback на случай, если функция недоступна
+                            const selectTemplateList = document.getElementById('selectTemplateList');
+                            if (selectTemplateList && selectTemplateList.querySelectorAll('.template-item').length === 0) {
+                                selectTemplateList.innerHTML = `
+                                    <div class="no-templates" style="text-align: center; padding: 1rem; color: #64748b;">
+                                        <i class="bi bi-calendar-x" style="font-size: 1.5rem;"></i>
+                                        <p>Нет созданных шаблонов</p>
+                                    </div>
+                                `;
+                            }
+                        }
                         selectTemplateModal.style.display = 'flex';
                     }
                 });
