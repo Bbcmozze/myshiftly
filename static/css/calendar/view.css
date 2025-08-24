@@ -2060,16 +2060,16 @@ tr.group-header-row.sortable-drag .group-header-cell {
 /* Пока контейнер помечен как pending-anim, скрываем строки, чтобы не было мерцания до старта анимации */
 .calendar-table-container.pending-anim tbody tr {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(2px);
 }
 .calendar-table tbody tr.calendar-row-anim {
-    transition: opacity 220ms ease, transform 220ms ease;
+    transition: opacity 180ms ease, transform 180ms ease;
     will-change: opacity, transform;
 }
 
 .calendar-table tbody tr.calendar-row-hidden {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(2px);
 }
 
 .calendar-table tbody tr.calendar-row-visible {
