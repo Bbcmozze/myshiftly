@@ -442,6 +442,7 @@ body.fullscreen-active {
 }
 
 .calendar-table th {
+    top: -2px;
     background: #f8fafc;
     padding: 0.75rem;
     text-align: center;
@@ -456,7 +457,7 @@ body.fullscreen-active {
     height: 60px;
     min-height: 60px;
     max-height: 60px;
-    position: sticky;  /* Для позиционирования внутренних элементов */
+    position: relative;  /* Нормальное позиционирование, без липкости */
     overflow: hidden;    /* Скрываем вылезающие элементы */
 }
 
@@ -466,19 +467,22 @@ body.fullscreen-active {
     overflow: visible;          /* не обрезаем липкий внутренний блок */
     background: #f8fafc;        /* фон как у левой колонки */
     border-color: #e2e8f0;
+    position: sticky;           /* фиксируем заголовок группы слева */
+    left: 0;
+    z-index: 16;
 }
 
 .group-header-content {
     position: sticky;
-    left: -1px;                 /* выравниваем с левой фикс-колонкой */
+    left: 0;                    /* исключаем 1px щель слева */
     z-index: 16;                /* выше обычных ячеек, ниже заголовка */
     display: flex;
     align-items: center;
     gap: 8px;
     min-height: 30px;
     nax-height: 30px;
-    min-width: 500px;           /* ширина как у .user-cell */
-    max-width: 500px;           /* фиксируем, чтобы текст не расползался */
+    min-width: 200px;           /* ширина как у .user-cell */
+    max-width: 200px;           /* фиксируем, чтобы текст не расползался */
     padding: 6px 10px;
     background: #f8fafc;        /* сплошной фон под текстом */
 }
@@ -499,7 +503,7 @@ body.fullscreen-active {
 
 .calendar-table thead {
     position: sticky;
-    top: -1px;
+    top: 0;
     z-index: 20;
     background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -514,8 +518,11 @@ body.fullscreen-active {
 /* Первая ячейка заголовка (с текстом "Коллега") */
 .calendar-table thead th:first-child {
     z-index: 25;  /* Выше чем остальной заголовок */
-    left: -1px;
-    min-width: 150px;
+    position: sticky;
+    left: 0;
+    min-width: 200px; /* выравниваем с .user-cell */
+    width: 200px;
+    background: #f8fafc;
 }
 
 .user-cell {
@@ -527,7 +534,7 @@ body.fullscreen-active {
     gap: 0.5rem;
     padding: 0.5rem;
     background: #f8fafc;
-    left: -1px;
+    left: 0;                    /* исключаем 1px щель слева */
     z-index: 15;
     position: relative;
     display: flex;
@@ -596,6 +603,16 @@ body.fullscreen-active {
     max-height: 60px;
 }
 
+/* Делаем первую колонку (ячейку с пользователем) липкой слева */
+.calendar-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 15;               /* ниже заголовка */
+    background: #f8fafc;       /* как у .user-cell */
+    min-width: 200px;
+    width: 200px;
+}
+
 .user-row.owner {
     cursor: default;
 }
@@ -636,7 +653,7 @@ body.fullscreen-active {
 }
 
 .day-cell > * {
-    margin-top: 4px;
+    margin-top: 0;              /* без внутренних верхних отступов — никаких визуальных щелей */
 }
 
 /* Стиль скроллбара */
