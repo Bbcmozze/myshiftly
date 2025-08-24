@@ -1,6 +1,8 @@
 // Глобальные переменные (currentCalendarId определена в view.js)
 let selectedGroupColor = 'badge-color-1';
 let selectedEditGroupColor = 'badge-color-1';
+// Кэш данных участников по контейнеру
+const membersDataCache = {}; // { [containerId]: { baseMembers: Array, usersInGroups: Set<number> } }
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
@@ -144,6 +146,11 @@ function openCreateGroupModal() {
     if (defaultColorOption) {
         defaultColorOption.classList.add('selected');
     }
+    // Сброс поля поиска участников
+    const membersSearch = document.getElementById('groupMembersSearchInput');
+    if (membersSearch) {
+        membersSearch.value = '';
+    }
     
     // Загрузка списка участников
     loadCalendarMembers('groupMembersSelectList');
@@ -157,6 +164,11 @@ function openEditGroupModal(groupId) {
         return;
     }
     modal.style.display = 'flex';
+    // Сброс поля поиска участников при открытии модалки редактирования
+    const editMembersSearch = document.getElementById('editGroupMembersSearchInput');
+    if (editMembersSearch) {
+        editMembersSearch.value = '';
+    }
     
     // Загрузка данных группы
     loadGroupData(groupId);
@@ -215,9 +227,6 @@ async function loadCalendarMembers(containerId, selectedMemberIds = []) {
         const groupsData = await groupsResponse.json();
         
         if (members && members.length > 0) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            
             // Собираем ID всех пользователей, которые уже состоят в группах
             const usersInGroups = new Set();
             if (groupsData.success && groupsData.groups) {
@@ -228,49 +237,25 @@ async function loadCalendarMembers(containerId, selectedMemberIds = []) {
                 });
             }
             
-            // Фильтруем участников, исключая тех, кто уже в группах
             const availableMembers = members.filter(member => 
                 !usersInGroups.has(member.id) || selectedMemberIds.includes(member.id)
             );
             
             if (availableMembers.length === 0) {
+                const container = document.getElementById(containerId);
                 container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 1rem;">Нет доступных участников для добавления в группу</div>';
                 return;
             }
-            
-            availableMembers.forEach(member => {
-                const memberItem = document.createElement('div');
-                memberItem.className = 'member-select-item';
-                
-                // Проверяем, состоит ли пользователь уже в группе
-                const isInGroup = usersInGroups.has(member.id) && !selectedMemberIds.includes(member.id);
-                
-                if (isInGroup) {
-                    memberItem.classList.add('disabled');
-                }
-                
-                memberItem.innerHTML = `
-                    <input type="checkbox" id="member_${member.id}" value="${member.id}" 
-                           ${selectedMemberIds.includes(member.id) ? 'checked' : ''}
-                           ${isInGroup ? 'disabled' : ''}>
-                    <img src="/static/images/${member.avatar}" onerror="this.src='/static/images/default_avatar.svg'">
-                    <span>${member.username}${isInGroup ? ' (уже в группе)' : ''}</span>
-                `;
-                
-                // Если пользователь уже в группе, делаем элемент неактивным
-                if (isInGroup) {
-                    memberItem.style.cursor = 'not-allowed';
-                } else {
-                    memberItem.addEventListener('click', function(e) {
-                        if (e.target.type !== 'checkbox') {
-                            const checkbox = this.querySelector('input[type="checkbox"]');
-                            checkbox.checked = !checkbox.checked;
-                        }
-                    });
-                }
-                
-                container.appendChild(memberItem);
-            });
+            // Кэшируем и рендерим список
+            membersDataCache[containerId] = { baseMembers: availableMembers, usersInGroups };
+            renderMemberList(containerId, availableMembers, usersInGroups, selectedMemberIds);
+
+            // Привязываем обработчик поиска для модалок создания/редактирования группы
+            if (containerId === 'groupMembersSelectList') {
+                setupMembersSearch('groupMembersSearchInput', containerId);
+            } else if (containerId === 'editGroupMembersSelectList') {
+                setupMembersSearch('editGroupMembersSearchInput', containerId);
+            }
         } else {
             const container = document.getElementById(containerId);
             container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 1rem;">Нет участников для добавления в группу</div>';
@@ -282,6 +267,86 @@ async function loadCalendarMembers(containerId, selectedMemberIds = []) {
         const container = document.getElementById(containerId);
         container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 1rem;">Ошибка загрузки участников</div>';
     }
+}
+
+// Хелпер: рендер списка участников в контейнер с сохранением обработчиков
+function renderMemberList(containerId, members, usersInGroups, selectedMemberIds = []) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!members || members.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 1rem;">Ничего не найдено</div>';
+        return;
+    }
+
+    members.forEach(member => {
+        const memberItem = document.createElement('div');
+        memberItem.className = 'member-select-item';
+
+        const isInGroup = usersInGroups.has(member.id) && !selectedMemberIds.includes(member.id);
+
+        if (isInGroup) {
+            memberItem.classList.add('disabled');
+        }
+
+        memberItem.innerHTML = `
+            <input type="checkbox" id="member_${member.id}" value="${member.id}" 
+                   ${selectedMemberIds.includes(member.id) ? 'checked' : ''}
+                   ${isInGroup ? 'disabled' : ''}>
+            <img src="/static/images/${member.avatar}" onerror="this.src='/static/images/default_avatar.svg'">
+            <span>${member.username}${isInGroup ? ' (уже в группе)' : ''}</span>
+        `;
+
+        if (isInGroup) {
+            memberItem.style.cursor = 'not-allowed';
+        } else {
+            memberItem.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                }
+            });
+        }
+
+        container.appendChild(memberItem);
+    });
+}
+
+// Привязка поиска и фильтрации для контейнера участников
+function setupMembersSearch(inputId, containerId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.dataset.bound === 'true') return;
+
+    input.addEventListener('input', function() {
+        const cache = membersDataCache[containerId];
+        if (!cache) return;
+
+        const query = (this.value || '').trim().toLowerCase();
+        const selectedIds = Array.from(document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`))
+            .map(cb => parseInt(cb.value));
+        const selectedSet = new Set(selectedIds);
+
+        let filtered = cache.baseMembers;
+        if (query) {
+            filtered = cache.baseMembers.filter(m => {
+                const name = String(m?.username ?? '').toLowerCase();
+                const position = String(m?.position ?? '').toLowerCase();
+                return name.includes(query) || position.includes(query);
+            });
+        }
+
+        // Гарантируем, что выбранные остаются в списке
+        const selectedObjects = cache.baseMembers.filter(m => selectedSet.has(m.id));
+        const unique = new Map();
+        [...selectedObjects, ...filtered].forEach(m => unique.set(m.id, m));
+        const toRender = Array.from(unique.values());
+
+        renderMemberList(containerId, toRender, cache.usersInGroups, selectedIds);
+    });
+
+    input.dataset.bound = 'true';
 }
 
 async function createGroup() {
