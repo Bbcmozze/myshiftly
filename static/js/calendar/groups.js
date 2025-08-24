@@ -1282,6 +1282,10 @@ function updateCalendarTableRows(groupedMembers, shifts) {
     const displayOrder = Array.from(groupedMembers.keys());
     console.log('Порядок отображения (массив):', displayOrder);
     
+    // Есть ли хотя бы одна созданная группа (кроме 'ungrouped') в отображаемом наборе
+    const hasAnyGroup = displayOrder.some(key => key !== 'ungrouped');
+    console.log('hasAnyGroup:', hasAnyGroup);
+    
     displayOrder.forEach(groupId => {
         const groupData = groupedMembers.get(groupId);
         
@@ -1292,9 +1296,13 @@ function updateCalendarTableRows(groupedMembers, shifts) {
         }
         
         if (groupId === 'ungrouped') {
-            console.log('Добавляем заголовок: Без группы');
-            // Заголовок для участников без группы
-            addGroupHeaderRow(tbody, null, 'Без группы', groupData.members.length);
+            if (hasAnyGroup) {
+                console.log('Добавляем заголовок: Без группы');
+                // Заголовок для участников без группы (только если есть созданные группы)
+                addGroupHeaderRow(tbody, null, 'Без группы', groupData.members.length);
+            } else {
+                console.log('Нет созданных групп — пропускаем заголовок "Без группы"');
+            }
         } else {
             console.log(`Добавляем группу: ${groupData.group.name} (позиция: ${groupData.group.position}), участников: ${groupData.members.length}`);
             // Заголовок группы

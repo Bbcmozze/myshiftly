@@ -215,6 +215,14 @@
                         {% endif %}
                     {% endfor %}
 
+                    {# Флаг: есть ли хотя бы одна реальная группа (с участниками) #}
+                    {% set has_real_groups = false %}
+                    {% for _gid, _gd in grouped_members.items() %}
+                        {% if _gd.group and _gd.members %}
+                            {% set has_real_groups = true %}
+                        {% endif %}
+                    {% endfor %}
+
                     {% for group_id, group_data in grouped_members.items() %}
                         {% if group_data.group %}
                         <!-- Заголовок группы -->
@@ -227,6 +235,7 @@
                             </td>
                         </tr>
                         {% else %}
+                        {% if has_real_groups %}
                         <!-- Заголовок для участников без группы -->
                         <tr class="group-header-row" data-ungrouped="true">
                             <td class="group-header-cell" colspan="{{ days_in_month|length + 1 }}">
@@ -235,6 +244,7 @@
                                 </div>
                             </td>
                         </tr>
+                        {% endif %}
                         {% endif %}
 
                         {% for member in group_data.members %}
