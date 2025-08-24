@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Сохраняем оригинальное состояние
     const originalNoFriendsHTML = noFriendsElement ? noFriendsElement.innerHTML : '';
-    const friendCards = friendsGrid ? Array.from(friendsGrid.querySelectorAll('.friend-card')) : [];
+    const getFriendCards = () => friendsGrid ? Array.from(friendsGrid.querySelectorAll('.friend-card')) : [];
 
     // Функция для выполнения поиска
     const performSearch = (rawTerm) => {
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let hasMatches = false;
 
         // Перебираем все карточки
-        friendCards.forEach(card => {
+        getFriendCards().forEach(card => {
             const username = (card.dataset.username || '').toLowerCase();
             const email = (card.dataset.email || '').toLowerCase();
             const first = (card.dataset.firstName || card.getAttribute('data-first-name') || '').toLowerCase();
@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Попробуйте изменить поисковый запрос</p>
                 `;
             } else {
-                noFriendsElement.style.display = q === '' && friendCards.length === 0 ? 'block' : 'none';
+                const totalCards = getFriendCards().length;
+                noFriendsElement.style.display = q === '' && totalCards === 0 ? 'block' : 'none';
                 if (q === '') {
                     noFriendsElement.innerHTML = originalNoFriendsHTML;
                 }

@@ -136,21 +136,43 @@ def register_routes(app):
         username = request.form.get('username')
         user = User.query.filter_by(username=username).first()
 
-        if not user or user.id == current_user.id:
-            flash("Пользователь не найден", "danger")
-        elif user in current_user.friends:
-            flash("Этот пользователь уже в вашем списке друзей", "danger")
-        else:
-            existing_request = FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
-            if not existing_request:
-                request_obj = FriendRequest(sender_id=current_user.id, receiver_id=user.id)
-                db.session.add(request_obj)
-                db.session.commit()
-                flash("Запрос отправлен", "success")
-            else:
-                flash("Вы уже отправили запрос этому пользователю", "info")
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-        return redirect(url_for('friends_page'))
+        if not user or user.id == current_user.id:
+            message = "Пользователь не найден"
+            if is_ajax:
+                return jsonify({"success": False, "status": "invalid", "message": message}), 400
+            flash(message, "danger")
+            return redirect(url_for('friends_page'))
+
+        if user in current_user.friends:
+            message = "Этот пользователь уже в вашем списке друзей"
+            if is_ajax:
+                return jsonify({"success": False, "status": "already_friends", "message": message}), 200
+            flash(message, "danger")
+            return redirect(url_for('friends_page'))
+
+        existing_request = FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first()
+        if not existing_request:
+            request_obj = FriendRequest(sender_id=current_user.id, receiver_id=user.id)
+            db.session.add(request_obj)
+            db.session.commit()
+            message = "Запрос отправлен"
+            if is_ajax:
+                return jsonify({
+                    "success": True,
+                    "status": "sent",
+                    "message": message,
+                    "user": {"id": user.id, "username": user.username}
+                })
+            flash(message, "success")
+            return redirect(url_for('friends_page'))
+        else:
+            message = "Вы уже отправили запрос этому пользователю"
+            if is_ajax:
+                return jsonify({"success": True, "status": "already_sent", "message": message}), 200
+            flash(message, "info")
+            return redirect(url_for('friends_page'))
 
 
     @app.route('/friends/requests', methods=['POST'])
@@ -160,18 +182,44 @@ def register_routes(app):
         request_id = request.form.get('request_id')
         friend_request = FriendRequest.query.get(request_id)
 
-        if friend_request and friend_request.receiver_id == current_user.id:
-            sender = User.query.get(friend_request.sender_id)
-            if action == 'accept':
-                current_user.friends.append(sender)
-                sender.friends.append(current_user)
-                flash(f"Вы теперь друзья с {sender.username}", "success")
-            elif action == 'reject':
-                flash(f"Запрос от {sender.username} отклонен", "info")
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-            db.session.delete(friend_request)
-            db.session.commit()
+        if not friend_request or friend_request.receiver_id != current_user.id:
+            if is_ajax:
+                return jsonify({"success": False, "message": "Запрос не найден"}), 404
+            return redirect(url_for('friends_page'))
 
+        sender = User.query.get(friend_request.sender_id)
+        if action == 'accept':
+            current_user.friends.append(sender)
+            sender.friends.append(current_user)
+            message = f"Вы теперь друзья с {sender.username}"
+            status = 'accepted'
+        else:
+            message = f"Запрос от {sender.username} отклонен"
+            status = 'rejected'
+
+        db.session.delete(friend_request)
+        db.session.commit()
+
+        if is_ajax:
+            # Возвращаем расширенную информацию и актуальное количество друзей
+            friends_count = current_user.friends.count()
+            return jsonify({
+                "success": True,
+                "status": status,
+                "message": message,
+                "friends_count": friends_count,
+                "sender": {
+                    "id": sender.id,
+                    "username": sender.username,
+                    "first_name": sender.first_name,
+                    "last_name": sender.last_name,
+                    "avatar": sender.avatar
+                }
+            })
+
+        flash(message, "success" if status == 'accepted' else "info")
         return redirect(url_for('friends_page'))
 
 
@@ -227,16 +275,56 @@ def register_routes(app):
 
         users = users_query.filter(User.id != current_user.id).limit(10).all()
 
-        results = [{
-            'id': user.id,
-            'username': user.username,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'avatar': user.avatar,
-            'is_friend': user in current_user.friends
-        } for user in users]
+        results = []
+        for user in users:
+            is_friend = user in current_user.friends
+            outgoing = FriendRequest.query.filter_by(sender_id=current_user.id, receiver_id=user.id).first() is not None
+            incoming = FriendRequest.query.filter_by(sender_id=user.id, receiver_id=current_user.id).first() is not None
+
+            if is_friend:
+                request_status = 'friends'
+            elif outgoing:
+                request_status = 'outgoing_pending'
+            elif incoming:
+                request_status = 'incoming_pending'
+            else:
+                request_status = 'none'
+
+            results.append({
+                'id': user.id,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'avatar': user.avatar,
+                'is_friend': is_friend,
+                'request_status': request_status
+            })
 
         return jsonify(results)
+
+    @app.route('/api/friend_requests', methods=['GET'])
+    @login_required
+    def api_friend_requests():
+        # Текущие входящие заявки для пользователя
+        reqs = FriendRequest.query.filter_by(receiver_id=current_user.id).order_by(FriendRequest.timestamp.desc()).all()
+        items = []
+        for r in reqs:
+            sender = r.sender
+            items.append({
+                'id': r.id,
+                'timestamp': (r.timestamp.isoformat() if r.timestamp else None),
+                'sender': {
+                    'id': sender.id,
+                    'username': sender.username,
+                    'first_name': sender.first_name,
+                    'last_name': sender.last_name,
+                    'avatar': sender.avatar
+                }
+            })
+        return jsonify({
+            'count': len(items),
+            'items': items
+        })
 
 
     @app.route('/my-calendars')
@@ -676,10 +764,7 @@ def register_routes(app):
             })
         except Exception as e:
             db.session.rollback()
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/get_friends', methods=['GET'])
     @login_required
@@ -688,35 +773,12 @@ def register_routes(app):
         results = [{
             'id': friend.id,
             'username': friend.username,
+            'first_name': friend.first_name,
+            'last_name': friend.last_name,
             'avatar': friend.avatar,
+            'created_at': friend.created_at.isoformat() if friend.created_at else None
         } for friend in friends]
         return jsonify(results)
-
-
-    @app.route('/calendar/<int:calendar_id>/clear-all-shifts', methods=['POST'])
-    @login_required
-    def clear_all_shifts(calendar_id):
-        calendar = Calendar.query.get_or_404(calendar_id)
-
-        # Проверка прав
-        if calendar.owner_id != current_user.id:
-            abort(403)
-
-        try:
-            # Удаляем все смены календаря
-            Shift.query.filter_by(calendar_id=calendar.id).delete()
-            db.session.commit()
-
-            return jsonify({
-                'success': True,
-                'message': 'Все смены успешно удалены'
-            })
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({
-                'success': False,
-                'message': str(e)
-            }), 500
 
 
     @app.route('/calendar/<int:calendar_id>/members', methods=['GET'])
