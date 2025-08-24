@@ -10,19 +10,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const friendCards = friendsGrid ? Array.from(friendsGrid.querySelectorAll('.friend-card')) : [];
 
     // Функция для выполнения поиска
-    const performSearch = (searchTerm) => {
-        searchTerm = searchTerm.toLowerCase().trim();
+    const performSearch = (rawTerm) => {
+        const q = (rawTerm || '').toLowerCase().trim();
         let hasMatches = false;
 
         // Перебираем все карточки
         friendCards.forEach(card => {
-            const username = card.dataset.username.toLowerCase();
-            const email = card.dataset.email.toLowerCase();
-            const isMatch = username.includes(searchTerm) || email.includes(searchTerm);
+            const username = (card.dataset.username || '').toLowerCase();
+            const email = (card.dataset.email || '').toLowerCase();
+            const first = (card.dataset.firstName || card.getAttribute('data-first-name') || '').toLowerCase();
+            const last = (card.dataset.lastName || card.getAttribute('data-last-name') || '').toLowerCase();
+            const fullFL = `${first} ${last}`.trim();
+            const fullLF = `${last} ${first}`.trim();
 
-            if (searchTerm === '' || isMatch) {
+            let isMatch = false;
+
+            if (q === '') {
+                isMatch = true;
+            } else if (q.startsWith('@')) {
+                const term = q.slice(1);
+                isMatch = username.includes(term);
+            } else {
+                // username / email / Имя / Фамилия / «Фамилия Имя» / «Имя Фамилия»
+                isMatch = (
+                    username.includes(q) ||
+                    email.includes(q) ||
+                    first.includes(q) ||
+                    last.includes(q) ||
+                    fullLF.includes(q) ||
+                    fullFL.includes(q)
+                );
+            }
+
+            if (isMatch) {
                 card.style.display = 'flex';
-                if (isMatch) hasMatches = true;
+                hasMatches = true;
             } else {
                 card.style.display = 'none';
             }
@@ -30,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Управление сообщениями
         if (noFriendsElement) {
-            if (searchTerm !== '' && !hasMatches) {
+            if (q !== '' && !hasMatches) {
                 noFriendsElement.style.display = 'block';
                 noFriendsElement.innerHTML = `
                     <div class="no-friends-icon">
@@ -40,8 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p>Попробуйте изменить поисковый запрос</p>
                 `;
             } else {
-                noFriendsElement.style.display = searchTerm === '' && friendCards.length === 0 ? 'block' : 'none';
-                if (searchTerm === '') {
+                noFriendsElement.style.display = q === '' && friendCards.length === 0 ? 'block' : 'none';
+                if (q === '') {
                     noFriendsElement.innerHTML = originalNoFriendsHTML;
                 }
             }
