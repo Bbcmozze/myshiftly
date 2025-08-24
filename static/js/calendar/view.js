@@ -238,6 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     setupDraggableRows();
                 }
                 hideOwnerControlsIfNotOwner();
+                // Пересчитываем сводки смен и часов после перерендера таблицы
+                if (typeof updateAllUserSummaries === 'function') {
+                    updateAllUserSummaries();
+                }
                 // Запускаем анимацию строк после обновления таблицы
                 window.animateCalendarRows();
             } else {
@@ -289,6 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     setupDraggableRows();
                 }
                 hideOwnerControlsIfNotOwner();
+                // Пересчитываем сводки смен и часов после перерендера таблицы
+                if (typeof updateAllUserSummaries === 'function') {
+                    updateAllUserSummaries();
+                }
                 // Запускаем анимацию строк после обновления таблицы
                 window.animateCalendarRows();
             } else {
@@ -1242,6 +1250,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     cell.appendChild(shiftBadge);
                     setupShiftHandlers();
+                    // Обновляем сводку для конкретного пользователя
+                    if (typeof updateSingleUserSummary === 'function') {
+                        updateSingleUserSummary(String(selectedUserId));
+                    }
                 }
                 selectTemplateModal.style.display = 'none';
             }
@@ -1332,6 +1344,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     shiftBadge?.remove();
                     if (cell && !cell.querySelector('.shift-badge')) {
                         cell.classList.remove('has-shift');
+                    }
+                    // После удаления обновляем сводку для пользователя
+                    if (typeof updateSingleUserSummary === 'function' && userId) {
+                        updateSingleUserSummary(String(userId));
                     }
                 }, 300);
             }
@@ -1474,6 +1490,83 @@ document.addEventListener('DOMContentLoaded', () => {
     // Вызываем при загрузке и при изменении размеров
     window.addEventListener('load', adjustTableLayout);
     window.addEventListener('resize', adjustTableLayout);
+
+    // Подсчет смен и часов для пользователей
+    const parseTimeRangeMinutes = (text) => {
+        if (!text) return 0;
+        const match = text.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+        if (!match) return 0;
+        const [ , sh, sm, eh, em ] = match;
+        const start = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+        let end = parseInt(eh, 10) * 60 + parseInt(em, 10);
+        // Обработка смен через полночь: если конец меньше начала — добавляем 24 часа
+        if (end < start) end += 24 * 60;
+        const diff = end - start;
+        return diff > 0 ? diff : 0;
+    };
+
+    // Упрощённый формат: всегда в часах с сокращением "ч"
+    const formatHours = (minutesTotal) => {
+        const hours = minutesTotal / 60;
+        return (Math.abs(hours % 1) < 0.05) ? `${Math.round(hours)} ч` : `${hours.toFixed(1)} ч`;
+    };
+
+    const computeUserSummary = (userId) => {
+        let totalShifts = 0;
+        let totalMinutes = 0;
+        const row = document.querySelector(`tr.user-row[data-user-id="${userId}"]`);
+        if (!row) return { totalShifts, totalMinutes };
+
+        const cells = row.querySelectorAll(`td.day-cell[data-user-id="${userId}"]`);
+        cells.forEach(cell => {
+            const badges = cell.querySelectorAll('.shift-badge');
+            badges.forEach(badge => {
+                totalShifts += 1;
+                if (!badge.classList.contains('no-time')) {
+                    totalMinutes += parseTimeRangeMinutes(badge.textContent);
+                }
+            });
+        });
+        return { totalShifts, totalMinutes };
+    };
+
+    const renderUserSummary = (userId, summary) => {
+        const row = document.querySelector(`tr.user-row[data-user-id="${userId}"]`);
+        if (!row) return;
+        const container = row.querySelector('.user-cell .user-cell-content');
+        if (!container) return;
+        const nameSpan = container.querySelector('span');
+        if (!nameSpan) return;
+
+        let summaryEl = nameSpan.querySelector('.user-shifts-summary');
+        if (!summary || summary.totalShifts === 0) {
+            if (summaryEl) summaryEl.remove();
+            return;
+        }
+
+        const text = `Смен: ${summary.totalShifts} • Часы: ${formatHours(summary.totalMinutes)}`;
+        if (!summaryEl) {
+            // Вставляем прямо под именем пользователя внутри span
+            summaryEl = document.createElement('span');
+            summaryEl.className = 'user-shifts-summary';
+            nameSpan.appendChild(summaryEl);
+        }
+        summaryEl.textContent = text;
+    };
+
+    window.updateSingleUserSummary = (userId) => {
+        const summary = computeUserSummary(userId);
+        renderUserSummary(userId, summary);
+    };
+
+    window.updateAllUserSummaries = () => {
+        document.querySelectorAll('tr.user-row').forEach(row => {
+            const uid = row.dataset.userId;
+            if (!uid) return;
+            const summary = computeUserSummary(uid);
+            renderUserSummary(uid, summary);
+        });
+    };
 
     // Мгновенное скрытие строк перед обновлением
     const preHideCalendarRows = () => {
@@ -1650,11 +1743,17 @@ document.addEventListener('DOMContentLoaded', () => {
         syncHorizontalScroll();
         adjustTableLayout();
         // setupDraggableRows будет вызван после updateCalendarAfterGroupChange()
+        if (typeof updateAllUserSummaries === 'function') {
+            updateAllUserSummaries();
+        }
         
         // Единоразовая синхронизация таблицы и сайдбара групп на первичной загрузке
         if (typeof updateCalendarAfterGroupChange === 'function') {
             try {
                 await updateCalendarAfterGroupChange();
+                if (typeof updateAllUserSummaries === 'function') {
+                    updateAllUserSummaries();
+                }
             } catch (e) {
                 console.warn('Не удалось выполнить первичную синхронизацию групп:', e);
             }
