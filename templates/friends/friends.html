@@ -29,15 +29,15 @@
     <!-- Список друзей -->
     <div class="friends-grid">
         {% for friend in current_user.friends.all() %}
-        <div class="friend-card" data-username="{{ friend.username|lower }}" data-email="{{ friend.email|lower }}">
+        <div class="friend-card" data-username="{{ friend.username|lower }}" data-email="{{ friend.email|lower }}" data-first-name="{{ friend.first_name|lower }}" data-last-name="{{ friend.last_name|lower }}">
             <div class="friend-avatar">
                 <img src="{{ url_for('static', filename='images/' + friend.avatar) }}"
                      onerror="this.src='{{ url_for('static', filename='images/default_avatar.svg') }}'"
                      alt="{{ friend.username }}">
             </div>
             <div class="friend-info">
-                <h3 class="friend-name">{{ friend.username }}</h3>
-                <p class="friend-email">{{ friend.email }}</p>
+                <h3 class="friend-name">{{ friend.first_name }} {{ friend.last_name }}</h3>
+                <p class="friend-email">@{{ friend.username }}</p>
                 <div class="friend-meta">
                     <span class="friend-since">
                         <i class="bi bi-calendar"></i>

@@ -465,10 +465,16 @@ main {
     flex: 1;
 }
 
-.notification-username {
+.notification-name {
     font-weight: 600;
     color: #1e293b;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
+}
+
+.notification-username {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
 }
 
 .notification-meta {
@@ -486,6 +492,23 @@ main {
 .notification-actions {
     display: flex;
     gap: 0.5rem;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Раскладываем кнопки в строку внутри формы */
+.notification-actions form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+/* Одинаковый размер и выравнивание текста в кнопках */
+.notification-actions .notification-btn {
+    width: 110px;
+    height: 30px;
+    justify-content: center;
 }
 
 .notification-btn {
@@ -499,30 +522,38 @@ main {
     cursor: pointer;
 }
 
+.notification-btn {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
 .notification-btn-accept {
-    padding: 1em;
-    width: 100px;
-    height: 28px;
-    background: #10b981;
-    color: white;
-    border: none;
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
 }
 
 .notification-btn-accept:hover {
-    background: #059669;
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
 }
 
 .notification-btn-reject {
-    padding: 1em;
-    width: 100px;
-    height: 28px;
-    background: #e41313;
+    background: #ef4444;
     color: #ffffff;
-    border: 1px solid #fee2e2;
+    border-color: #ef4444;
 }
 
 .notification-btn-reject:hover {
-    background: #b31e1e;
+    background: #dc2626;
+    border-color: #dc2626;
 }
 
 .no-notifications {
@@ -550,7 +581,7 @@ main {
 /* Поле поиска */
 .search-container {
     position: relative;
-    width: 300px;
+    width: 380px;
 }
 
 .search-friends {
@@ -617,9 +648,17 @@ main {
     overflow: hidden;
 }
 
-.search-result-username {
-    font-weight: 500;
+.search-result-name {
+    font-weight: 600;
     color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-username {
+    font-size: 0.9rem;
+    color: #64748b;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

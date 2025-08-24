@@ -42,7 +42,7 @@
             <div class="nav-links" style="display: flex; align-items: center; gap: 1.5rem;">
                 {% if current_user.is_authenticated %}
                     <div class="search-container">
-                        <input type="text" id="userSearch" placeholder="Поиск по @username…"
+                        <input type="text" id="userSearch" placeholder="Добавить по имени или @username…"
                                class="search-friends" autocomplete="off">
                         <div id="searchResults" class="search-results">
                             <div class="no-results">Начните вводить имя пользователя</div>
@@ -69,25 +69,25 @@
                                                  class="notification-avatar"
                                                  onerror="this.src='/static/images/default_avatar.svg'">
                                             <div class="notification-text">
-                                                <div class="notification-username">{{ req.sender.username }}</div>
-                                                <div>Хочет добавить вас в друзья</div>
+                                                <div class="notification-name">{{ req.sender.first_name }} {{ req.sender.last_name }}</div>
+                                                <div class="notification-username">@{{ req.sender.username }}</div>
+                                                <div class="notification-actions" style="margin-top: 0.5rem;">
+                                                    <form method="POST" action="{{ url_for('handle_friend_request') }}">
+                                                        <input type="hidden" name="request_id" value="{{ req.id }}">
+                                                        <button name="action" value="accept"
+                                                                class="notification-btn notification-btn-accept">
+                                                            <i class="bi bi-check-lg"></i> Принять
+                                                        </button>
+                                                        <button name="action" value="reject"
+                                                                class="notification-btn notification-btn-reject">
+                                                            <i class="bi bi-x-lg"></i> Отклонить
+                                                        </button>
+                                                    </form>
+                                                </div>
                                                 <div class="notification-meta">
                                                     <span class="notification-time">
-                                                        {{ req.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                                                        {{ req.timestamp|to_msk('%d.%m.%Y %H:%M') }}
                                                     </span>
-                                                    <div class="notification-actions">
-                                                        <form method="POST" action="{{ url_for('handle_friend_request') }}">
-                                                            <input type="hidden" name="request_id" value="{{ req.id }}">
-                                                            <button name="action" value="accept"
-                                                                    class="notification-btn notification-btn-accept">
-                                                                <i class="bi bi-check-lg"></i> Принять
-                                                            </button>
-                                                            <button name="action" value="reject"
-                                                                    class="notification-btn notification-btn-reject">
-                                                                <i class="bi bi-x-lg"></i> Отклонить
-                                                            </button>
-                                                        </form>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

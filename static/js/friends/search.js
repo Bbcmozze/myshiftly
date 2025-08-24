@@ -27,19 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                          class="search-result-avatar" 
                                          onerror="this.src='/static/images/default_avatar.svg'">
                                     <div class="search-result-info">
-                                        <div class="search-result-username">${user.username}</div>
+                                        <div class="search-result-name">${user.first_name} ${user.last_name}</div>
+                                        <div class="search-result-username">@${user.username}</div>
                                     </div>
                                 </div>
                                 <div class="search-result-actions">
                                     ${user.is_friend ? 
                                         '<span class="search-result-already-friends"><i class="bi bi-check-circle"></i> В друзьях</span>' : 
-                                        `<form method="POST" action="/friends/add" style="display: inline;">
-                                            <input type="hidden" name="username" value="${user.username}">
-                                            <button type="submit" class="btn btn-sm btn-primary" 
-                                                    style="padding: 0.25rem 0.75rem;">
-                                                <i class="bi bi-person-plus"></i> Добавить
-                                            </button>
-                                        </form>`}
+                                        `<form method=\"POST\" action=\"/friends/add\" style=\"display: inline;\">\n                                            <input type=\"hidden\" name=\"username\" value=\"${user.username}\">\n                                            <button type=\"submit\" class=\"btn btn-sm btn-primary\" \n                                                    style=\"padding: 0.25rem 0.75rem;\">\n                                                <i class=\"bi bi-person-plus\"></i> Добавить\n                                            </button>\n                                        </form>`}
                                 </div>
                             </div>
                         `).join('');

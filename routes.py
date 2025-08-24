@@ -1,21 +1,37 @@
 import traceback
 import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
-from sqlalchemy import exists, and_
+from sqlalchemy import exists, and_, or_
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, generate_user_id, generate_calendar_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members, Group, group_members
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from config import Config
 from jinja2 import Environment
 import os
 from werkzeug.utils import secure_filename
+from zoneinfo import ZoneInfo
 
 
 def add_jinja2_filters(app):
     env = app.jinja_env
     env.filters['unique'] = lambda items: list(set(items))
+    
+    # Фильтр: конвертация времени в MSK и опциональное форматирование
+    def to_msk(value, fmt: str | None = None):
+        try:
+            if not isinstance(value, datetime):
+                return value
+            # Если naive — считаем, что это UTC из БД
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            msk = value.astimezone(ZoneInfo('Europe/Moscow'))
+            return msk.strftime(fmt) if fmt else msk
+        except Exception:
+            return value
+
+    env.filters['to_msk'] = to_msk
 
 
 def allowed_file(filename):
@@ -175,18 +191,47 @@ def register_routes(app):
     @app.route('/api/search_users', methods=['GET'])
     @login_required
     def search_users():
-        query = request.args.get('q', '').strip()
-        if len(query) < 2:  # Не ищем при слишком коротком запросе
+        raw_query = request.args.get('q', '').strip()
+        if len(raw_query) < 2:  # Не ищем при слишком коротком запросе
             return jsonify([])
 
-        users = User.query.filter(
-            User.username.ilike(f'%{query}%'),
-            User.id != current_user.id
-        ).limit(10).all()
+        # Поддержка ввода в формате @username
+        query = raw_query[1:] if raw_query.startswith('@') else raw_query
+
+        users_query = User.query
+
+        # Если введено несколько слов, требуем, чтобы каждое вхождение
+        # присутствовало хотя бы в одном из полей (username/first_name/last_name)
+        if ' ' in query:
+            tokens = [t for t in query.split() if t]
+            for t in tokens:
+                users_query = users_query.filter(
+                    or_(
+                        User.username.ilike(f'%{t}%'),
+                        User.first_name.ilike(f'%{t}%'),
+                        User.last_name.ilike(f'%{t}%')
+                    )
+                )
+        else:
+            q = query
+            users_query = users_query.filter(
+                or_(
+                    User.username.ilike(f'%{q}%'),
+                    # Поддержка поиска по полному имени в обоих порядках
+                    (User.last_name + ' ' + User.first_name).ilike(f'%{q}%'),
+                    (User.first_name + ' ' + User.last_name).ilike(f'%{q}%'),
+                    User.first_name.ilike(f'%{q}%'),
+                    User.last_name.ilike(f'%{q}%')
+                )
+            )
+
+        users = users_query.filter(User.id != current_user.id).limit(10).all()
 
         results = [{
             'id': user.id,
             'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
             'avatar': user.avatar,
             'is_friend': user in current_user.friends
         } for user in users]
