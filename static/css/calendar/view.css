@@ -708,21 +708,75 @@ body.fullscreen-active {
 }
 
 .shift-badge .remove-shift-btn {
-    /* Стили кнопки удаления */
+    /* Аккуратная кнопка удаления в углу бейджа */
     position: absolute;
     top: -5px;
-    right: -5px;
-    background: #f87171;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    font-size: 0.6rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 30%;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: rgba(239, 68, 68, 0.9); /* красный, как в теме */
+    color: #ffffff;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    font-size: 0; /* скрываем символ ×, используем псевдоэлементы для идеального центрирования */
+    line-height: 1;
+    font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(0.9);
+    transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease,
+                background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+/* Рисуем крестик ровно по центру двумя линиями */
+.shift-badge .remove-shift-btn::before,
+.shift-badge .remove-shift-btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    background: #ffffff;
+    border-radius: 1px;
+    transform-origin: center;
+}
+
+.shift-badge .remove-shift-btn::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.shift-badge .remove-shift-btn::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* Показываем кнопку только при наведении на смену или фокусе внутри */
+.shift-badge:hover .remove-shift-btn,
+.shift-badge:focus-within .remove-shift-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.shift-badge .remove-shift-btn:hover {
+    background: #dc2626; /* темнее при ховере */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.shift-badge .remove-shift-btn:active {
+    transform: scale(0.95);
+}
+
+.shift-badge .remove-shift-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .add-shift-btn:hover {
