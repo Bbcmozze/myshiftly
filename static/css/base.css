@@ -209,6 +209,10 @@ main {
     margin-top: 4rem;
 }
 
+.user-username {
+    color: #706c6c;
+}
+
 .avatar {
     width: 80px;
     height: 80px;

@@ -1096,26 +1096,26 @@ def register_routes(app):
         try:
             current_user_id = current_user.id
             test_users = [
-                {"username": "test_user1", "email": "test1@example.com", "password": "password123"},
-                {"username": "test_user2", "email": "test2@example.com", "password": "password123"},
-                {"username": "test_user3", "email": "test3@example.com", "password": "password123"},
-                {"username": "test_user4", "email": "test4@example.com", "password": "password123"},
-                {"username": "test_user5", "email": "test5@example.com", "password": "password123"},
-                {"username": "test_user6", "email": "test6@example.com", "password": "password123"},
-                {"username": "test_user7", "email": "test7@example.com", "password": "password123"},
-                {"username": "test_user8", "email": "test8@example.com", "password": "password123"},
-                {"username": "test_user9", "email": "test9@example.com", "password": "password123"},
-                {"username": "test_user10", "email": "test10@example.com", "password": "password123"},
-                {"username": "test_user11", "email": "test11@example.com", "password": "password123"},
-                {"username": "test_user12", "email": "test12@example.com", "password": "password123"},
-                {"username": "test_user13", "email": "test13@example.com", "password": "password123"},
-                {"username": "test_user14", "email": "test14@example.com", "password": "password123"},
-                {"username": "test_user15", "email": "test15@example.com", "password": "password123"},
-                {"username": "test_user16", "email": "test16@example.com", "password": "password123"},
-                {"username": "test_user17", "email": "test17@example.com", "password": "password123"},
-                {"username": "test_user18", "email": "test18@example.com", "password": "password123"},
-                {"username": "test_user19", "email": "test19@example.com", "password": "password123"},
-                {"username": "test_user20", "email": "test20@example.com", "password": "password123"}
+                {"username": "test_user1", "email": "test1@example.com", "password": "password123", "first_name": "Иван", "last_name": "Иванов"},
+                {"username": "test_user2", "email": "test2@example.com", "password": "password123", "first_name": "Пётр", "last_name": "Петров"},
+                {"username": "test_user3", "email": "test3@example.com", "password": "password123", "first_name": "Сергей", "last_name": "Сергеев"},
+                {"username": "test_user4", "email": "test4@example.com", "password": "password123", "first_name": "Алексей", "last_name": "Алексеев"},
+                {"username": "test_user5", "email": "test5@example.com", "password": "password123", "first_name": "Дмитрий", "last_name": "Дмитриев"},
+                {"username": "test_user6", "email": "test6@example.com", "password": "password123", "first_name": "Максим", "last_name": "Максимов"},
+                {"username": "test_user7", "email": "test7@example.com", "password": "password123", "first_name": "Николай", "last_name": "Николаев"},
+                {"username": "test_user8", "email": "test8@example.com", "password": "password123", "first_name": "Андрей", "last_name": "Андреев"},
+                {"username": "test_user9", "email": "test9@example.com", "password": "password123", "first_name": "Михаил", "last_name": "Михайлов"},
+                {"username": "test_user10", "email": "test10@example.com", "password": "password123", "first_name": "Егор", "last_name": "Егоров"},
+                {"username": "test_user11", "email": "test11@example.com", "password": "password123", "first_name": "Кирилл", "last_name": "Кириллов"},
+                {"username": "test_user12", "email": "test12@example.com", "password": "password123", "first_name": "Роман", "last_name": "Романов"},
+                {"username": "test_user13", "email": "test13@example.com", "password": "password123", "first_name": "Владимир", "last_name": "Владимиров"},
+                {"username": "test_user14", "email": "test14@example.com", "password": "password123", "first_name": "Антон", "last_name": "Антонов"},
+                {"username": "test_user15", "email": "test15@example.com", "password": "password123", "first_name": "Георгий", "last_name": "Георгиев"},
+                {"username": "test_user16", "email": "test16@example.com", "password": "password123", "first_name": "Артур", "last_name": "Артуров"},
+                {"username": "test_user17", "email": "test17@example.com", "password": "password123", "first_name": "Лев", "last_name": "Львов"},
+                {"username": "test_user18", "email": "test18@example.com", "password": "password123", "first_name": "Тимофей", "last_name": "Тимофеев"},
+                {"username": "test_user19", "email": "test19@example.com", "password": "password123", "first_name": "Илья", "last_name": "Ильин"},
+                {"username": "test_user20", "email": "test20@example.com", "password": "password123", "first_name": "Степан", "last_name": "Степанов"}
             ]
 
             added_users = []
@@ -1138,7 +1138,9 @@ def register_routes(app):
                         id=user_id,
                         username=user_data["username"],
                         email=user_data["email"],
-                        password_hash=hashed_password
+                        password_hash=hashed_password,
+                        first_name=user_data["first_name"],
+                        last_name=user_data["last_name"]
                     )
                     db.session.add(new_user)
                     added_users.append(new_user)
