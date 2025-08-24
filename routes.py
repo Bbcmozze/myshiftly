@@ -48,10 +48,12 @@ def register_routes(app):
     @app.route('/register', methods=['GET', 'POST'])
     def register():
         if request.method == 'POST':
-            username = request.form.get('username')
-            email = request.form.get('email')
+            username = (request.form.get('username') or '').strip()
+            email = (request.form.get('email') or '').strip()
             password = request.form.get('password')
             confirm_password = request.form.get('confirm_password')
+            first_name = (request.form.get('first_name') or '').strip()
+            last_name = (request.form.get('last_name') or '').strip()
 
             # Проверка длины пароля
             if len(password) < 8:
@@ -60,6 +62,11 @@ def register_routes(app):
 
             if password != confirm_password:
                 flash('Пароли не совпадают', 'danger')
+                return redirect(url_for('register'))
+
+            # Имя и Фамилия обязательны
+            if not first_name or not last_name:
+                flash('Имя и Фамилия должны быть заполнены', 'danger')
                 return redirect(url_for('register'))
 
             existing_user = User.query.filter(
@@ -80,7 +87,9 @@ def register_routes(app):
                 id=user_id,
                 username=username,
                 email=email,
-                password_hash=hashed_password
+                password_hash=hashed_password,
+                first_name=first_name,
+                last_name=last_name
             )
 
             db.session.add(new_user)

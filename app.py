@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_login import LoginManager
-from models import db
+from models import db, ensure_user_columns
+
 from config import Config
 import os
 
@@ -39,4 +40,5 @@ if __name__ == '__main__':
     app = create_app()
     with app.app_context():
         db.create_all()
+        ensure_user_columns()
     app.run(debug=True)

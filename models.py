@@ -2,6 +2,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
 import random
+from sqlalchemy import text
 
 db = SQLAlchemy()
 
@@ -42,6 +43,8 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     avatar = db.Column(db.String(200), default='default_avatar.svg')  # Изменено на SVG
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
     friends = db.relationship(
         'User', secondary=friends,
         primaryjoin=(friends.c.user_id == id),
@@ -117,3 +120,75 @@ class ShiftTemplate(db.Model):
 
     calendar = db.relationship('Calendar', back_populates='shift_templates')
     owner = db.relationship('User', backref='shift_templates')
+
+
+def ensure_user_columns():
+    """Гарантирует наличие колонок first_name/last_name в таблице user (SQLite)."""
+    try:
+        with db.engine.connect() as conn:
+            # Получаем список колонок таблицы user
+            result = conn.execute(text("PRAGMA table_info('user')"))
+            table_info = result.fetchall()
+            columns = {row[1]: row for row in table_info}  # name -> row
+
+            # Добавляем колонки при отсутствии: NOT NULL + DEFAULT ''
+            if 'first_name' not in columns:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN first_name VARCHAR(50) NOT NULL DEFAULT ""'))
+            if 'last_name' not in columns:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN last_name VARCHAR(50) NOT NULL DEFAULT ""'))
+
+            # Если колонки есть, но допускают NULL или пустые значения — создаём защитные триггеры
+            # PRAGMA table_info: (cid, name, type, notnull, dflt_value, pk)
+            def _create_trigger_if_missing(trigger_name: str, sql: str):
+                exists = conn.execute(text(
+                    "SELECT name FROM sqlite_master WHERE type='trigger' AND name=:name"
+                ), {"name": trigger_name}).fetchone()
+                if not exists:
+                    conn.execute(text(sql))
+
+            # Триггеры на first_name
+            first_info = columns.get('first_name')
+            if first_info and (first_info[3] == 0):  # notnull == 0
+                _create_trigger_if_missing(
+                    'user_first_name_not_empty_insert',
+                    (
+                        'CREATE TRIGGER user_first_name_not_empty_insert '\
+                        'BEFORE INSERT ON "user" '\
+                        'FOR EACH ROW WHEN NEW.first_name IS NULL OR length(trim(NEW.first_name))=0 '\
+                        "BEGIN SELECT RAISE(ABORT, 'first_name required'); END;"
+                    )
+                )
+                _create_trigger_if_missing(
+                    'user_first_name_not_empty_update',
+                    (
+                        'CREATE TRIGGER user_first_name_not_empty_update '\
+                        'BEFORE UPDATE OF first_name ON "user" '\
+                        'FOR EACH ROW WHEN NEW.first_name IS NULL OR length(trim(NEW.first_name))=0 '\
+                        "BEGIN SELECT RAISE(ABORT, 'first_name required'); END;"
+                    )
+                )
+
+            # Триггеры на last_name
+            last_info = columns.get('last_name')
+            if last_info and (last_info[3] == 0):  # notnull == 0
+                _create_trigger_if_missing(
+                    'user_last_name_not_empty_insert',
+                    (
+                        'CREATE TRIGGER user_last_name_not_empty_insert '\
+                        'BEFORE INSERT ON "user" '\
+                        'FOR EACH ROW WHEN NEW.last_name IS NULL OR length(trim(NEW.last_name))=0 '\
+                        "BEGIN SELECT RAISE(ABORT, 'last_name required'); END;"
+                    )
+                )
+                _create_trigger_if_missing(
+                    'user_last_name_not_empty_update',
+                    (
+                        'CREATE TRIGGER user_last_name_not_empty_update '\
+                        'BEFORE UPDATE OF last_name ON "user" '\
+                        'FOR EACH ROW WHEN NEW.last_name IS NULL OR length(trim(NEW.last_name))=0 '\
+                        "BEGIN SELECT RAISE(ABORT, 'last_name required'); END;"
+                    )
+                )
+    except Exception:
+        # Избегаем падения приложения на старте, детали будут в логах Flask
+        pass
