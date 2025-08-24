@@ -585,11 +585,11 @@ function createGroupElement(group) {
             </div>
         </div>
         <div class="group-actions">
-            <button class="delete-group-btn" data-group-id="${group.id}">
-                <i class="bi bi-trash"></i>
-            </button>
             <button class="edit-group-btn" data-group-id="${group.id}">
                 <i class="bi bi-pencil"></i>
+            </button>
+            <button class="delete-group-btn" data-group-id="${group.id}">
+                <i class="bi bi-trash"></i>
             </button>
         </div>
     `;
@@ -622,11 +622,11 @@ function addGroupToDOM(group) {
                 </div>
             </div>
             <div class="group-actions">
-                <button class="delete-group-btn" data-group-id="${group.id}">
-                    <i class="bi bi-trash"></i>
-                </button>
                 <button class="edit-group-btn" data-group-id="${group.id}">
                     <i class="bi bi-pencil"></i>
+                </button>
+                <button class="delete-group-btn" data-group-id="${group.id}">
+                    <i class="bi bi-trash"></i>
                 </button>
             </div>
         `;
