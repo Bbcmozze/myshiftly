@@ -690,18 +690,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 const title = item.querySelector('.template-title').textContent.toLowerCase();
                 item.style.display = title.includes(query) ? 'flex' : 'none';
             });
+
+            const templateList = document.getElementById('templateList');
+            const selectTemplateList = document.getElementById('selectTemplateList');
+
+            const updateNoResultsMsg = (container) => {
+                if (!container) return;
+                const items = container.querySelectorAll('.template-item');
+                const noTemplates = container.querySelector('.no-templates');
+
+                let visibleCount = 0;
+                items.forEach(it => {
+                    if (it.style.display !== 'none') visibleCount++;
+                });
+
+                let noResults = container.querySelector('.no-results');
+                if (items.length > 0 && visibleCount === 0) {
+                    // Не показываем «Ничего не найдено», если отображается «Нет созданных шаблонов»
+                    if (!noTemplates) {
+                        if (!noResults) {
+                            noResults = document.createElement('div');
+                            noResults.className = 'no-results';
+                            noResults.style.textAlign = 'center';
+                            noResults.style.padding = '1rem';
+                            noResults.style.color = '#64748b';
+                            noResults.innerHTML = `
+                                <i class="bi bi-search" style="font-size: 1.5rem;"></i>
+                                <p>Ничего не найдено</p>
+                            `;
+                            container.appendChild(noResults);
+                        }
+                    }
+                } else if (noResults) {
+                    noResults.remove();
+                }
+            };
+
+            updateNoResultsMsg(templateList);
+            updateNoResultsMsg(selectTemplateList);
         });
     }
-
-    const checkEmptyMembersList = () => {
-        const memberList = document.getElementById('memberList');
-        if (!memberList) return;
-
-        const memberItems = memberList.querySelectorAll('.member-item:not(.owner)');
-        if (memberItems.length === 0) {
-            showToast('Список участников пуст', 'info');
-        }
-    };
 
     // ====================== ОСНОВНЫЕ ФУНКЦИИ ======================
 

@@ -1609,16 +1609,42 @@ function isCalendarOwner() {
 
 function filterGroups() {
     const searchTerm = document.getElementById('searchGroupInput').value.toLowerCase();
-    const groupItems = document.querySelectorAll('.group-item');
-    
+    const groupList = document.getElementById('groupList');
+    const groupItems = groupList ? groupList.querySelectorAll('.group-item') : document.querySelectorAll('.group-item');
+
+    let visibleCount = 0;
     groupItems.forEach(item => {
         const groupName = item.querySelector('.group-title').textContent.toLowerCase();
-        if (groupName.includes(searchTerm)) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
+        const matches = groupName.includes(searchTerm);
+        item.style.display = matches ? 'block' : 'none';
+        if (matches) visibleCount++;
     });
+
+    // Показ/скрытие сообщения «Ничего не найдено» при активной фильтрации
+    if (groupList) {
+        const noGroups = groupList.querySelector('.no-groups'); // «Нет созданных групп»
+        let noResults = groupList.querySelector('.no-results'); // «Ничего не найдено» (поиск)
+
+        if (visibleCount === 0) {
+            // Не дублируем, если уже показано «Нет созданных групп»
+            if (!noGroups) {
+                if (!noResults) {
+                    noResults = document.createElement('div');
+                    noResults.className = 'no-results';
+                    noResults.innerHTML = `
+                <i class="bi bi-search"></i>
+                <p>Ничего не найдено</p>
+            `;
+                    noResults.style.textAlign = 'center';
+                    noResults.style.padding = '1rem';
+                    noResults.style.color = '#64748b';
+                    groupList.appendChild(noResults);
+                }
+            }
+        } else if (noResults) {
+            noResults.remove();
+        }
+    }
 }
 
 function closeModal(modalId) {
