@@ -13,7 +13,12 @@
             <td class="user-cell">
                 <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                      onerror="this.src='/static/images/default_avatar.svg'">
-                {{ calendar.owner.username }} {% if calendar.owner_id == current_user.id %}(Вы){% endif %}
+                {% if calendar.owner.last_name or calendar.owner.first_name %}
+                    {{ calendar.owner.last_name }} {{ calendar.owner.first_name }}
+                {% else %}
+                    {{ calendar.owner.username }}
+                {% endif %}
+                {% if calendar.owner_id == current_user.id %}(Вы){% endif %}
             </td>
             {% for day in days_in_month %}
             <td class="day-cell editable"
@@ -48,7 +53,12 @@
             <td class="user-cell">
                 <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
                      onerror="this.src='/static/images/default_avatar.svg'">
-                {{ member.username }} {% if member.id == current_user.id %}(Вы){% endif %}
+                {% if member.last_name or member.first_name %}
+                    {{ member.last_name }} {{ member.first_name }}
+                {% else %}
+                    {{ member.username }}
+                {% endif %}
+                {% if member.id == current_user.id %}(Вы){% endif %}
             </td>
             {% for day in days_in_month %}
             <td class="day-cell editable"

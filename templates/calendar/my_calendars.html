@@ -128,7 +128,13 @@
                     {% endif %}
                     <div class="calendar-info">
                         <h3>{{ calendar.name }}</h3>
-                        <p>Общий календарь · Создатель: {{ calendar.owner.username }}</p>
+                        <p>Общий календарь · Создатель: 
+                            {% if calendar.owner.last_name or calendar.owner.first_name %}
+                                {{ (calendar.owner.last_name or '') ~ (' ' if calendar.owner.last_name and calendar.owner.first_name else '') ~ (calendar.owner.first_name or '') }}
+                            {% else %}
+                                {{ calendar.owner.username }}
+                            {% endif %}
+                        </p>
                         <div class="calendar-meta">
                             <span><i class="bi bi-calendar3"></i> {{ calendar.created_at.strftime('%d.%m.%Y') }}</span>
                         </div>

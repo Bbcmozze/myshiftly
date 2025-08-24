@@ -793,7 +793,7 @@ def register_routes(app):
         # Возвращаем участников с их позицией из calendar_members, отсортированных по позиции (возрастание)
         # Владелец не включается (для групп он не нужен)
         rows = (
-            db.session.query(User.id, User.username, User.avatar, calendar_members.c.position)
+            db.session.query(User.id, User.username, User.first_name, User.last_name, User.avatar, calendar_members.c.position)
             .join(calendar_members, (calendar_members.c.user_id == User.id) & (calendar_members.c.calendar_id == calendar.id))
             .order_by(calendar_members.c.position.asc(), User.id.asc())
             .all()
@@ -803,6 +803,8 @@ def register_routes(app):
             {
                 'id': r.id,
                 'username': r.username,
+                'first_name': r.first_name,
+                'last_name': r.last_name,
                 'avatar': r.avatar,
                 'position': int(r.position) if r.position is not None else None,
             }
@@ -1089,7 +1091,15 @@ def register_routes(app):
                 'color': group.color,
                 'owner_id': group.owner_id,
                 'position': group.position,
-                'members': [{'id': m.id, 'username': m.username, 'avatar': m.avatar} for m in group.members]
+                'members': [
+                    {
+                        'id': m.id,
+                        'username': m.username,
+                        'first_name': m.first_name,
+                        'last_name': m.last_name,
+                        'avatar': m.avatar
+                    } for m in group.members
+                ]
             })
 
         return jsonify({'success': True, 'groups': groups_data})
@@ -1113,6 +1123,8 @@ def register_routes(app):
             members_with_groups.append({
                 'id': member.id,
                 'username': member.username,
+                'first_name': member.first_name,
+                'last_name': member.last_name,
                 'avatar': member.avatar,
                 'groups': [{'id': g.id, 'name': g.name, 'color': g.color} for g in member_groups]
             })

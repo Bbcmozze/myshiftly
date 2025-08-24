@@ -4,6 +4,23 @@ let selectedEditGroupColor = 'badge-color-1';
 // Кэш данных участников по контейнеру
 const membersDataCache = {}; // { [containerId]: { baseMembers: Array, usersInGroups: Set<number> } }
 
+// Хелперы для форматирования отображаемого имени участника
+function formatMemberFullName(member) {
+    const ln = (member && member.last_name) ? String(member.last_name).trim() : '';
+    const fn = (member && member.first_name) ? String(member.first_name).trim() : '';
+    const full = `${ln} ${fn}`.trim();
+    return full;
+}
+
+function getMemberDisplayName(member, includeYouLabel = true) {
+    const full = formatMemberFullName(member);
+    const base = full || (member && member.username) || '';
+    if (includeYouLabel && member && member.id === getCurrentUserId()) {
+        return `${base} (Вы)`;
+    }
+    return base;
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Groups.js: DOM loaded, initializing...'); // Для отладки
@@ -295,7 +312,7 @@ function renderMemberList(containerId, members, usersInGroups, selectedMemberIds
                    ${selectedMemberIds.includes(member.id) ? 'checked' : ''}
                    ${isInGroup ? 'disabled' : ''}>
             <img src="/static/images/${member.avatar}" onerror="this.src='/static/images/default_avatar.svg'">
-            <span>${member.username}${isInGroup ? ' (уже в группе)' : ''}</span>
+            <span>${getMemberDisplayName(member, false)}${isInGroup ? ' (уже в группе)' : ''}</span>
         `;
 
         if (isInGroup) {
@@ -331,9 +348,11 @@ function setupMembersSearch(inputId, containerId) {
         let filtered = cache.baseMembers;
         if (query) {
             filtered = cache.baseMembers.filter(m => {
-                const name = String(m?.username ?? '').toLowerCase();
+                const fullName = formatMemberFullName(m).toLowerCase();
+                const username = String(m?.username ?? '').toLowerCase();
+                const combined = `${fullName} ${username}`.trim();
                 const position = String(m?.position ?? '').toLowerCase();
-                return name.includes(query) || position.includes(query);
+                return combined.includes(query) || position.includes(query);
             });
         }
 
@@ -1466,7 +1485,7 @@ function addUserRow(tbody, member, group, shifts) {
     userCellContent.appendChild(userAvatar);
     
     const userName = document.createElement('span');
-    userName.textContent = member.username + (member.id === getCurrentUserId() ? ' (Вы)' : '');
+    userName.textContent = getMemberDisplayName(member, true);
     userCellContent.appendChild(userName);
     
     userCell.appendChild(userCellContent);
@@ -1717,7 +1736,7 @@ async function updateAddMembersModal() {
                         memberItem.innerHTML = `
                             <input type="checkbox" id="member_${member.id}" value="${member.id}">
                             <img src="/static/images/${member.avatar}" onerror="this.src='/static/images/default_avatar.svg'">
-                            <span>${member.username}</span>
+                            <span>${getMemberDisplayName(member, false)}</span>
                         `;
                         
                         memberItem.addEventListener('click', function(e) {

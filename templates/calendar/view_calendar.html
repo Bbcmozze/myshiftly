@@ -169,7 +169,14 @@
                             <div class="user-cell-content">
                                 <img src="{{ url_for('static', filename='images/' + calendar.owner.avatar) }}"
                                      onerror="this.src='/static/images/default_avatar.svg'">
-                                <span>{{ calendar.owner.username }}{% if calendar.owner.id == current_user.id %} (Вы){% endif %}</span>
+                                <span>
+                                    {% if calendar.owner.last_name or calendar.owner.first_name %}
+                                        {{ (calendar.owner.last_name or '') ~ (' ' if calendar.owner.last_name and calendar.owner.first_name else '') ~ (calendar.owner.first_name or '') }}
+                                    {% else %}
+                                        {{ calendar.owner.username }}
+                                    {% endif %}
+                                    {% if calendar.owner.id == current_user.id %} (Вы){% endif %}
+                                </span>
                             </div>
                         </td>
                         {% for day in days_in_month %}
@@ -255,7 +262,14 @@
                                 <div class="user-cell-content">
                                     <img src="{{ url_for('static', filename='images/' + member.avatar) }}"
                                          onerror="this.src='/static/images/default_avatar.svg'">
-                                    <span>{{ member.username }}{% if member.id == current_user.id %} (Вы){% endif %}</span>
+                                    <span>
+                                        {% if member.last_name or member.first_name %}
+                                            {{ (member.last_name or '') ~ (' ' if member.last_name and member.first_name else '') ~ (member.first_name or '') }}
+                                        {% else %}
+                                            {{ member.username }}
+                                        {% endif %}
+                                        {% if member.id == current_user.id %} (Вы){% endif %}
+                                    </span>
                                 </div>
                                 {% if calendar.owner_id == current_user.id and member.id != calendar.owner.id %}
                                 <button class="btn-remove-member" data-user-id="{{ member.id }}" title="Удалить участника">

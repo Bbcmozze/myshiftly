@@ -120,6 +120,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+// Хелперы форматирования имени для отображения в списках друзей/участников
+function formatFriendFullName(user) {
+    const ln = (user && user.last_name) ? String(user.last_name).trim() : '';
+    const fn = (user && user.first_name) ? String(user.first_name).trim() : '';
+    return `${ln} ${fn}`.trim();
+}
+
+function getUserDisplayName(user, includeYouLabel = false) {
+    const full = formatFriendFullName(user);
+    const base = full || (user && user.username) || '';
+    // В модалке выбора друзей не добавляем метку (Вы)
+    return includeYouLabel ? `${base}` : base;
+}
+
     // Обработка ошибок
     const handleError = (error, message = 'Произошла ошибка') => {
         console.error(message, error);
@@ -381,14 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
             availableFriends.forEach(friend => {
                 const friendItem = document.createElement('div');
                 friendItem.className = 'friend-select-item';
-                friendItem.dataset.username = friend.username.toLowerCase(); // Для поиска
+                friendItem.dataset.search = `${formatFriendFullName(friend)} ${friend.username}`.trim().toLowerCase(); // Для поиска по ФИ + username
                 friendItem.innerHTML = `
                     <label>
                         <input type="checkbox" name="selected_friends" value="${friend.id}">
                         <img src="/static/images/${friend.avatar}" 
                              onerror="this.src='/static/images/default_avatar.svg'"
                              class="friend-select-avatar">
-                        <span>${friend.username}</span>
+                        <span>${getUserDisplayName(friend, false)}</span>
                     </label>
                 `;
                 friendsSelectList.appendChild(friendItem);
@@ -421,8 +435,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let visibleCount = 0;
 
             friendItems.forEach(item => {
-                const username = item.dataset.username || '';
-                const isVisible = username.includes(searchTerm);
+                const search = item.dataset.search || '';
+                const isVisible = search.includes(searchTerm);
                 
                 if (isVisible) {
                     item.classList.remove('hidden');
