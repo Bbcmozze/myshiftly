@@ -180,7 +180,7 @@
                             {% if shift.user_id == calendar.owner.id and shift.date == day %}
                             <div class="shift-badge {{ shift.color_class }}{% if not shift.show_time %} no-time{% endif %}"
                                  data-shift-id="{{ shift.id }}"
-                                 title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
+                                 data-full-title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
                                 {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
                                 {% if shift.show_time %}
                                 <br>
@@ -261,7 +261,7 @@
                                 {% if shift.user_id == member.id and shift.date == day %}
                                 <div class="shift-badge {{ shift.color_class }}{% if not shift.show_time %} no-time{% endif %}"
                                      data-shift-id="{{ shift.id }}"
-                                     title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
+                                     data-full-title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time }}-{{ shift.end_time }}){% endif %}">
                                     {{ shift.title[:8] }}{% if shift.title|length > 8 %}...{% endif %}
                                     {% if shift.show_time %}
                                     <br>

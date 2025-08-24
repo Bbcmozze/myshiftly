@@ -1197,6 +1197,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         shiftBadge.classList.add('no-time');
                     }
 
+                    // Кастомный тултип через data-атрибут
+                    const fullTitle = showTime
+                        ? `${title} (${data.shift.start_time}-${data.shift.end_time})`
+                        : title;
+                    shiftBadge.dataset.fullTitle = fullTitle;
+
                     shiftBadge.innerHTML = shortTitle;
                     if (showTime) {
                         shiftBadge.innerHTML += `<br>${data.shift.start_time} - ${data.shift.end_time}`;

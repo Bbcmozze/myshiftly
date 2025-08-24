@@ -22,7 +22,7 @@
                 {% for shift in shifts if shift.user_id == calendar.owner.id and shift.date == day %}
                 <div class="shift-badge{% if not shift.show_time %} no-time{% endif %}"
                      data-shift-id="{{ shift.id }}"
-                     title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}){% endif %}">
+                     data-full-title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}){% endif %}">
                     {{ shift.title }}
                     {% if shift.show_time %}
                     <br>
@@ -58,7 +58,7 @@
                 <div class="shift-badge{% if not shift.show_time %} no-time{% endif %}"
                      data-shift-id="{{ shift.id }}"
                      data-template-id="{{ shift.template_id if shift.template_id else '' }}"
-                     title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}){% endif %}">
+                     data-full-title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}){% endif %}">
                     {{ shift.title }}
                     {% if shift.show_time %}
                     <br>

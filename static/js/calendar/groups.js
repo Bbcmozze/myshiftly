@@ -1439,7 +1439,8 @@ function createShiftBadge(shift) {
     const shiftBadge = document.createElement('div');
     shiftBadge.className = `shift-badge ${shift.color_class}`;
     shiftBadge.dataset.shiftId = shift.id;
-    shiftBadge.title = shift.title + (shift.show_time ? ` (${shift.start_time}-${shift.end_time})` : '');
+    // Устанавливаем кастомный тултип через data-атрибут
+    shiftBadge.dataset.fullTitle = shift.title + (shift.show_time ? ` (${shift.start_time}-${shift.end_time})` : '');
     
     const title = document.createElement('span');
     title.textContent = shift.title.length > 8 ? shift.title.substring(0, 8) + '...' : shift.title;

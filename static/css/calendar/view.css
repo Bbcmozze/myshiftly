@@ -628,6 +628,12 @@ body.fullscreen-active {
 
 .day-cell:hover {
     background-color: #f8fafc;
+    overflow: visible;
+}
+
+/* Разрешаем выход тултипа за пределы ячейки при наведении */
+.calendar-table td:hover {
+    overflow: visible;
 }
 
 .day-cell > * {
@@ -668,6 +674,10 @@ body.fullscreen-active {
     word-break: break-word;
     margin: 2px;
     transition: all 0.2s;
+    cursor: default;
+}
+
+.shift-badge[data-full-title] {
     cursor: help;
 }
 
@@ -679,7 +689,7 @@ body.fullscreen-active {
 }
 
 .shift-badge:hover {
-    z-index: 10;
+    z-index: 50;
     white-space: normal;
     filter: brightness(85%);
 }
@@ -687,27 +697,56 @@ body.fullscreen-active {
 .shift-badge::after {
     content: attr(data-full-title);
     position: absolute;
-    bottom: 100%;
+    bottom: calc(100% + 10px);
     left: 50%;
     transform: translateX(-50%);
     background-color: #333;
     color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 6px 10px;
+    border-radius: 6px;
     font-size: 12px;
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
-    z-index: 10;
+    z-index: 50;
     pointer-events: none;
     width: max-content;
     max-width: 200px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
-.shift-badge:hover::after {
+.shift-badge[data-full-title]:hover::after {
     opacity: 1;
     visibility: visible;
+}
+
+/* Стрелочка для тултипа */
+.shift-badge::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px 6px 0 6px; /* треугольник вверх */
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 50;
+    pointer-events: none;
+}
+
+.shift-badge[data-full-title]:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Не показывать тултип и стрелку, если значение пустое */
+.shift-badge[data-full-title=""]::after,
+.shift-badge[data-full-title=""]::before {
+    display: none !important;
 }
 
 .shift-badge.removing {
