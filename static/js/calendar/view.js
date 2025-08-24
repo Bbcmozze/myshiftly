@@ -1192,6 +1192,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const title = data.shift.title;
                     const shortTitle = title.length > 8 ? `${title.substring(0, 8)}...` : title;
 
+                    // Добавляем класс, если время не отображается
+                    if (!showTime) {
+                        shiftBadge.classList.add('no-time');
+                    }
+
                     shiftBadge.innerHTML = shortTitle;
                     if (showTime) {
                         shiftBadge.innerHTML += `<br>${data.shift.start_time} - ${data.shift.end_time}`;

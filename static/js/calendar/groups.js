@@ -1,4 +1,4 @@
-﻿// Глобальные переменные (currentCalendarId определена в view.js)
+// Глобальные переменные (currentCalendarId определена в view.js)
 let selectedGroupColor = 'badge-color-1';
 let selectedEditGroupColor = 'badge-color-1';
 
@@ -1445,6 +1445,10 @@ function createShiftBadge(shift) {
     title.textContent = shift.title.length > 8 ? shift.title.substring(0, 8) + '...' : shift.title;
     shiftBadge.appendChild(title);
     
+    if (!shift.show_time) {
+        shiftBadge.classList.add('no-time');
+    }
+
     if (shift.show_time) {
         const timeBreak = document.createElement('br');
         shiftBadge.appendChild(timeBreak);

@@ -671,6 +671,13 @@ body.fullscreen-active {
     cursor: help;
 }
 
+/* Для бейджей без времени используем flex-центрирование */
+.shift-badge.no-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .shift-badge:hover {
     z-index: 10;
     white-space: normal;

@@ -20,8 +20,14 @@
             data-date="{{ day.strftime('%Y-%m-%d') }}"
             data-user-id="{{ calendar.owner.id }}">
                 {% for shift in shifts if shift.user_id == calendar.owner.id and shift.date == day %}
-                <div class="shift-badge" data-shift-id="{{ shift.id }}">
-                    {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
+                <div class="shift-badge{% if not shift.show_time %} no-time{% endif %}"
+                     data-shift-id="{{ shift.id }}"
+                     title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}){% endif %}">
+                    {{ shift.title }}
+                    {% if shift.show_time %}
+                    <br>
+                    {{ shift.start_time.strftime('%H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
+                    {% endif %}
                     {% if calendar.owner_id == current_user.id or current_user.id == shift.user_id %}
                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
                     {% endif %}
@@ -49,10 +55,15 @@
             data-date="{{ day.strftime('%Y-%m-%d') }}"
             data-user-id="{{ member.id }}">
                 {% for shift in shifts if shift.user_id == member.id and shift.date == day %}
-                <div class="shift-badge"
+                <div class="shift-badge{% if not shift.show_time %} no-time{% endif %}"
                      data-shift-id="{{ shift.id }}"
-                     data-template-id="{{ shift.template_id if shift.template_id else '' }}">
-                    {{ shift.title }} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }})
+                     data-template-id="{{ shift.template_id if shift.template_id else '' }}"
+                     title="{{ shift.title }}{% if shift.show_time %} ({{ shift.start_time.strftime('%H:%M') }}-{{ shift.end_time.strftime('%H:%M') }}){% endif %}">
+                    {{ shift.title }}
+                    {% if shift.show_time %}
+                    <br>
+                    {{ shift.start_time.strftime('%H:%M') }} - {{ shift.end_time.strftime('%H:%M') }}
+                    {% endif %}
                     {% if calendar.owner_id == current_user.id %}
                     <button class="remove-shift-btn" data-shift-id="{{ shift.id }}">&times;</button>
                     {% endif %}
