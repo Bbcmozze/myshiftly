@@ -1005,8 +1005,11 @@ document.addEventListener('DOMContentLoaded', () => {
         templateItem.dataset.templateId = template.id;
         templateItem.innerHTML = `
             <div class="template-info">
-                <div class="template-title">${template.title}</div>
-                <div class="template-time">${timeDisplay}</div>
+                <div class="template-color-indicator ${template.color_class}"></div>
+                <div class="template-text">
+                    <div class="template-title">${template.title}</div>
+                    <div class="template-time">${timeDisplay}</div>
+                </div>
             </div>
             <div class="template-actions">
                 <button class="delete-template-btn" data-template-id="${template.id}">
@@ -1020,8 +1023,13 @@ document.addEventListener('DOMContentLoaded', () => {
         selectTemplateItem.className = `template-item selectable-template ${template.color_class}`;
         selectTemplateItem.dataset.templateId = template.id;
         selectTemplateItem.innerHTML = `
-            <strong>${template.title}</strong><br>
-            ${timeDisplay}
+            <div class="template-info">
+                <div class="template-color-indicator ${template.color_class}"></div>
+                <div class="template-text">
+                    <div class="template-title">${template.title}</div>
+                    <div class="template-time">${timeDisplay}</div>
+                </div>
+            </div>
         `;
 
         // Добавляем в оба списка

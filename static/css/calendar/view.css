@@ -22,16 +22,18 @@
 .shift-badge.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
 .shift-badge.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
 
-.template-item.badge-color-1  { background-color: #ffb3b3; color: #7f0000; } /* Роза */
-.template-item.badge-color-2  { background-color: #ffd0a8; color: #7f4300; } /* Персик */
-.template-item.badge-color-3  { background-color: #fff2b3; color: #7f6a00; } /* Лимон */
-.template-item.badge-color-4  { background-color: #f4ffb3; color: #5a6600; } /* Лайм */
-.template-item.badge-color-5  { background-color: #e4ffb3; color: #4c6600; } /* Яблоко */
-.template-item.badge-color-6  { background-color: #b3ffe1; color: #005f47; } /* Мята */
-.template-item.badge-color-7  { background-color: #b3f4ff; color: #004b66; } /* Лёд */
-.template-item.badge-color-8  { background-color: #b3d6ff; color: #003166; } /* Небо */
-.template-item.badge-color-9  { background-color: #d1b3ff; color: #320066; } /* Сирень */
-.template-item.badge-color-10 { background-color: #f0b3ff; color: #5a0066; } /* Орхидея */
+
+/* Цветовые классы для индикатора шаблонов (новая структура) */
+.template-color-indicator.badge-color-1  { background-color: #ffb3b3; } /* Роза */
+.template-color-indicator.badge-color-2  { background-color: #ffd0a8; } /* Персик */
+.template-color-indicator.badge-color-3  { background-color: #fff2b3; } /* Лимон */
+.template-color-indicator.badge-color-4  { background-color: #f4ffb3; } /* Лайм */
+.template-color-indicator.badge-color-5  { background-color: #e4ffb3; } /* Яблоко */
+.template-color-indicator.badge-color-6  { background-color: #b3ffe1; } /* Мята */
+.template-color-indicator.badge-color-7  { background-color: #b3f4ff; } /* Лёд */
+.template-color-indicator.badge-color-8  { background-color: #b3d6ff; } /* Небо */
+.template-color-indicator.badge-color-9  { background-color: #d1b3ff; } /* Сирень */
+.template-color-indicator.badge-color-10 { background-color: #f0b3ff; } /* Орхидея */
 
 /* Стили для групп */
 .group-item.badge-color-1  { border-left: 4px solid #ffb3b3; } /* Роза */
@@ -807,44 +809,48 @@ body.fullscreen-active {
 }
 
 .template-item {
-    min-height: 50px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.4rem 0.50rem;
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    min-height: 60px;
+    max-height: 60px;
     min-width: 185px;
-    max-height: 50px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.6rem;
     margin-bottom: 0.5rem;
-    border-radius: 6px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    transition: all 0.3s ease;
-}
-
-.selectable-template {
-    max-width: 100%;
-}
-
-.selectable-template:hover {
-    transform: scale(1.02);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.template-actions {
-    display: flex;
-    gap: 0.5rem;
 }
 
 .template-item:hover {
-    filter: brightness(90%);
-    border-color: #cbd5e1;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Индикатор цвета для элементов шаблонов */
+.template-item .template-color-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
 }
 
 .template-info {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.template-text {
+    display: flex;
+    flex-direction: column;
 }
 
 .template-title {
@@ -1773,6 +1779,7 @@ body.fullscreen-active #fullscreenOverlay {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     min-height: 60px;
     max-height: 60px;
+    cursor: pointer;
 }
 
 .group-item:hover {

@@ -55,13 +55,16 @@
                         <div class="template-item {{ template.color_class }}"
                              data-template-id="{{ template.id }}">
                             <div class="template-info">
-                                <div class="template-title">{{ template.title }}</div>
-                                <div class="template-time">
-                                    {% if template.show_time %}
-                                        {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
-                                    {% else %}
-                                        Без указания времени
-                                    {% endif %}
+                                <div class="template-color-indicator {{ template.color_class }}"></div>
+                                <div class="template-text">
+                                    <div class="template-title">{{ template.title }}</div>
+                                    <div class="template-time">
+                                        {% if template.show_time %}
+                                            {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                                        {% else %}
+                                            Без указания времени
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="template-actions">
@@ -244,7 +247,7 @@
                                          onerror="this.src='/static/images/default_avatar.svg'">
                                     <span>{{ member.username }}{% if member.id == current_user.id %} (Вы){% endif %}</span>
                                 </div>
-                                {% if calendar.owner_id == current_user.id and member.id != calendar.owner_id %}
+                                {% if calendar.owner_id == current_user.id and member.id != calendar.owner.id %}
                                 <button class="btn-remove-member" data-user-id="{{ member.id }}" title="Удалить участника">
                                     <i class="bi bi-x"></i>
                                 </button>
@@ -423,12 +426,19 @@
                 {% for template in shift_templates %}
                 <div class="template-item selectable-template {{ template.color_class }}"
                      data-template-id="{{ template.id }}">
-                    <strong>{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</strong><br>
-                    {% if template.show_time %}
-                        {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
-                    {% else %}
-                        Без указания времени
-                    {% endif %}
+                    <div class="template-info">
+                        <div class="template-color-indicator {{ template.color_class }}"></div>
+                        <div class="template-text">
+                            <div class="template-title">{{ template.title[:20] }}{% if template.title|length > 20 %}...{% endif %}</div>
+                            <div class="template-time">
+                                {% if template.show_time %}
+                                    {{ template.start_time.strftime('%H:%M') }} - {{ template.end_time.strftime('%H:%M') }}
+                                {% else %}
+                                    Без указания времени
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
