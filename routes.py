@@ -4,7 +4,8 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, a
 from sqlalchemy import exists, and_
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, generate_user_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members, Group, group_members
+from models import db, User, generate_user_id, generate_calendar_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members, Group, group_members
+
 from datetime import datetime, timedelta
 from config import Config
 from jinja2 import Environment
@@ -211,7 +212,13 @@ def register_routes(app):
                 flash('Введите название календаря', 'danger')
                 return redirect(url_for('create_calendar'))
 
+            # Генерируем уникальный 8-значный ID календаря
+            calendar_id = generate_calendar_id()
+            while Calendar.query.get(calendar_id):
+                calendar_id = generate_calendar_id()
+
             calendar = Calendar(
+                id=calendar_id,
                 name=name,
                 owner_id=current_user.id,
                 is_team=is_team

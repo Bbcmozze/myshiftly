@@ -31,6 +31,10 @@ def generate_user_id():
     return random.randint(10000000, 99999999)
 
 
+def generate_calendar_id():
+    return random.randint(10000000, 99999999)
+
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
