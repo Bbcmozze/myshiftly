@@ -481,8 +481,8 @@ body.fullscreen-active {
     gap: 8px;
     min-height: 30px;
     nax-height: 30px;
-    min-width: 200px;           /* ширина как у .user-cell */
-    max-width: 200px;           /* фиксируем, чтобы текст не расползался */
+    min-width: 500px;           /* ширина как у .user-cell */
+    max-width: 500px;           /* фиксируем, чтобы текст не расползался */
     padding: 6px 10px;
     background: #f8fafc;        /* сплошной фон под текстом */
 }
