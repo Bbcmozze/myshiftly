@@ -2056,10 +2056,37 @@ tr.group-header-row.sortable-drag .group-header-cell {
     transform: scale(1.1);
 }
 
+/* Анимация построчного появления календаря */
+/* Пока контейнер помечен как pending-anim, скрываем строки, чтобы не было мерцания до старта анимации */
+.calendar-table-container.pending-anim tbody tr {
+    opacity: 0;
+    transform: translateY(6px);
+}
+.calendar-table tbody tr.calendar-row-anim {
+    transition: opacity 220ms ease, transform 220ms ease;
+    will-change: opacity, transform;
+}
+
+.calendar-table tbody tr.calendar-row-hidden {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.calendar-table tbody tr.calendar-row-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-table tbody tr.calendar-row-anim {
+        transition: none !important;
+    }
+}
+
 /* Мгновенное скрытие элементов владельца для не-владельцев (без ожидания JS) */
 body[data-is-owner="false"] .remove-shift-btn,
 body[data-is-owner="false"] .delete-template-btn,
 body[data-is-owner="false"] .btn-remove-member,
 body[data-is-owner="false"] #createTemplateBtn {
-  display: none !important;
+    display: none !important;
 }

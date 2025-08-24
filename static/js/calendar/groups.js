@@ -1,4 +1,4 @@
-// Глобальные переменные (currentCalendarId определена в view.js)
+﻿// Глобальные переменные (currentCalendarId определена в view.js)
 let selectedGroupColor = 'badge-color-1';
 let selectedEditGroupColor = 'badge-color-1';
 

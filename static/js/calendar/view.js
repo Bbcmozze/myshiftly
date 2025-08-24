@@ -137,8 +137,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Анимация построчного появления таблицы
+    const getRowAnimDelay = () => {
+        // Приоритет: dataset контейнера -> глобальная переменная -> localStorage -> значение по умолчанию
+        const container = document.querySelector('.calendar-table-container');
+        const ds = container?.dataset?.rowAnimDelay;
+        if (ds !== undefined) {
+            const n = parseInt(ds, 10);
+            if (!isNaN(n) && n >= 0) return n;
+        }
+
+        if (typeof window.calendarRowAnimDelay === 'number' && window.calendarRowAnimDelay >= 0) {
+            return window.calendarRowAnimDelay;
+        }
+
+        const fromLS = parseInt(localStorage.getItem('calendarRowAnimDelay') || '', 10);
+        if (!isNaN(fromLS) && fromLS >= 0) return fromLS;
+
+        return 60; // мс по умолчанию
+    };
+
+    window.animateCalendarRows = (delayMs) => {
+        const tbody = document.querySelector('.calendar-table tbody');
+        const container = document.querySelector('.calendar-table-container');
+        if (!tbody) {
+            if (container) container.classList.remove('pending-anim');
+            return;
+        }
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length === 0) {
+            if (container) container.classList.remove('pending-anim');
+            return;
+        }
+
+        const delay = typeof delayMs === 'number' ? delayMs : getRowAnimDelay();
+
+        // Сбрасываем состояния и задаем начальные классы
+        rows.forEach(row => {
+            row.classList.remove('calendar-row-hidden', 'calendar-row-visible', 'calendar-row-anim');
+            row.classList.add('calendar-row-anim', 'calendar-row-hidden');
+        });
+
+        // Форсируем reflow перед запуском
+        void tbody.offsetHeight;
+
+        // Снимаем технический класс, скрывающий строки до старта анимации
+        if (container) container.classList.remove('pending-anim');
+
+        rows.forEach((row, index) => {
+            const run = () => {
+                row.classList.remove('calendar-row-hidden');
+                row.classList.add('calendar-row-visible');
+            };
+            if (delay > 0) {
+                setTimeout(run, index * delay);
+            } else {
+                run();
+            }
+        });
+    };
+
     // Обновление отображения месяца
     const updateMonthDisplay = async () => {
+        // Скрываем строки немедленно до запроса
+        preHideCalendarRows();
         const monthName = monthNames[currentMonth.getMonth()];
         currentMonthEl.textContent = `${monthName} ${currentMonth.getFullYear()}`;
 
@@ -162,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (newTable) {
                 const tableContainer = document.querySelector('.calendar-table-container');
+                tableContainer.classList.add('pending-anim');
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
 
@@ -175,15 +238,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     setupDraggableRows();
                 }
                 hideOwnerControlsIfNotOwner();
+                // Запускаем анимацию строк после обновления таблицы
+                window.animateCalendarRows();
+            } else {
+                const tableContainer = document.querySelector('.calendar-table-container');
+                if (tableContainer) tableContainer.classList.remove('pending-anim');
             }
         } catch (error) {
             console.error('Ошибка при загрузке календаря:', error);
+            const tableContainer = document.querySelector('.calendar-table-container');
+            if (tableContainer) tableContainer.classList.remove('pending-anim');
             showToast('Не удалось загрузить данные календаря', 'danger');
         }
     };
 
     // Обновление таблицы календаря
     const updateCalendarTable = async () => {
+        // Скрываем строки немедленно до запроса
+        preHideCalendarRows();
         try {
             const calendarId = document.body.dataset.calendarId;
             const month = currentMonth.toISOString().split('T')[0];
@@ -203,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (newTable) {
                 const tableContainer = document.querySelector('.calendar-table-container');
+                tableContainer.classList.add('pending-anim');
                 tableContainer.innerHTML = '';
                 tableContainer.appendChild(newTable);
 
@@ -216,9 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     setupDraggableRows();
                 }
                 hideOwnerControlsIfNotOwner();
+                // Запускаем анимацию строк после обновления таблицы
+                window.animateCalendarRows();
+            } else {
+                const tableContainer = document.querySelector('.calendar-table-container');
+                if (tableContainer) tableContainer.classList.remove('pending-anim');
             }
         } catch (error) {
             console.error('Ошибка при обновлении таблицы:', error);
+            const tableContainer = document.querySelector('.calendar-table-container');
+            if (tableContainer) tableContainer.classList.remove('pending-anim');
             showToast('Не удалось обновить таблицу', 'danger');
         }
     };
@@ -628,16 +708,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Навигация по месяцам
     const setupMonthNavigation = () => {
         prevMonthBtn.addEventListener('click', () => {
+            preHideCalendarRows();
             currentMonth.setMonth(currentMonth.getMonth() - 1);
             updateMonthDisplay();
         });
 
         nextMonthBtn.addEventListener('click', () => {
+            preHideCalendarRows();
             currentMonth.setMonth(currentMonth.getMonth() + 1);
             updateMonthDisplay();
         });
 
         todayBtn.addEventListener('click', () => {
+            preHideCalendarRows();
             currentMonth = new Date();
             updateMonthDisplay();
         });
@@ -1330,6 +1413,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('load', adjustTableLayout);
     window.addEventListener('resize', adjustTableLayout);
 
+    // Мгновенное скрытие строк перед обновлением
+    const preHideCalendarRows = () => {
+        const container = document.querySelector('.calendar-table-container');
+        if (container) container.classList.add('pending-anim');
+        const tbody = document.querySelector('.calendar-table tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach(row => {
+            row.classList.add('calendar-row-anim', 'calendar-row-hidden');
+            row.classList.remove('calendar-row-visible');
+        });
+    };
 
     const clearAllShifts = async () => {
         try {
@@ -1361,7 +1455,6 @@ document.addEventListener('DOMContentLoaded', () => {
             handleError(error, 'Ошибка при удалении смен');
         }
     };
-
 
     // Функция setupDraggableRows теперь заменена на setupUnifiedDragAndDrop в groups.js
     window.setupDraggableRows = () => {
@@ -1473,7 +1566,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-
     // ====================== ИНИЦИАЛИЗАЦИЯ ======================
 
     // Скрываем элементы управления, доступные ТОЛЬКО владельцу календаря
@@ -1481,6 +1573,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Инициализация всех обработчиков
     const init = async () => {
+        // Помечаем контейнер как pending-anim до первичного рендера, чтобы исключить мерцание
+        const firstContainer = document.querySelector('.calendar-table-container');
+        if (firstContainer) firstContainer.classList.add('pending-anim');
+
         updateMonthDisplay();
         setupMonthNavigation();
         setupModals();
