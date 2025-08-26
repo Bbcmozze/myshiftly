@@ -219,7 +219,12 @@ main {
     border-radius: 50%;
     object-fit: cover;
     margin-bottom: 1rem;
-    border: 3px solid var(--primary-color);
+    border: 3px solid #e2e8f0;
+}
+
+.avatar:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .sidebar-nav {
