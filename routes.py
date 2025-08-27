@@ -781,6 +781,30 @@ def register_routes(app):
         return jsonify(results)
 
 
+    @app.route('/calendar/<int:calendar_id>/clear-all-shifts', methods=['POST'])
+    @login_required
+    def clear_all_shifts(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+        
+        # Проверка прав доступа - только владелец может очищать смены
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        
+        try:
+            # Удаляем все смены календаря
+            deleted_count = Shift.query.filter_by(calendar_id=calendar.id).delete()
+            db.session.commit()
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Удалено смен: {deleted_count}',
+                'deleted_count': deleted_count
+            })
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error clearing shifts: {str(e)}")
+            return jsonify({'success': False, 'error': 'Ошибка при удалении смен'}), 500
+
     @app.route('/calendar/<int:calendar_id>/members', methods=['GET'])
     @login_required
     def get_calendar_members(calendar_id):

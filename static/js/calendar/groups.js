@@ -765,36 +765,166 @@ function setupUnifiedDragAndDrop() {
             return;
         }
 
-        // === Автопрокрутка календаря при DnD ===
+        // === Улучшенная автопрокрутка календаря при DnD ===
         const scrollContainer = document.querySelector('.calendar-table-container');
         let autoScrollActive = false;
         let autoScrollRAF = null;
         let docMouseMoveHandler = null;
         let pointerClientY = 0;
-        const EDGE_THRESHOLD = 60; // px от края контейнера
-        const MAX_SCROLL_SPEED = 20; // px на кадр для комфортной скорости
+        
+        // Настройки автоскролла
+        const EDGE_THRESHOLD = 80; // px от края контейнера для активации скролла
+        const INNER_EDGE_THRESHOLD = 40; // px для более медленного скролла
+        const MIN_SCROLL_SPEED = 3; // минимальная скорость скролла (увеличена для лучшей отзывчивости)
+        const MAX_SCROLL_SPEED = 25; // максимальная скорость скролла
+        const ACCELERATION_FACTOR = 1.5; // коэффициент ускорения при приближении к краю
+        const TOP_ZONE_BOOST = 1.2; // дополнительный коэффициент для верхней зоны
+        
+        // Переменные для плавности
+        let currentScrollSpeed = 0;
+        let targetScrollSpeed = 0;
+        const SMOOTHING_FACTOR = 0.15; // коэффициент сглаживания (чем меньше, тем плавнее)
 
         function autoScrollTick() {
             if (!autoScrollActive || !scrollContainer) return;
+            
             const rect = scrollContainer.getBoundingClientRect();
-            let delta = 0;
+            targetScrollSpeed = 0;
+            let scrollDirection = null;
 
-            // Вверх
-            if (pointerClientY < rect.top + EDGE_THRESHOLD) {
-                const dist = Math.max(0, (rect.top + EDGE_THRESHOLD) - pointerClientY);
-                delta = -Math.ceil((dist / EDGE_THRESHOLD) * MAX_SCROLL_SPEED);
+            // Проверяем, находится ли курсор в зоне автоскролла
+            const canScrollUp = scrollContainer.scrollTop > 0;
+            const inTopZone = pointerClientY < rect.top + EDGE_THRESHOLD;
+            
+            if (inTopZone && canScrollUp) {
+                // Скролл вверх (только если можем скроллить вверх)
+                const distFromEdge = Math.max(0, (rect.top + EDGE_THRESHOLD) - pointerClientY);
+                const normalizedDist = Math.min(1, distFromEdge / EDGE_THRESHOLD);
+                
+                // Рассчитываем скорость с учетом расстояния от края
+                let speed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDist;
+                
+                // Дополнительное ускорение для очень близких к краю позиций
+                if (distFromEdge > INNER_EDGE_THRESHOLD) {
+                    speed *= ACCELERATION_FACTOR;
+                }
+                
+                // Дополнительный буст для верхней зоны (компенсирует возможные помехи)
+                speed *= TOP_ZONE_BOOST;
+                
+                targetScrollSpeed = -speed;
+                scrollDirection = 'up';
+                
+                // Отладочная информация для верхней зоны
+                if (Math.random() < 0.01) { // Логируем только иногда, чтобы не засорять консоль
+                    console.log('🔝 Top scroll zone:', {
+                        pointerY: pointerClientY,
+                        rectTop: rect.top,
+                        threshold: EDGE_THRESHOLD,
+                        distFromEdge,
+                        normalizedDist,
+                        speed,
+                        targetSpeed: targetScrollSpeed,
+                        currentScrollTop: scrollContainer.scrollTop
+                    });
+                }
             }
-            // Вниз
             else if (pointerClientY > rect.bottom - EDGE_THRESHOLD) {
-                const dist = Math.max(0, pointerClientY - (rect.bottom - EDGE_THRESHOLD));
-                delta = Math.ceil((dist / EDGE_THRESHOLD) * MAX_SCROLL_SPEED);
+                // Скролл вниз
+                const maxScrollTop = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+                if (scrollContainer.scrollTop < maxScrollTop) {
+                    const distFromEdge = Math.max(0, pointerClientY - (rect.bottom - EDGE_THRESHOLD));
+                    const normalizedDist = Math.min(1, distFromEdge / EDGE_THRESHOLD);
+                    
+                    // Рассчитываем скорость с учетом расстояния от края
+                    let speed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * normalizedDist;
+                    
+                    // Дополнительное ускорение для очень близких к краю позиций
+                    if (distFromEdge > INNER_EDGE_THRESHOLD) {
+                        speed *= ACCELERATION_FACTOR;
+                    }
+                    
+                    targetScrollSpeed = speed;
+                    scrollDirection = 'down';
+                }
             }
 
-            if (delta !== 0) {
-                scrollContainer.scrollTop += delta;
+            // Визуальная индикация зон автоскролла
+            updateScrollZoneIndicators(scrollDirection);
+
+            // Плавное изменение скорости скролла
+            currentScrollSpeed += (targetScrollSpeed - currentScrollSpeed) * SMOOTHING_FACTOR;
+            
+            // Применяем скролл только если скорость достаточно большая
+            if (Math.abs(currentScrollSpeed) > 0.1) {
+                const newScrollTop = scrollContainer.scrollTop + currentScrollSpeed;
+                const maxScrollTop = scrollContainer.scrollHeight - scrollContainer.clientHeight;
+                
+                // Ограничиваем скролл границами контейнера
+                scrollContainer.scrollTop = Math.max(0, Math.min(maxScrollTop, newScrollTop));
             }
 
             autoScrollRAF = requestAnimationFrame(autoScrollTick);
+        }
+
+        // Функция для обновления визуальных индикаторов зон скролла
+        function updateScrollZoneIndicators(direction) {
+            // Удаляем существующие индикаторы
+            const existingIndicators = scrollContainer.querySelectorAll('.scroll-zone-indicator');
+            existingIndicators.forEach(indicator => indicator.remove());
+
+            if (direction) {
+                const indicator = document.createElement('div');
+                indicator.className = 'scroll-zone-indicator';
+                indicator.style.cssText = `
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    height: ${EDGE_THRESHOLD}px;
+                    background: linear-gradient(${direction === 'up' ? '180deg' : '0deg'}, 
+                        rgba(37, 99, 235, 0.1) 0%, 
+                        rgba(37, 99, 235, 0.05) 50%, 
+                        transparent 100%);
+                    pointer-events: none;
+                    z-index: 10;
+                    ${direction === 'up' ? 'top: 0;' : 'bottom: 0;'}
+                    border-${direction === 'up' ? 'bottom' : 'top'}: 2px solid rgba(37, 99, 235, 0.3);
+                `;
+                
+                // Добавляем стрелку для указания направления
+                const arrow = document.createElement('div');
+                arrow.style.cssText = `
+                    position: absolute;
+                    ${direction === 'up' ? 'top: 10px;' : 'bottom: 10px;'}
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 16px;
+                    color: rgba(37, 99, 235, 0.7);
+                    animation: ${direction === 'up' ? 'scroll-pulse' : 'scroll-pulse-down'} 1s ease-in-out infinite alternate;
+                `;
+                arrow.innerHTML = direction === 'up' ? '↑' : '↓';
+                indicator.appendChild(arrow);
+                
+                scrollContainer.style.position = 'relative';
+                scrollContainer.appendChild(indicator);
+            }
+        }
+
+        // Добавляем CSS анимацию для пульсации стрелок (один раз)
+        if (!document.getElementById('scroll-zone-styles')) {
+            const style = document.createElement('style');
+            style.id = 'scroll-zone-styles';
+            style.textContent = `
+                @keyframes scroll-pulse {
+                    0% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+                    100% { opacity: 1; transform: translateX(-50%) translateY(-2px); }
+                }
+                @keyframes scroll-pulse-down {
+                    0% { opacity: 0.5; transform: translateX(-50%) translateY(0); }
+                    100% { opacity: 1; transform: translateX(-50%) translateY(2px); }
+                }
+            `;
+            document.head.appendChild(style);
         }
 
         let draggingType = null; // 'group' или 'user'
@@ -875,6 +1005,9 @@ function setupUnifiedDragAndDrop() {
                 // Включаем автопрокрутку при начале перетаскивания
                 if (scrollContainer) {
                     autoScrollActive = true;
+                    // Сбрасываем скорости для плавного старта
+                    currentScrollSpeed = 0;
+                    targetScrollSpeed = 0;
                     pointerClientY = (evt.originalEvent && evt.originalEvent.clientY) || 0;
                     if (docMouseMoveHandler) {
                         document.removeEventListener('mousemove', docMouseMoveHandler);
@@ -885,6 +1018,20 @@ function setupUnifiedDragAndDrop() {
                             pointerClientY = e.touches[0].clientY;
                         } else if (typeof e.clientY === 'number') {
                             pointerClientY = e.clientY;
+                        }
+                        
+                        // Отладка для проверки координат мыши
+                        if (Math.random() < 0.005) { // Очень редко логируем
+                            const rect = scrollContainer.getBoundingClientRect();
+                            console.log('🖱️ Mouse position:', {
+                                clientY: pointerClientY,
+                                containerTop: rect.top,
+                                containerBottom: rect.bottom,
+                                topZoneThreshold: rect.top + EDGE_THRESHOLD,
+                                bottomZoneThreshold: rect.bottom - EDGE_THRESHOLD,
+                                inTopZone: pointerClientY < rect.top + EDGE_THRESHOLD,
+                                inBottomZone: pointerClientY > rect.bottom - EDGE_THRESHOLD
+                            });
                         }
                     };
                     document.addEventListener('mousemove', docMouseMoveHandler, { passive: true });
@@ -988,6 +1135,9 @@ function setupUnifiedDragAndDrop() {
 
                 // Отключаем автопрокрутку и чистим обработчики
                 autoScrollActive = false;
+                // Плавная остановка скролла
+                currentScrollSpeed = 0;
+                targetScrollSpeed = 0;
                 if (autoScrollRAF) {
                     cancelAnimationFrame(autoScrollRAF);
                     autoScrollRAF = null;
@@ -996,6 +1146,12 @@ function setupUnifiedDragAndDrop() {
                     document.removeEventListener('mousemove', docMouseMoveHandler);
                     document.removeEventListener('touchmove', docMouseMoveHandler);
                     docMouseMoveHandler = null;
+                }
+                
+                // Очищаем визуальные индикаторы скролла
+                if (scrollContainer) {
+                    const indicators = scrollContainer.querySelectorAll('.scroll-zone-indicator');
+                    indicators.forEach(indicator => indicator.remove());
                 }
 
                 if (draggingType === 'group') {

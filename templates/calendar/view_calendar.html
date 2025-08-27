@@ -136,12 +136,12 @@
                     </button>
                     {% if calendar.owner_id == current_user.id %}
                     <button id="addMembersBtn" class="btn btn-primary">
-                        <i class="bi bi-plus-lg"></i> Добавить участников
+                        <i class="bi bi-plus-lg"></i> Добавить коллег
                     </button>
                     {% endif %}
                     {% if calendar.owner_id == current_user.id %}
                         <button id="clearAllShiftsBtn" class="btn btn-outline-danger">
-                            <i class="bi bi-trash"></i> Очистить все
+                            <i class="bi bi-trash"></i> Сброс смен
                         </button>
                     {% endif %}
                 </div>
@@ -398,7 +398,7 @@
 <div class="modal" id="addMembersModal">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h4>Добавить участников</h4>
+            <h4>Добавить коллег</h4>
             <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
