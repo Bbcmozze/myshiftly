@@ -1535,8 +1535,9 @@ function getUserDisplayName(user, includeYouLabel = false) {
         cells.forEach(cell => {
             const badges = cell.querySelectorAll('.shift-badge');
             badges.forEach(badge => {
-                totalShifts += 1;
+                // Считаем только смены со временем (не no-time)
                 if (!badge.classList.contains('no-time')) {
+                    totalShifts += 1;
                     totalMinutes += parseTimeRangeMinutes(badge.textContent);
                 }
             });
@@ -1553,6 +1554,8 @@ function getUserDisplayName(user, includeYouLabel = false) {
         if (!nameSpan) return;
 
         let summaryEl = nameSpan.querySelector('.user-shifts-summary');
+        
+        // Скрываем сводку если нет смен со временем
         if (!summary || summary.totalShifts === 0) {
             if (summaryEl) summaryEl.remove();
             return;
