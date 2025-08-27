@@ -7,5 +7,5 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-123'
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + str(BASE_DIR / 'database' / 'users.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = str(BASE_DIR / 'static' / 'images')
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+    UPLOAD_FOLDER = str(BASE_DIR / 'static')
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'heif'}

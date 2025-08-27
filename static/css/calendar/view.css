@@ -520,15 +520,15 @@ body.fullscreen-active {
     z-index: 25;  /* Выше чем остальной заголовок */
     position: sticky;
     left: 0;
-    min-width: 200px; /* выравниваем с .user-cell */
-    width: 200px;
+    min-width: 240px; /* выравниваем с .user-cell */
+    width: 240px;
     background: #f8fafc;
 }
 
 .user-cell {
     font-size: 0.8rem;
-    min-width: 200px;
-    max-width: 200px;
+    min-width: 240px;
+    max-width: 240px;
     min-height: 60px;
     max-height: 60px;
     gap: 0.5rem;
@@ -605,8 +605,8 @@ body.fullscreen-active {
 }
 
 .user-cell img {
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -622,8 +622,8 @@ body.fullscreen-active {
     left: 0;
     z-index: 15;               /* ниже заголовка */
     background: #f8fafc;       /* как у .user-cell */
-    min-width: 200px;
-    width: 200px;
+    min-width: 240px;
+    width: 240px;
 }
 
 .user-row.owner {

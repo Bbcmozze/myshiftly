@@ -1283,3 +1283,57 @@ def register_routes(app):
             db.session.rollback()
             flash(f"Ошибка: {str(e)}", "danger")
             return redirect(url_for('friends_page'))
+
+    @app.route('/upload_avatar', methods=['POST'])
+    @login_required
+    def upload_avatar():
+        try:
+            if 'avatar' not in request.files:
+                return jsonify({'success': False, 'message': 'Файл не выбран'}), 400
+
+            file = request.files['avatar']
+            if file.filename == '':
+                return jsonify({'success': False, 'message': 'Файл не выбран'}), 400
+
+            if file and allowed_file(file.filename):
+                # Создаем безопасное имя файла с уникальным идентификатором
+                filename = secure_filename(file.filename)
+                file_extension = filename.rsplit('.', 1)[1].lower()
+                unique_filename = f"avatar_{current_user.id}_{int(datetime.now().timestamp())}.{file_extension}"
+                
+                # Путь для сохранения файла
+                upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', unique_filename)
+                
+                # Создаем директорию если её нет
+                os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+                
+                # Удаляем старый аватар если он не дефолтный
+                if current_user.avatar and current_user.avatar != 'default_avatar.svg':
+                    old_avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', current_user.avatar)
+                    if os.path.exists(old_avatar_path):
+                        try:
+                            os.remove(old_avatar_path)
+                        except OSError:
+                            pass  # Игнорируем ошибки удаления старого файла
+                
+                # Сохраняем новый файл
+                file.save(upload_path)
+                
+                # Обновляем аватар пользователя в базе данных
+                current_user.avatar = unique_filename
+                db.session.commit()
+                
+                # Возвращаем успешный ответ с URL нового аватара
+                avatar_url = url_for('static', filename=f'images/{unique_filename}')
+                return jsonify({
+                    'success': True,
+                    'message': 'Аватар успешно обновлен',
+                    'avatar_url': avatar_url
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Неподдерживаемый формат файла'}), 400
+
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error uploading avatar: {str(e)}")
+            return jsonify({'success': False, 'message': 'Ошибка при загрузке аватара'}), 500

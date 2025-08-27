@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupRegistrationFormValidation();
     setupFriendAjaxHandlers();
     startFriendRequestsPolling();
+    initAvatarUpload();
 });
 
 // === Toast уведомления ===
@@ -397,7 +398,8 @@ function simpleUpdateSearchResult(userId, status) {
     const item = document.querySelector(`#searchResults .search-result-item[data-user-id="${CSS.escape(userId)}"]`);
     if (!item) return;
     const actions = item.querySelector('.search-result-actions');
-    const username = item.getAttribute('data-username') || (item.querySelector('.search-result-username')?.textContent || '').replace('@','').trim();
+    const usernameEl = item.querySelector('.search-result-username');
+    const username = item.getAttribute('data-username') || (usernameEl ? usernameEl.textContent || '' : '').replace('@','').trim();
     if (!actions) return;
 
     if (status === 'friends') {
@@ -504,5 +506,327 @@ function updateBellBadge(count) {
         badge.textContent = String(count);
     } else if (badge) {
         badge.remove();
+    }
+}
+
+// === Avatar Upload Functionality ===
+let currentCropper = null;
+let selectedFile = null;
+
+function initAvatarUpload() {
+    const avatarContainer = document.getElementById('avatarContainer');
+    const uploadModal = document.getElementById('avatarUploadModal');
+    const cropModal = document.getElementById('avatarCropModal');
+    const fileInput = document.getElementById('avatarFileInput');
+    const selectBtn = document.getElementById('avatarSelectBtn');
+    const uploadArea = document.getElementById('avatarUploadArea');
+    
+    if (!avatarContainer || !uploadModal || !cropModal) return;
+
+    // Открытие модального окна загрузки при клике на аватар
+    avatarContainer.addEventListener('click', () => {
+        uploadModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Закрытие модальных окон
+    setupModalCloseHandlers();
+
+    // Обработка выбора файла (удаляем старые обработчики)
+    if (selectBtn) {
+        selectBtn.removeEventListener('click', selectBtn.clickHandler);
+        selectBtn.clickHandler = (e) => {
+            // Не даём клику всплыть до контейнера, чтобы не вызвать второй .click()
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (fileInput) {
+                // Сбрасываем значение, чтобы выбор того же файла подряд тоже вызывал change
+                fileInput.value = '';
+                fileInput.click();
+            }
+        };
+        selectBtn.addEventListener('click', selectBtn.clickHandler);
+    }
+
+    if (uploadArea) {
+        uploadArea.removeEventListener('click', uploadArea.clickHandler);
+        uploadArea.clickHandler = (e) => {
+            // Если клик пришёл от кнопки выбора файла или инпута — игнорируем
+            if (
+                e && (
+                    e.target === selectBtn ||
+                    e.target === fileInput ||
+                    (e.target.closest && (e.target.closest('#avatarSelectBtn') || e.target.closest('#avatarFileInput')))
+                )
+            ) {
+                return;
+            }
+            if (fileInput) fileInput.click();
+        };
+        uploadArea.addEventListener('click', uploadArea.clickHandler);
+    }
+
+    if (fileInput) {
+        fileInput.removeEventListener('change', handleFileSelect);
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    // Drag & Drop
+    setupDragAndDrop();
+}
+
+function setupModalCloseHandlers() {
+    const uploadModal = document.getElementById('avatarUploadModal');
+    const cropModal = document.getElementById('avatarCropModal');
+    const uploadClose = document.getElementById('avatarUploadClose');
+    const cropClose = document.getElementById('avatarCropClose');
+    const cancelBtn = document.getElementById('avatarCancelBtn');
+
+    // Закрытие по кнопке X
+    if (uploadClose) {
+        uploadClose.removeEventListener('click', closeUploadModal);
+        uploadClose.addEventListener('click', closeUploadModal);
+    }
+    if (cropClose) {
+        cropClose.removeEventListener('click', closeCropModal);
+        cropClose.addEventListener('click', closeCropModal);
+    }
+    if (cancelBtn) {
+        cancelBtn.removeEventListener('click', closeCropModal);
+        cancelBtn.addEventListener('click', closeCropModal);
+    }
+
+    // Закрытие по клику на фон — отключено по требованию (клики вне модального окна не закрывают его)
+    // if (uploadModal) {
+    //     uploadModal.addEventListener('click', (e) => {
+    //         if (e.target === uploadModal) closeUploadModal();
+    //     });
+    // }
+
+    // if (cropModal) {
+    //     cropModal.addEventListener('click', (e) => {
+    //         if (e.target === cropModal) closeCropModal();
+    //     });
+    // }
+
+    // Закрытие по Escape (добавляем только один раз)
+    if (!document.avatarEscapeHandlerAdded) {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (cropModal && cropModal.classList.contains('active')) {
+                    closeCropModal();
+                } else if (uploadModal && uploadModal.classList.contains('active')) {
+                    closeUploadModal();
+                }
+            }
+        });
+        document.avatarEscapeHandlerAdded = true;
+    }
+}
+
+function closeUploadModal() {
+    const uploadModal = document.getElementById('avatarUploadModal');
+    if (uploadModal) uploadModal.classList.remove('active');
+    document.body.style.overflow = '';
+    resetFileInput();
+}
+
+function closeCropModal() {
+    const cropModal = document.getElementById('avatarCropModal');
+    if (cropModal) cropModal.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    if (currentCropper) {
+        currentCropper.destroy();
+        currentCropper = null;
+    }
+    
+    // Возвращаемся к модалу загрузки
+    const uploadModal = document.getElementById('avatarUploadModal');
+    if (uploadModal) uploadModal.classList.add('active');
+}
+
+function resetFileInput() {
+    const fileInput = document.getElementById('avatarFileInput');
+    if (fileInput) fileInput.value = '';
+    selectedFile = null;
+}
+
+function setupDragAndDrop() {
+    const uploadArea = document.getElementById('avatarUploadArea');
+    if (!uploadArea) return;
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = 'var(--primary-color)';
+        uploadArea.style.background = 'rgba(37, 99, 235, 0.05)';
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#d1d5db';
+        uploadArea.style.background = '';
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#d1d5db';
+        uploadArea.style.background = '';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelect({ target: { files } });
+        }
+    });
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Проверка типа файла
+    if (!file.type.startsWith('image/')) {
+        toastManager.show('Пожалуйста, выберите изображение', 'danger');
+        return;
+    }
+
+    // Проверка размера файла (максимум 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+        toastManager.show('Размер файла не должен превышать 10MB', 'danger');
+        return;
+    }
+
+    selectedFile = file;
+    showCropModal(file);
+}
+
+function showCropModal(file) {
+    const uploadModal = document.getElementById('avatarUploadModal');
+    const cropModal = document.getElementById('avatarCropModal');
+    const cropImage = document.getElementById('avatarCropImage');
+
+    if (!cropModal || !cropImage) return;
+
+    // Скрываем модал загрузки и показываем модал обрезки
+    if (uploadModal) uploadModal.classList.remove('active');
+    cropModal.classList.add('active');
+
+    // Создаем URL для изображения
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        cropImage.src = e.target.result;
+        
+        // Инициализируем Cropper.js (используем простую реализацию без внешней библиотеки)
+        initSimpleCropper(cropImage);
+    };
+    reader.readAsDataURL(file);
+}
+
+function initSimpleCropper(image) {
+    // Уничтожаем предыдущий cropper если есть
+    if (currentCropper) {
+        currentCropper.destroy();
+        currentCropper = null;
+    }
+    
+    // Инициализируем Cropper.js
+    currentCropper = new Cropper(image, {
+        aspectRatio: 1, // Квадратное соотношение для аватара
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.8,
+        restore: false,
+        guides: false,
+        center: false,
+        highlight: false,
+        cropBoxMovable: true,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+        ready: function () {
+            // Cropper готов к использованию
+        }
+    });
+    
+    const saveBtn = document.getElementById('avatarSaveBtn');
+    // Удаляем старый обработчик перед добавлением нового
+    if (saveBtn) {
+        saveBtn.removeEventListener('click', handleAvatarSave);
+        saveBtn.addEventListener('click', handleAvatarSave);
+    }
+}
+
+async function handleAvatarSave() {
+    if (!currentCropper) return;
+
+    const loading = document.getElementById('avatarLoading');
+    const actions = document.querySelector('.avatar-crop-actions');
+    
+    // Показываем загрузку
+    if (loading) loading.classList.add('active');
+    if (actions) actions.style.display = 'none';
+
+    try {
+        // Получаем обрезанное изображение как canvas
+        const canvas = currentCropper.getCroppedCanvas({
+            width: 300,
+            height: 300,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        });
+
+        // Конвертируем canvas в blob
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                toastManager.show('Ошибка при обработке изображения', 'danger');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', blob, 'avatar.jpg');
+
+            try {
+                const response = await fetch('/upload_avatar', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Обновляем аватар на странице
+                    const userAvatar = document.getElementById('userAvatar');
+                    if (userAvatar && data.avatar_url) {
+                        userAvatar.src = data.avatar_url + '?t=' + Date.now();
+                    }
+
+                    toastManager.show('Аватар успешно обновлен!', 'success');
+                    closeCropModal();
+                    closeUploadModal();
+                } else {
+                    toastManager.show(data.message || 'Ошибка при загрузке аватара', 'danger');
+                }
+            } catch (error) {
+                console.error('Error uploading avatar:', error);
+                toastManager.show('Ошибка сети при загрузке аватара', 'danger');
+            } finally {
+                // Скрываем загрузку
+                if (loading) loading.classList.remove('active');
+                if (actions) actions.style.display = 'flex';
+            }
+        }, 'image/jpeg', 0.9);
+
+    } catch (error) {
+        console.error('Error processing image:', error);
+        toastManager.show('Ошибка при обработке изображения', 'danger');
+        
+        // Скрываем загрузку
+        if (loading) loading.classList.remove('active');
+        if (actions) actions.style.display = 'flex';
     }
 }

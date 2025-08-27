@@ -6,6 +6,7 @@
     <title>{% block title %}My Shiftly{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
     {% block styles %}{% endblock %}
 </head>
 <body {% if calendar %}data-calendar-id="{{ calendar.id }}"
@@ -116,8 +117,13 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="user-profile">
-            <img src="{{ url_for('static', filename='images/' + current_user.avatar) }}"
-                 alt="Аватар" class="avatar">
+            <div class="avatar-container" id="avatarContainer">
+                <img src="{{ url_for('static', filename='images/' + current_user.avatar) }}"
+                     alt="Аватар" class="avatar" id="userAvatar">
+                <div class="avatar-upload-overlay" id="avatarUploadOverlay">
+                    <i class="bi bi-plus-lg avatar-upload-icon"></i>
+                </div>
+            </div>
             <h3>
                 {% if current_user.last_name or current_user.first_name %}
                     {{ (current_user.last_name or '') ~ (' ' if current_user.last_name and current_user.first_name else '') ~ (current_user.first_name or '') }}
@@ -147,6 +153,49 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Avatar Upload Modal -->
+    <div class="avatar-modal" id="avatarUploadModal">
+        <div class="avatar-modal-content">
+            <div class="avatar-modal-header">
+                <h2 class="avatar-modal-title">Загрузка новой фотографии</h2>
+                <button class="avatar-modal-close" id="avatarUploadClose">&times;</button>
+            </div>
+            <div class="avatar-upload-area" id="avatarUploadArea">
+                <div class="avatar-upload-text">Коллегам будет проще узнать вас, если вы загрузите свою настоящую фотографию.</div>
+                <div class="avatar-upload-hint">Вы можете загрузить изображение в формате JPG, GIF, PNG, WEBP или HEIC/HEIF.</div>
+                <input type="file" class="avatar-file-input" id="avatarFileInput" accept="image/*">
+                <button class="avatar-select-btn" id="avatarSelectBtn">Выбрать файл</button>
+            </div>
+            <div class="avatar-upload-hint">Если у вас возникают проблемы с загрузкой, попробуйте выбрать фотографию меньшего размера.</div>
+        </div>
+    </div>
+
+    <!-- Avatar Crop Modal -->
+    <div class="avatar-crop-modal" id="avatarCropModal">
+        <div class="avatar-crop-content">
+            <div class="avatar-crop-header">
+                <h2 class="avatar-crop-title">Фотография на вашей странице</h2>
+                <button class="avatar-modal-close" id="avatarCropClose">&times;</button>
+            </div>
+            <div class="avatar-crop-description">
+                Выбранная область будет показываться на вашей странице.<br>
+                Если изображение ориентировано неправильно, фотографию можно повернуть.
+            </div>
+            <div class="avatar-crop-container" id="avatarCropContainer">
+                <img class="avatar-crop-image" id="avatarCropImage" alt="Crop preview">
+            </div>
+            <div class="avatar-crop-actions">
+                <button class="avatar-crop-btn avatar-crop-btn-primary" id="avatarSaveBtn">Сохранить и продолжить</button>
+                <button class="avatar-crop-btn avatar-crop-btn-secondary" id="avatarCancelBtn">Вернуться назад</button>
+            </div>
+            <div class="avatar-loading" id="avatarLoading">
+                <div class="avatar-spinner"></div>
+                <div>Загружаем ваше фото...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     <script src="{{ url_for('static', filename='js/friends/search.js') }}"></script>
     {% block scripts %}{% endblock %}
