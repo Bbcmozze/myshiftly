@@ -352,6 +352,7 @@ main {
     opacity: 0;
     transform: translateX(100%);
     pointer-events: all;
+    font-size: 0.875rem;
 }
 
 .toast.show {
