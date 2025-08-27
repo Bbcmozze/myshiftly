@@ -773,17 +773,17 @@ function setupUnifiedDragAndDrop() {
         let pointerClientY = 0;
         
         // Настройки автоскролла
-        const EDGE_THRESHOLD = 80; // px от края контейнера для активации скролла
-        const INNER_EDGE_THRESHOLD = 40; // px для более медленного скролла
+        const EDGE_THRESHOLD = 120; // px от края контейнера для активации скролла
+        const INNER_EDGE_THRESHOLD = 80; // px для более медленного скролла
         const MIN_SCROLL_SPEED = 3; // минимальная скорость скролла (увеличена для лучшей отзывчивости)
         const MAX_SCROLL_SPEED = 25; // максимальная скорость скролла
         const ACCELERATION_FACTOR = 1.5; // коэффициент ускорения при приближении к краю
-        const TOP_ZONE_BOOST = 1.2; // дополнительный коэффициент для верхней зоны
+        const TOP_ZONE_BOOST = 1.6; // дополнительный коэффициент для верхней зоны
         
         // Переменные для плавности
         let currentScrollSpeed = 0;
         let targetScrollSpeed = 0;
-        const SMOOTHING_FACTOR = 0.15; // коэффициент сглаживания (чем меньше, тем плавнее)
+        const SMOOTHING_FACTOR = 0.25; // коэффициент сглаживания (чем меньше, тем плавнее)
 
         function autoScrollTick() {
             if (!autoScrollActive || !scrollContainer) return;
@@ -1358,8 +1358,21 @@ async function updateCalendarAfterGroupChange() {
 // Функция для динамического обновления таблицы календаря (локальная, чтобы не пересекаться с view.js)
 async function rebuildCalendarTableFromData(groups, members) {
     try {
-        // Получаем смены для отображения
-        const shiftsResponse = await fetch(`/calendar/${currentCalendarId}/shifts`);
+        // Получаем текущий месяц из URL или используем текущий
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentMonth = urlParams.get('month');
+        if (!currentMonth) {
+            // Если месяц не указан в URL, берем из body dataset или текущий
+            const bodyMonth = document.body.dataset.currentMonth;
+            if (bodyMonth) {
+                currentMonth = new Date(bodyMonth).toISOString().split('T')[0];
+            } else {
+                currentMonth = new Date().toISOString().split('T')[0];
+            }
+        }
+        
+        // Получаем смены для отображения с параметром месяца
+        const shiftsResponse = await fetch(`/calendar/${currentCalendarId}/shifts?month=${currentMonth}`);
         const shifts = await shiftsResponse.json();
         console.log('=== DIAG: updateCalendarTable input ===');
         console.log('Groups count:', groups.length);
@@ -1740,10 +1753,20 @@ function getDateForDayIndex(dayIndex) {
         const dayMatch = dayText.match(/(\d+)/);
         if (dayMatch) {
             const day = parseInt(dayMatch[1]);
-            // Получаем текущий месяц и год
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            return `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            // Получаем текущий месяц из URL или body dataset
+            const urlParams = new URLSearchParams(window.location.search);
+            let currentMonthStr = urlParams.get('month');
+            if (!currentMonthStr) {
+                const bodyMonth = document.body.dataset.currentMonth;
+                if (bodyMonth) {
+                    currentMonthStr = new Date(bodyMonth).toISOString().split('T')[0];
+                } else {
+                    currentMonthStr = new Date().toISOString().split('T')[0];
+                }
+            }
+            // Извлекаем год и месяц из строки даты
+            const [year, month] = currentMonthStr.split('-');
+            return `${year}-${month}-${String(day).padStart(2, '0')}`;
         }
     }
     return '';

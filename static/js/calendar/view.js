@@ -1604,12 +1604,17 @@ function getUserDisplayName(user, includeYouLabel = false) {
             });
 
             const calendarId = document.body.dataset.calendarId;
+            const month = currentMonth.toISOString().split('T')[0];
+            
             const response = await fetch(`/calendar/${calendarId}/clear-all-shifts`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                body: JSON.stringify({
+                    month: month
+                })
             });
 
             const data = await response.json();

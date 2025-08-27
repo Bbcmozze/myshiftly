@@ -791,8 +791,30 @@ def register_routes(app):
             return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
         
         try:
-            # Удаляем все смены календаря
-            deleted_count = Shift.query.filter_by(calendar_id=calendar.id).delete()
+            # Получаем месяц из запроса
+            data = request.get_json() or {}
+            month = data.get('month')
+            
+            if month:
+                try:
+                    # Парсим месяц и определяем диапазон дат
+                    current_month = datetime.strptime(month, '%Y-%m-%d').date().replace(day=1)
+                    next_month = current_month.replace(day=28) + timedelta(days=4)
+                    last_day = next_month - timedelta(days=next_month.day)
+                    
+                    # Удаляем смены только за указанный месяц
+                    deleted_count = Shift.query.filter(
+                        Shift.calendar_id == calendar.id,
+                        Shift.date >= current_month,
+                        Shift.date <= last_day
+                    ).delete()
+                except ValueError:
+                    # Если месяц некорректный, удаляем все смены
+                    deleted_count = Shift.query.filter_by(calendar_id=calendar.id).delete()
+            else:
+                # Если месяц не указан, удаляем все смены календаря
+                deleted_count = Shift.query.filter_by(calendar_id=calendar.id).delete()
+                
             db.session.commit()
             
             return jsonify({
@@ -846,15 +868,24 @@ def register_routes(app):
         if calendar.owner_id != current_user.id and current_user not in calendar.members:
             abort(403)
 
-        # Получаем смены для текущего месяца
-        current_date = datetime.now()
-        start_of_month = current_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        # Получаем месяц из параметров запроса
+        month = request.args.get('month')
+        if month:
+            try:
+                current_month = datetime.strptime(month, '%Y-%m-%d').date().replace(day=1)
+            except ValueError:
+                current_month = datetime.utcnow().date().replace(day=1)
+        else:
+            current_month = datetime.utcnow().date().replace(day=1)
+
+        # Получаем все дни месяца
+        next_month = current_month.replace(day=28) + timedelta(days=4)
+        last_day = next_month - timedelta(days=next_month.day)
 
         shifts = Shift.query.filter(
             Shift.calendar_id == calendar_id,
-            Shift.date >= start_of_month.date(),
-            Shift.date <= end_of_month.date()
+            Shift.date >= current_month,
+            Shift.date <= last_day
         ).all()
 
         # Формируем список смен
