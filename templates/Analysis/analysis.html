@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика и Анализ - My Shiftly{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/Analysis/analysis.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="analysis-container">
+    <div class="analysis-header">
+        <h1><i class="bi bi-clipboard-data-fill"></i> Статистика и Анализ</h1>
+        <div class="header-controls">
+            <div class="comparison-toggle">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="comparisonMode">
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">Сравнить периоды</span>
+                </label>
+            </div>
+            <div class="period-selector">
+                <div class="period-group" id="primaryPeriod">
+                    <label class="period-label">Период:</label>
+                    <select id="periodSelect" class="period-select">
+                        <option value="week">Неделя</option>
+                        <option value="month" selected>Месяц</option>
+                        <option value="quarter">Квартал</option>
+                        <option value="year">Год</option>
+                    </select>
+                    <input type="month" id="monthPicker" class="month-picker" value="{{ current_month.strftime('%Y-%m') }}">
+                </div>
+                <div class="period-group comparison-period" id="comparisonPeriod" style="display: none;">
+                    <label class="period-label">Сравнить с:</label>
+                    <select id="comparisonPeriodSelect" class="period-select">
+                        <option value="week">Неделя</option>
+                        <option value="month" selected>Месяц</option>
+                        <option value="quarter">Квартал</option>
+                        <option value="year">Год</option>
+                    </select>
+                    <input type="month" id="comparisonMonthPicker" class="month-picker">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры и календари -->
+    <section class="filters-section">
+        <div class="section-header">
+            <h2><i class="bi bi-funnel"></i> Фильтры и настройки</h2>
+            <button class="filter-toggle-btn" id="filterToggle">
+                <i class="bi bi-chevron-down"></i>
+                <span>Расширенные фильтры</span>
+            </button>
+        </div>
+        
+        <div class="calendars-selector" id="calendarsSelector">
+            {% for calendar in calendars %}
+            <div class="calendar-checkbox">
+                <input type="checkbox" id="calendar_{{ calendar.id }}" value="{{ calendar.id }}" 
+                       class="calendar-input" {% if loop.first %}checked{% endif %}>
+                <label for="calendar_{{ calendar.id }}" class="calendar-label">
+                    <i class="bi bi-calendar-week"></i>
+                    <span>{{ calendar.name }}</span>
+                    <small>{{ calendar.members|length + 1 }} участников</small>
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="advanced-filters" id="advancedFilters" style="display: none;">
+            <div class="filters-header">
+                <i class="bi bi-funnel"></i>
+                <h4>Расширенные фильтры</h4>
+            </div>
+            
+            <div class="filters-grid">
+                <div class="filter-card">
+                    <div class="filter-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="filter-content">
+                        <label class="filter-label">Участники</label>
+                        <div class="participants-filter">
+                            <div class="participants-dropdown" id="participantsDropdown">
+                                <div class="participants-trigger" id="participantsTrigger">
+                                    <span class="participants-placeholder">Все участники</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </div>
+                                <div class="participants-list" id="participantsList">
+                                    <div class="participants-search">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" placeholder="Поиск участников..." id="participantsSearch">
+                                    </div>
+                                    <div class="participants-options" id="participantsOptions">
+                                        <div class="participant-option all-option" data-value="">
+                                            <div class="participant-checkbox">
+                                                <input type="checkbox" id="all-participants" checked>
+                                                <label for="all-participants"></label>
+                                            </div>
+                                            <div class="participant-info">
+                                                <div class="participant-avatar">
+                                                    <i class="bi bi-people-fill"></i>
+                                                </div>
+                                                <div class="participant-details">
+                                                    <div class="participant-name">Все участники</div>
+                                                    <div class="participant-username">Показать всех</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Hidden select for form compatibility -->
+                            <select id="userFilter" class="hidden-select" multiple style="display: none;">
+                                <option value="">Все участники</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-card">
+                    <div class="filter-icon">
+                        <i class="bi bi-palette"></i>
+                    </div>
+                    <div class="filter-content">
+                        <label class="filter-label">Тип смен</label>
+                        <div class="shift-types-filter">
+                            <div class="shift-types-dropdown" id="shiftTypesDropdown">
+                                <div class="shift-types-trigger" id="shiftTypesTrigger">
+                                    <span class="shift-types-placeholder">Все типы</span>
+                                    <i class="bi bi-chevron-down"></i>
+                                </div>
+                                <div class="shift-types-list" id="shiftTypesList">
+                                    <div class="shift-types-search">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text" placeholder="Поиск типов смен..." id="shiftTypesSearch">
+                                    </div>
+                                    <div class="shift-types-options" id="shiftTypesOptions">
+                                        <div class="shift-type-option all-option" data-value="">
+                                            <div class="shift-type-checkbox">
+                                                <input type="checkbox" id="all-shift-types" checked>
+                                                <label for="all-shift-types"></label>
+                                            </div>
+                                            <div class="shift-type-info">
+                                                <div class="shift-type-color">
+                                                    <i class="bi bi-palette-fill"></i>
+                                                </div>
+                                                <div class="shift-type-details">
+                                                    <div class="shift-type-name">Все типы</div>
+                                                    <div class="shift-type-description">Показать все</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Hidden select for form compatibility -->
+                            <select id="shiftTypeFilter" class="hidden-select" multiple style="display: none;">
+                                <option value="">Все типы</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-card">
+                    <div class="filter-icon">
+                        <i class="bi bi-hourglass"></i>
+                    </div>
+                    <div class="filter-content">
+                        <label class="filter-label">Длительность</label>
+                        <div class="custom-select-wrapper">
+                            <select id="durationFilter" class="custom-select">
+                                <option value="">Любая длительность</option>
+                                <option value="short">⚡ Короткие (&lt;4ч)</option>
+                                <option value="medium">⏰ Средние (4-8ч)</option>
+                                <option value="long">🔥 Длинные (&gt;8ч)</option>
+                            </select>
+                            <i class="bi bi-chevron-down select-arrow"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="filter-actions">
+                <button class="btn-reset" id="resetFilters">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Сбросить фильтры
+                </button>
+                <button class="btn-apply" id="applyFilters">
+                    <i class="bi bi-check2"></i>
+                    Применить
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Статистика по сменам -->
+    <section class="stats-section">
+        <div class="section-header">
+            <h2><i class="bi bi-clock-history"></i> Статистика по сменам</h2>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-stopwatch"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalHours">0</h3>
+                    <p>Общее время работы</p>
+                    <span class="stat-period">за выбранный период</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalShifts">0</h3>
+                    <p>Всего смен</p>
+                    <span class="stat-period">выполнено</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="avgShiftDuration">0ч 0м</h3>
+                    <p>Средняя продолжительность</p>
+                    <span class="stat-period">смены</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-star-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="topTemplate">-</h3>
+                    <p>Популярный шаблон</p>
+                    <span class="stat-period">чаще всего используется</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-container">
+                <h3>Распределение рабочего времени</h3>
+                <canvas id="workTimeChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Активность по дням недели</h3>
+                <canvas id="weekdayChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Анализ команды -->
+    <section class="team-section">
+        <div class="section-header">
+            <h2><i class="bi bi-people-fill"></i> Анализ команды</h2>
+        </div>
+        
+        <div class="team-stats-grid">
+            <div class="team-card">
+                <h3>Рейтинг активности</h3>
+                <div class="activity-ranking" id="activityRanking">
+                    <!-- Динамически заполняется JS -->
+                </div>
+            </div>
+            
+            <div class="team-card">
+                <h3>Баланс нагрузки</h3>
+                <canvas id="workloadBalanceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="team-details">
+            <div class="coverage-analysis">
+                <h3>Анализ покрытия расписания</h3>
+                <div class="coverage-legend">
+                    <div class="legend-item">
+                        <div class="legend-color excellent"></div>
+                        <span>Отличное покрытие (80%+)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color good"></div>
+                        <span>Хорошее покрытие (60-79%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color fair"></div>
+                        <span>Среднее покрытие (30-59%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color poor"></div>
+                        <span>Слабое покрытие (1-29%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color empty"></div>
+                        <span>Нет смен (0%)</span>
+                    </div>
+                </div>
+                <div class="coverage-grid" id="coverageGrid">
+                    <!-- Динамически заполняется JS -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Временные тренды -->
+    <section class="trends-section">
+        <div class="section-header">
+            <h2><i class="bi bi-graph-up"></i> Временные тренды</h2>
+        </div>
+        
+        <div class="trends-container">
+            <div class="trend-chart-container">
+                <h3>График загрузки по месяцам</h3>
+                <div class="chart-controls">
+                    <button class="chart-btn active" data-metric="hours">Часы</button>
+                    <button class="chart-btn" data-metric="shifts">Смены</button>
+                    <button class="chart-btn" data-metric="people">Участники</button>
+                </div>
+                <canvas id="trendsChart"></canvas>
+            </div>
+            
+            <div class="seasonal-patterns">
+                <h3>Популярность временных слотов</h3>
+                <div class="time-slots" id="timeSlots">
+                    <div class="time-slot">
+                        <div class="slot-header">
+                            <i class="bi bi-sunrise"></i>
+                            <span>Утро (06:00-12:00)</span>
+                        </div>
+                        <div class="slot-bar">
+                            <div class="slot-fill" data-slot="morning"></div>
+                        </div>
+                        <span class="slot-percentage" id="morningPercent">0%</span>
+                    </div>
+                    <div class="time-slot">
+                        <div class="slot-header">
+                            <i class="bi bi-sun"></i>
+                            <span>День (12:00-18:00)</span>
+                        </div>
+                        <div class="slot-bar">
+                            <div class="slot-fill" data-slot="day"></div>
+                        </div>
+                        <span class="slot-percentage" id="dayPercent">0%</span>
+                    </div>
+                    <div class="time-slot">
+                        <div class="slot-header">
+                            <i class="bi bi-sunset"></i>
+                            <span>Вечер (18:00-00:00)</span>
+                        </div>
+                        <div class="slot-bar">
+                            <div class="slot-fill" data-slot="evening"></div>
+                        </div>
+                        <span class="slot-percentage" id="eveningPercent">0%</span>
+                    </div>
+                    <div class="time-slot">
+                        <div class="slot-header">
+                            <i class="bi bi-moon"></i>
+                            <span>Ночь (00:00-06:00)</span>
+                        </div>
+                        <div class="slot-bar">
+                            <div class="slot-fill" data-slot="night"></div>
+                        </div>
+                        <span class="slot-percentage" id="nightPercent">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Загрузка данных...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Ensure Chart.js is loaded before initializing
+window.addEventListener('load', function() {
+    console.log('Window loaded, Chart.js available:', typeof Chart !== 'undefined');
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js failed to load from CDN');
+    }
+});
+</script>
+<script src="{{ url_for('static', filename='js/Analysis/analysis.js') }}"></script>
+{% endblock %}

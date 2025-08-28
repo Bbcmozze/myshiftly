@@ -1,7 +1,7 @@
 import traceback
 import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, abort
-from sqlalchemy import exists, and_, or_
+from sqlalchemy import exists, and_, or_, extract
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, User, generate_user_id, generate_calendar_id, FriendRequest, Calendar, Shift, ShiftTemplate, calendar_members, Group, group_members
@@ -780,6 +780,316 @@ def register_routes(app):
         } for friend in friends]
         return jsonify(results)
 
+    @app.route('/analysis')
+    @login_required
+    def analysis():
+        # Получаем календари пользователя (владелец или участник)
+        owned_calendars = Calendar.query.filter_by(owner_id=current_user.id).all()
+        shared_calendars = current_user.shared_calendars
+        
+        # Объединяем все календари
+        all_calendars = list(owned_calendars) + list(shared_calendars)
+        
+        # Убираем дубликаты
+        unique_calendars = []
+        seen_ids = set()
+        for calendar in all_calendars:
+            if calendar.id not in seen_ids:
+                unique_calendars.append(calendar)
+                seen_ids.add(calendar.id)
+        
+        current_month = datetime.utcnow().date().replace(day=1)
+        
+        return render_template(
+            'Analysis/analysis.html',
+            calendars=unique_calendars,
+            current_month=current_month
+        )
+
+    @app.route('/api/analysis-debug', methods=['GET'])
+    @login_required
+    def analysis_debug():
+        """Debug endpoint to test basic functionality"""
+        try:
+            user_calendars = Calendar.query.filter_by(owner_id=current_user.id).all()
+            shared_calendars = current_user.shared_calendars
+            
+            return jsonify({
+                'user_id': current_user.id,
+                'owned_calendars': [{'id': c.id, 'name': c.name} for c in user_calendars],
+                'shared_calendars': [{'id': c.id, 'name': c.name} for c in shared_calendars],
+                'status': 'ok'
+            })
+        except Exception as e:
+            import traceback
+            return jsonify({
+                'error': str(e),
+                'traceback': traceback.format_exc(),
+                'status': 'error'
+            }), 500
+
+    @app.route('/api/analysis-data', methods=['POST'])
+    @login_required
+    def get_analysis_data():
+        try:
+            data = request.get_json()
+            if not data:
+                app.logger.error("No JSON data received")
+                return jsonify({'error': 'No data provided'}), 400
+                
+            period = data.get('period', 'month')
+            month = data.get('month', datetime.utcnow().strftime('%Y-%m'))
+            calendar_ids = data.get('calendar_ids', [])
+            filters = data.get('filters', {})
+            comparison = data.get('comparison')
+            
+            app.logger.info(f"Analysis request: period={period}, month={month}, calendars={calendar_ids}, filters={filters}")
+            
+            if not calendar_ids:
+                return jsonify({'error': 'No calendars selected'}), 400
+            
+            accessible_calendars = []
+            for calendar_id in calendar_ids:
+                try:
+                    calendar = Calendar.query.get(calendar_id)
+                    if calendar and (calendar.owner_id == current_user.id or current_user in calendar.members):
+                        accessible_calendars.append(calendar_id)
+                except Exception as e:
+                    app.logger.error(f"Error checking calendar {calendar_id}: {str(e)}")
+            
+            if not accessible_calendars:
+                return jsonify({'error': 'No accessible calendars'}), 403
+            
+            try:
+                if period == 'week':
+                    start_date, end_date = get_week_range(month)
+                elif period == 'quarter':
+                    start_date, end_date = get_quarter_range(month)
+                elif period == 'year':
+                    start_date, end_date = get_year_range(month)
+                else:
+                    start_date, end_date = get_month_range(month)
+                
+                app.logger.info(f"Date range: {start_date} to {end_date}")
+                
+                analysis_data = {}
+                
+                # Calculate each section separately with error handling
+                try:
+                    analysis_data['shift_stats'] = calculate_shift_stats(accessible_calendars, start_date, end_date, filters)
+                except Exception as e:
+                    app.logger.error(f"Error in shift_stats: {str(e)}")
+                    analysis_data['shift_stats'] = {'total_hours': 0, 'total_shifts': 0, 'avg_duration': 0, 'top_template': None}
+                
+                try:
+                    analysis_data['team_analysis'] = calculate_team_analysis(accessible_calendars, start_date, end_date, filters)
+                except Exception as e:
+                    app.logger.error(f"Error in team_analysis: {str(e)}")
+                    analysis_data['team_analysis'] = {'activity_ranking': [], 'coverage_data': [], 'workload_balance': {'labels': [], 'values': []}}
+                
+                try:
+                    analysis_data['time_slots'] = calculate_time_slots(accessible_calendars, start_date, end_date, filters)
+                except Exception as e:
+                    app.logger.error(f"Error in time_slots: {str(e)}")
+                    analysis_data['time_slots'] = {'morning': {'percentage': 0}, 'day': {'percentage': 0}, 'evening': {'percentage': 0}, 'night': {'percentage': 0}}
+                
+                try:
+                    analysis_data['work_time_distribution'] = calculate_work_time_distribution(accessible_calendars, start_date, end_date, filters)
+                except Exception as e:
+                    app.logger.error(f"Error in work_time_distribution: {str(e)}")
+                    analysis_data['work_time_distribution'] = {'labels': [], 'values': []}
+                
+                try:
+                    analysis_data['weekday_activity'] = calculate_weekday_activity(accessible_calendars, start_date, end_date, filters)
+                except Exception as e:
+                    app.logger.error(f"Error in weekday_activity: {str(e)}")
+                    analysis_data['weekday_activity'] = {'hours': [0] * 7}
+                
+                try:
+                    analysis_data['trends_data'] = calculate_trends_data(accessible_calendars, period, month, filters)
+                except Exception as e:
+                    app.logger.error(f"Error in trends_data: {str(e)}")
+                    analysis_data['trends_data'] = {'hours': {'labels': [], 'values': []}, 'shifts': {'labels': [], 'values': []}, 'people': {'labels': [], 'values': []}}
+                
+                # Add comparison data if requested
+                if comparison:
+                    try:
+                        comp_period = comparison.get('period', 'month')
+                        comp_month = comparison.get('month')
+                        
+                        if comp_period == 'week':
+                            comp_start_date, comp_end_date = get_week_range(comp_month)
+                        elif comp_period == 'quarter':
+                            comp_start_date, comp_end_date = get_quarter_range(comp_month)
+                        elif comp_period == 'year':
+                            comp_start_date, comp_end_date = get_year_range(comp_month)
+                        else:
+                            comp_start_date, comp_end_date = get_month_range(comp_month)
+                        
+                        analysis_data['comparison'] = {
+                            'shift_stats': calculate_shift_stats(accessible_calendars, comp_start_date, comp_end_date, filters),
+                            'team_analysis': calculate_team_analysis(accessible_calendars, comp_start_date, comp_end_date, filters),
+                            'time_slots': calculate_time_slots(accessible_calendars, comp_start_date, comp_end_date, filters),
+                            'work_time_distribution': calculate_work_time_distribution(accessible_calendars, comp_start_date, comp_end_date, filters),
+                            'weekday_activity': calculate_weekday_activity(accessible_calendars, comp_start_date, comp_end_date, filters),
+                            'trends_data': calculate_trends_data(accessible_calendars, comp_period, comp_month, filters)
+                        }
+                    except Exception as e:
+                        app.logger.error(f"Error in comparison data: {str(e)}")
+                        analysis_data['comparison'] = None
+                
+                return jsonify(analysis_data)
+            
+            except Exception as e:
+                app.logger.error(f"Error in date calculation or analysis: {str(e)}")
+                import traceback
+                app.logger.error(traceback.format_exc())
+                return jsonify({'error': f'Analysis calculation failed: {str(e)}'}), 500
+        
+        except Exception as e:
+            app.logger.error(f"Critical error in get_analysis_data: {str(e)}")
+            import traceback
+            app.logger.error(traceback.format_exc())
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+    @app.route('/api/calendar-users', methods=['POST'])
+    @login_required
+    def get_calendar_users():
+        data = request.get_json()
+        calendar_ids = data.get('calendar_ids', [])
+        
+        if not calendar_ids:
+            return jsonify([])
+        
+        try:
+            users = {}
+            for calendar_id in calendar_ids:
+                calendar = Calendar.query.get(calendar_id)
+                if calendar and (calendar.owner_id == current_user.id or current_user in calendar.members):
+                    # Add owner
+                    owner = calendar.owner
+                    users[owner.id] = {
+                        'id': owner.id,
+                        'username': owner.username,
+                        'first_name': owner.first_name,
+                        'last_name': owner.last_name,
+                        'avatar': owner.avatar
+                    }
+                    # Add members
+                    for member in calendar.members:
+                        users[member.id] = {
+                            'id': member.id,
+                            'username': member.username,
+                            'first_name': member.first_name,
+                            'last_name': member.last_name,
+                            'avatar': member.avatar
+                        }
+            
+            return jsonify(list(users.values()))
+        
+        except Exception as e:
+            app.logger.error(f"Error getting calendar users: {str(e)}")
+            return jsonify([])
+
+    @app.route('/api/calendar-shift-types', methods=['POST'])
+    @login_required
+    def get_calendar_shift_types():
+        data = request.get_json()
+        calendar_ids = data.get('calendar_ids', [])
+        
+        if not calendar_ids:
+            return jsonify([])
+        
+        try:
+            # Получаем уникальные типы смен из шаблонов и смен
+            shift_types = set()
+            
+            for calendar_id in calendar_ids:
+                calendar = Calendar.query.get(calendar_id)
+                if calendar and (calendar.owner_id == current_user.id or current_user in calendar.members):
+                    # Получаем типы из шаблонов смен
+                    templates = ShiftTemplate.query.filter_by(calendar_id=calendar_id).all()
+                    for template in templates:
+                        shift_types.add((template.color_class, template.title))
+                    
+                    # Получаем типы из существующих смен
+                    shifts = Shift.query.filter_by(calendar_id=calendar_id).all()
+                    for shift in shifts:
+                        shift_types.add((shift.color_class, shift.title))
+            
+            # Преобразуем в список словарей с информацией о цвете
+            color_map = {
+                'badge-color-1': {'name': 'Роза', 'color': '#ffb3b3'},
+                'badge-color-2': {'name': 'Персик', 'color': '#ffd0a8'},
+                'badge-color-3': {'name': 'Лимон', 'color': '#fff2b3'},
+                'badge-color-4': {'name': 'Лайм', 'color': '#f4ffb3'},
+                'badge-color-5': {'name': 'Яблоко', 'color': '#e4ffb3'},
+                'badge-color-6': {'name': 'Мята', 'color': '#b3ffe1'},
+                'badge-color-7': {'name': 'Лёд', 'color': '#b3f4ff'},
+                'badge-color-8': {'name': 'Небо', 'color': '#b3d6ff'},
+                'badge-color-9': {'name': 'Сирень', 'color': '#d1b3ff'},
+                'badge-color-10': {'name': 'Орхидея', 'color': '#f0b3ff'}
+            }
+            
+            result = []
+            for color_class, title in shift_types:
+                color_info = color_map.get(color_class, {'name': 'Неизвестный', 'color': '#cccccc'})
+                result.append({
+                    'color_class': color_class,
+                    'title': title,
+                    'color_name': color_info['name'],
+                    'color': color_info['color']
+                })
+            
+            # Сортируем по названию цвета
+            result.sort(key=lambda x: x['color_name'])
+            
+            return jsonify(result)
+        
+        except Exception as e:
+            app.logger.error(f"Error getting calendar shift types: {str(e)}")
+            return jsonify([])
+
+def apply_filters(query, filters):
+    """Apply filters to shift query"""
+    if not filters:
+        return query
+    
+    # Filter by users
+    if filters.get('users'):
+        query = query.filter(Shift.user_id.in_(filters['users']))
+    
+    # Filter by shift type (based on color_class)
+    if filters.get('shiftType'):
+        shift_types = filters['shiftType']
+        if isinstance(shift_types, str):
+            shift_types = [shift_types]
+        
+        if shift_types and shift_types != ['']:
+            # Filter by color_class from shift templates
+            query = query.join(ShiftTemplate).filter(ShiftTemplate.color_class.in_(shift_types))
+    
+    # Filter by duration
+    if filters.get('duration'):
+        duration_type = filters['duration']
+        if duration_type == 'short':
+            # Short shifts: < 4 hours
+            query = query.filter(
+                (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) < 4 * 3600
+            )
+        elif duration_type == 'medium':
+            # Medium shifts: 4-8 hours
+            query = query.filter(
+                (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) >= 4 * 3600,
+                (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) <= 8 * 3600
+            )
+        elif duration_type == 'long':
+            # Long shifts: > 8 hours
+            query = query.filter(
+                (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) > 8 * 3600
+            )
+    
+    return query
 
     @app.route('/calendar/<int:calendar_id>/clear-all-shifts', methods=['POST'])
     @login_required
@@ -1392,3 +1702,481 @@ def register_routes(app):
             db.session.rollback()
             app.logger.error(f"Error uploading avatar: {str(e)}")
             return jsonify({'success': False, 'message': 'Ошибка при загрузке аватара'}), 500
+
+
+# Analysis helper functions
+def get_week_range(month_str):
+    """Get start and end date for a week period"""
+    try:
+        date = datetime.strptime(month_str, '%Y-%m').date()
+        # Get the first day of the week containing the first day of the month
+        start_date = date - timedelta(days=date.weekday())
+        end_date = start_date + timedelta(days=6)
+        return start_date, end_date
+    except ValueError:
+        # Fallback to current week
+        today = datetime.utcnow().date()
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
+        return start_date, end_date
+
+
+def get_month_range(month_str):
+    """Get start and end date for a month period"""
+    try:
+        date = datetime.strptime(month_str, '%Y-%m').date().replace(day=1)
+        next_month = date.replace(day=28) + timedelta(days=4)
+        end_date = next_month - timedelta(days=next_month.day)
+        return date, end_date
+    except ValueError:
+        # Fallback to current month
+        today = datetime.utcnow().date()
+        start_date = today.replace(day=1)
+        next_month = start_date.replace(day=28) + timedelta(days=4)
+        end_date = next_month - timedelta(days=next_month.day)
+        return start_date, end_date
+
+
+def get_quarter_range(month_str):
+    """Get start and end date for a quarter period"""
+    try:
+        date = datetime.strptime(month_str, '%Y-%m').date()
+        quarter = (date.month - 1) // 3 + 1
+        start_month = (quarter - 1) * 3 + 1
+        start_date = date.replace(month=start_month, day=1)
+        
+        if quarter == 4:
+            end_date = date.replace(year=date.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            end_month = quarter * 3 + 1
+            end_date = date.replace(month=end_month, day=1) - timedelta(days=1)
+        
+        return start_date, end_date
+    except ValueError:
+        # Fallback to current quarter
+        today = datetime.utcnow().date()
+        quarter = (today.month - 1) // 3 + 1
+        start_month = (quarter - 1) * 3 + 1
+        start_date = today.replace(month=start_month, day=1)
+        
+        if quarter == 4:
+            end_date = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            end_month = quarter * 3 + 1
+            end_date = today.replace(month=end_month, day=1) - timedelta(days=1)
+        
+        return start_date, end_date
+
+
+def get_year_range(month_str):
+    """Get start and end date for a year period"""
+    try:
+        date = datetime.strptime(month_str, '%Y-%m').date()
+        start_date = date.replace(month=1, day=1)
+        end_date = date.replace(month=12, day=31)
+        return start_date, end_date
+    except ValueError:
+        # Fallback to current year
+        today = datetime.utcnow().date()
+        start_date = today.replace(month=1, day=1)
+        end_date = today.replace(month=12, day=31)
+        return start_date, end_date
+
+
+def calculate_shift_stats(calendar_ids, start_date, end_date, filters=None):
+    """Calculate shift statistics"""
+    query = Shift.query.filter(
+        Shift.calendar_id.in_(calendar_ids),
+        Shift.date >= start_date,
+        Shift.date <= end_date
+    )
+    
+    if filters:
+        query = apply_filters(query, filters)
+    
+    shifts = query.all()
+    
+    if not shifts:
+        return {
+            'total_hours': 0,
+            'total_shifts': 0,
+            'avg_duration': 0,
+            'top_template': None
+        }
+    
+    total_minutes = 0
+    template_usage = {}
+    
+    for shift in shifts:
+        # Only calculate duration for shifts that show time
+        if shift.show_time:
+            # Calculate shift duration in minutes
+            start_time = datetime.combine(shift.date, shift.start_time)
+            end_time = datetime.combine(shift.date, shift.end_time)
+            
+            # Handle shifts that cross midnight
+            if end_time < start_time:
+                end_time += timedelta(days=1)
+            
+            duration = (end_time - start_time).total_seconds() / 60
+            total_minutes += duration
+        
+        # Track template usage
+        if shift.template_id:
+            template = ShiftTemplate.query.get(shift.template_id)
+            if template:
+                template_usage[template.title] = template_usage.get(template.title, 0) + 1
+    
+    total_hours = total_minutes / 60
+    # Only calculate average duration for shifts with time
+    shifts_with_time = [shift for shift in shifts if shift.show_time]
+    avg_duration = total_minutes / len(shifts_with_time) if shifts_with_time else 0
+    top_template = max(template_usage.items(), key=lambda x: x[1])[0] if template_usage else None
+    
+    return {
+        'total_hours': round(total_hours, 1),
+        'total_shifts': len(shifts),
+        'avg_duration': round(avg_duration),
+        'top_template': top_template
+    }
+
+
+def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None):
+    """Calculate team analysis data"""
+    # Get all users involved in shifts
+    query = db.session.query(Shift, User).join(User, Shift.user_id == User.id).filter(
+        Shift.calendar_id.in_(calendar_ids),
+        Shift.date >= start_date,
+        Shift.date <= end_date
+    )
+    
+    if filters:
+        # Apply filters to the Shift part of the query
+        if filters.get('users'):
+            query = query.filter(Shift.user_id.in_(filters['users']))
+        
+        if filters.get('shiftType'):
+            shift_types = filters['shiftType']
+            if isinstance(shift_types, str):
+                shift_types = [shift_types]
+            
+            if shift_types and shift_types != ['']:
+                # Filter by color_class from shifts directly
+                query = query.filter(Shift.color_class.in_(shift_types))
+        
+        if filters.get('duration'):
+            duration_type = filters['duration']
+            if duration_type == 'short':
+                query = query.filter(
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) < 4 * 3600
+                )
+            elif duration_type == 'medium':
+                query = query.filter(
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) >= 4 * 3600,
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) <= 8 * 3600
+                )
+            elif duration_type == 'long':
+                query = query.filter(
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) > 8 * 3600
+                )
+    
+    shifts = query.all()
+    
+    user_stats = {}
+    coverage_data = []
+    
+    # Calculate user statistics
+    for shift, user in shifts:
+        if user.id not in user_stats:
+            user_stats[user.id] = {
+                'user': user,
+                'total_hours': 0,
+                'total_shifts': 0
+            }
+        
+        # Only calculate duration for shifts that show time
+        if shift.show_time:
+            # Calculate shift duration
+            start_time = datetime.combine(shift.date, shift.start_time)
+            end_time = datetime.combine(shift.date, shift.end_time)
+            
+            if end_time < start_time:
+                end_time += timedelta(days=1)
+            
+            duration = (end_time - start_time).total_seconds() / 3600
+            user_stats[user.id]['total_hours'] += duration
+        
+        user_stats[user.id]['total_shifts'] += 1
+    
+    # Create activity ranking
+    activity_ranking = []
+    for user_id, stats in user_stats.items():
+        user = stats['user']
+        activity_ranking.append({
+            'id': user.id,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'avatar': user.avatar,
+            'total_hours': round(stats['total_hours'], 1),
+            'total_shifts': stats['total_shifts']
+        })
+    
+    # Sort by total hours descending
+    activity_ranking.sort(key=lambda x: x['total_hours'], reverse=True)
+    
+    # Calculate coverage data (simplified - by day of month)
+    current_date = start_date
+    while current_date <= end_date:
+        day_shifts = [s for s, u in shifts if s.date == current_date]
+        coverage_percent = min(100, len(day_shifts) * 20)  # Simplified calculation
+        
+        coverage_data.append({
+            'day': current_date.day,
+            'coverage_percent': coverage_percent,
+            'shifts_count': len(day_shifts)
+        })
+        current_date += timedelta(days=1)
+    
+    # Workload balance data
+    workload_balance = {
+        'labels': [f"{u['first_name']} {u['last_name']}" for u in activity_ranking[:10]],
+        'values': [u['total_hours'] for u in activity_ranking[:10]]
+    }
+    
+    return {
+        'activity_ranking': activity_ranking,
+        'coverage_data': coverage_data,
+        'workload_balance': workload_balance
+    }
+
+
+def calculate_time_slots(calendar_ids, start_date, end_date, filters=None):
+    """Calculate time slot distribution"""
+    query = Shift.query.filter(
+        Shift.calendar_id.in_(calendar_ids),
+        Shift.date >= start_date,
+        Shift.date <= end_date
+    )
+    
+    if filters:
+        query = apply_filters(query, filters)
+    
+    shifts = query.all()
+    
+    if not shifts:
+        return {
+            'morning': {'percentage': 0},
+            'day': {'percentage': 0},
+            'evening': {'percentage': 0},
+            'night': {'percentage': 0}
+        }
+    
+    slot_counts = {'morning': 0, 'day': 0, 'evening': 0, 'night': 0}
+    
+    for shift in shifts:
+        # Only count shifts that show time
+        if shift.show_time:
+            hour = shift.start_time.hour
+            
+            if 6 <= hour < 12:
+                slot_counts['morning'] += 1
+            elif 12 <= hour < 18:
+                slot_counts['day'] += 1
+            elif 18 <= hour < 24:
+                slot_counts['evening'] += 1
+            else:  # 0 <= hour < 6
+                slot_counts['night'] += 1
+    
+    # Only count shifts with time for percentage calculation
+    shifts_with_time = [shift for shift in shifts if shift.show_time]
+    total_shifts = len(shifts_with_time)
+    
+    if total_shifts == 0:
+        return {
+            'morning': {'percentage': 0},
+            'day': {'percentage': 0},
+            'evening': {'percentage': 0},
+            'night': {'percentage': 0}
+        }
+    
+    return {
+        slot: {'percentage': (count / total_shifts) * 100}
+        for slot, count in slot_counts.items()
+    }
+
+
+def calculate_work_time_distribution(calendar_ids, start_date, end_date, filters=None):
+    """Calculate work time distribution by user"""
+    query = db.session.query(Shift, User).join(User, Shift.user_id == User.id).filter(
+        Shift.calendar_id.in_(calendar_ids),
+        Shift.date >= start_date,
+        Shift.date <= end_date
+    )
+    
+    if filters:
+        if filters.get('users'):
+            query = query.filter(Shift.user_id.in_(filters['users']))
+        
+        if filters.get('shiftType'):
+            shift_types = filters['shiftType']
+            if isinstance(shift_types, str):
+                shift_types = [shift_types]
+            
+            if shift_types and shift_types != ['']:
+                # Filter by color_class from shifts directly
+                query = query.filter(Shift.color_class.in_(shift_types))
+        
+        if filters.get('duration'):
+            duration_type = filters['duration']
+            if duration_type == 'short':
+                query = query.filter(
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) < 4 * 3600
+                )
+            elif duration_type == 'medium':
+                query = query.filter(
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) >= 4 * 3600,
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) <= 8 * 3600
+                )
+            elif duration_type == 'long':
+                query = query.filter(
+                    (extract('epoch', Shift.end_time) - extract('epoch', Shift.start_time)) > 8 * 3600
+                )
+    
+    shifts = query.all()
+    
+    user_hours = {}
+    
+    for shift, user in shifts:
+        if user.id not in user_hours:
+            user_hours[user.id] = {
+                'name': f"{user.first_name} {user.last_name}",
+                'hours': 0
+            }
+        
+        # Only calculate duration for shifts that show time
+        if shift.show_time:
+            # Calculate shift duration
+            start_time = datetime.combine(shift.date, shift.start_time)
+            end_time = datetime.combine(shift.date, shift.end_time)
+            
+            if end_time < start_time:
+                end_time += timedelta(days=1)
+            
+            duration = (end_time - start_time).total_seconds() / 3600
+            user_hours[user.id]['hours'] += duration
+    
+    # Sort by hours and take top users
+    sorted_users = sorted(user_hours.values(), key=lambda x: x['hours'], reverse=True)[:6]
+    
+    return {
+        'labels': [user['name'] for user in sorted_users],
+        'values': [round(user['hours'], 1) for user in sorted_users]
+    }
+
+
+def calculate_weekday_activity(calendar_ids, start_date, end_date, filters=None):
+    """Calculate activity by weekday"""
+    query = Shift.query.filter(
+        Shift.calendar_id.in_(calendar_ids),
+        Shift.date >= start_date,
+        Shift.date <= end_date
+    )
+    
+    if filters:
+        query = apply_filters(query, filters)
+    
+    shifts = query.all()
+    
+    weekday_hours = [0] * 7  # Monday = 0, Sunday = 6
+    
+    for shift in shifts:
+        weekday = shift.date.weekday()
+        
+        # Calculate shift duration
+        start_time = datetime.combine(shift.date, shift.start_time)
+        end_time = datetime.combine(shift.date, shift.end_time)
+        
+        if end_time < start_time:
+            end_time += timedelta(days=1)
+        
+        duration = (end_time - start_time).total_seconds() / 3600
+        weekday_hours[weekday] += duration
+    
+    return {
+        'hours': [round(hours, 1) for hours in weekday_hours]
+    }
+
+
+def calculate_trends_data(calendar_ids, period, month_str, filters=None):
+    """Calculate trends data for different metrics"""
+    # Get data for the last 12 periods
+    trends_data = {
+        'hours': {'labels': [], 'values': []},
+        'shifts': {'labels': [], 'values': []},
+        'people': {'labels': [], 'values': []}
+    }
+    
+    try:
+        base_date = datetime.strptime(month_str, '%Y-%m').date()
+    except ValueError:
+        base_date = datetime.utcnow().date()
+    
+    for i in range(11, -1, -1):  # Last 12 periods
+        if period == 'month':
+            period_date = base_date.replace(day=1) - timedelta(days=32 * i)
+            period_date = period_date.replace(day=1)
+            start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
+            label = period_date.strftime('%b %Y')
+        elif period == 'year':
+            year = base_date.year - i
+            start_date = datetime(year, 1, 1).date()
+            end_date = datetime(year, 12, 31).date()
+            label = str(year)
+        else:  # week or quarter - simplified to month for now
+            period_date = base_date.replace(day=1) - timedelta(days=32 * i)
+            period_date = period_date.replace(day=1)
+            start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
+            label = period_date.strftime('%b %Y')
+        
+        # Get shifts for this period
+        query = Shift.query.filter(
+            Shift.calendar_id.in_(calendar_ids),
+            Shift.date >= start_date,
+            Shift.date <= end_date
+        )
+        
+        if filters:
+            query = apply_filters(query, filters)
+        
+        shifts = query.all()
+        
+        # Calculate metrics
+        total_hours = 0
+        unique_users = set()
+        
+        for shift in shifts:
+            # Only calculate duration for shifts that show time
+            if shift.show_time:
+                # Calculate duration
+                start_time = datetime.combine(shift.date, shift.start_time)
+                end_time = datetime.combine(shift.date, shift.end_time)
+                
+                if end_time < start_time:
+                    end_time += timedelta(days=1)
+                
+                duration = (end_time - start_time).total_seconds() / 3600
+                total_hours += duration
+            
+            unique_users.add(shift.user_id)
+        
+        trends_data['hours']['labels'].append(label)
+        trends_data['hours']['values'].append(round(total_hours, 1))
+        
+        trends_data['shifts']['labels'].append(label)
+        trends_data['shifts']['values'].append(len(shifts))
+        
+        trends_data['people']['labels'].append(label)
+        trends_data['people']['values'].append(len(unique_users))
+    
+    return trends_data
