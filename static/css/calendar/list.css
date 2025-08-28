@@ -1,49 +1,50 @@
 /* список календарей */
 .calendars-container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 2rem;
+    max-width: 1000px;
+    margin: 1.5rem auto;
+    padding: 1.5rem;
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
 .calendars-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.2rem;
     border-bottom: 1px solid #f1f5f9;
 }
 
 .calendars-header h2 {
-    font-size: 2rem;
+    font-size: 1.6rem;
     color: #1e293b;
     font-weight: 700;
 }
 
 .calendar-tabs {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
 }
 
 .tab-header {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     border-bottom: 1px solid #e2e8f0;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
 }
 
 .tab-btn {
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1.2rem;
     background: none;
     border: none;
-    border-radius: 8px 8px 0 0;
+    border-radius: 6px 6px 0 0;
     font-weight: 500;
     color: #64748b;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
+    font-size: 0.9rem;
 }
 
 .tab-btn.active {
@@ -71,16 +72,16 @@
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.2rem;
 }
 
 .calendar-card {
     background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    padding: 1.2rem;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
     border: 1px solid #f1f5f9;
     transition: all 0.3s ease;
     display: flex;
@@ -90,8 +91,8 @@
 
 .calendar-header {
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
+    top: 0.6rem;
+    right: 0.6rem;
     z-index: 10;
 }
 
@@ -100,10 +101,10 @@
     border: none;
     color: #94a3b8;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
+    padding: 0.4rem;
+    border-radius: 5px;
     transition: all 0.2s ease;
-    font-size: 1rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -147,25 +148,25 @@
 }
 
 .calendar-info h3 {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     color: #1e293b;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     font-weight: 600;
 }
 
 .calendar-info p {
     color: #64748b;
-    margin-bottom: 1rem;
-    font-size: 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
 }
 
 .calendar-meta {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    font-size: 0.85rem;
+    gap: 0.8rem;
+    font-size: 0.75rem;
     color: #94a3b8;
-    margin-top: 1rem;
+    margin-top: 0.8rem;
 }
 
 .calendar-meta i {
@@ -173,32 +174,33 @@
 }
 
 .calendar-actions {
-    margin-top: 1.5rem;
+    margin-top: 1.2rem;
     text-align: right;
 }
 
 .no-calendars {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 2.4rem 0.8rem;
     grid-column: 1 / -1;
 }
 
 .no-calendars i {
-    font-size: 3rem;
+    font-size: 2.4rem;
     color: #cbd5e1;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
 }
 
 .no-calendars h3 {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #1e293b;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .no-calendars p {
     color: #64748b;
-    max-width: 400px;
+    max-width: 320px;
     margin: 0 auto;
+    font-size: 0.85rem;
 }
 
 /* Модальное окно для подтверждения удаления */
