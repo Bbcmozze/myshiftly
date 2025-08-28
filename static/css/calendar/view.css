@@ -359,7 +359,7 @@ body.fullscreen-active {
     background: white;
     border-radius: 12px;
     width: 100%;
-    max-width: 440px;
+    max-width: 440px !important;
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
@@ -404,7 +404,7 @@ body.fullscreen-active {
 }
 
 .modal-body p {
-    font-size: 0.75rem;
+    font-size: 0.75rem !important;
 }
 
 .form-row {
@@ -433,14 +433,14 @@ body.fullscreen-active {
     max-width: 100%;
     margin-bottom: 0.6rem;
     width: 100%;
-    max-height: calc(11 * 40px); /* 10 строк по 40px */
+    max-height: calc(9 * 50px); /* 10 строк по 50px */
     overflow-y: auto;
     position: relative;
     scroll-behavior: smooth;
 }
 
 .calendar-main.fullscreen .calendar-table-container {
-    max-height: calc(14 * 40px); /* 12 строк по 40px */
+    max-height: calc(14 * 50px); /* 12 строк по 50px */
 }
 
 .calendar-table {
@@ -462,12 +462,12 @@ body.fullscreen-active {
 }
 
 .calendar-table td {
-    padding: 2px 4px;
+    padding: 4px 6px;
     border: 1px solid #e2e8f0;
     vertical-align: top;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
+    height: 50px;
+    min-height: 50px;
+    max-height: 50px;
     position: relative;  /* Нормальное позиционирование, без липкости */
     overflow: hidden;    /* Скрываем вылезающие элементы */
 }
@@ -492,8 +492,8 @@ body.fullscreen-active {
     gap: 5px;
     min-height: 20px;
     max-height: 20px;
-    min-width: 160px;           /* ширина как у .user-cell */
-    max-width: 160px;           /* фиксируем, чтобы текст не расползался */
+    min-width: 180px;           /* ширина как у .user-cell */
+    max-width: 180px;           /* фиксируем, чтобы текст не расползался */
     padding: 3px 6px;
     background: #f8fafc;        /* сплошной фон под текстом */
 }
@@ -515,7 +515,7 @@ body.fullscreen-active {
 
 .calendar-table thead {
     position: sticky;
-    top: 0;
+    top: -1px;
     z-index: 20;
     background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -533,42 +533,35 @@ body.fullscreen-active {
     z-index: 25;  /* Выше чем остальной заголовок */
 }
 
-.user-cell {
-font-size: 0.55rem;
-min-width: 160px;
-max-width: 160px;
-min-height: 40px;
-max-height: 40px;
-gap: 0.3rem;
-padding: 0.3rem;
-background: #f8fafc;
-left: 0;                    /* исключаем 1px щель слева */
-z-index: 15;
-position: relative;
-display: flex;
-align-items: center;
-cursor: grab;
-user-select: none;
-    max-width: 160px;
-    min-height: 40px;
-    max-height: 40px;
-    gap: 0.3rem;
-    padding: 0.3rem;
+td.user-cell {
+    font-size: 0.6rem;
+    min-width: 180px;
+    max-width: 180px;
+    min-height: 50px;
+    max-height: 50px;
+    padding: 0;
     background: #f8fafc;
-    left: 0;                    /* исключаем 1px щель слева */
+    position: sticky;
+    left: 0;
     z-index: 15;
-    position: relative;
-    display: flex;
-    align-items: center;
     cursor: grab;
     user-select: none;
+    box-sizing: border-box;
 }
 
-.user-cell:active {
+.user-cell-content {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem;
+    height: 100%;
+}
+
+td.user-cell:active {
     cursor: grabbing;
 }
 
-.user-cell:hover .btn-remove-member {
+td.user-cell:hover .btn-remove-member {
     opacity: 1;
 }
 
@@ -626,33 +619,36 @@ user-select: none;
     flex-shrink: 0;         /* не сжимать при нехватке места */
 }
 
-.user-cell img {
-    width: 26px;
-    height: 26px;
+td.user-cell img {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
 }
 
 .user-row {
-    min-height: 40px;
-    max-height: 40px;
+    min-height: 50px;
+    max-height: 50px;
 }
 
-/* Делаем первую колонку (ячейку с пользователем) липкой слева */
-.calendar-table td:first-child {
+/* Убираем дублирующие стили для первой колонки, так как td.user-cell уже имеет нужное позиционирование */
+.calendar-table td:first-child:not(.user-cell) {
     position: sticky;
     left: 0;
-    z-index: 15;               /* ниже заголовка */
-    background: #f8fafc;       /* как у .user-cell */
-    min-width: 160px;
-    width: 160px;
+    z-index: 15;
+    background: #f8fafc;
+    min-width: 180px;
+    max-width: 180px;
+    width: 180px;
+    box-sizing: border-box;
+    padding: 0;
 }
 
 .user-row.owner {
     cursor: default;
 }
 
-.user-row.owner .user-cell {
+.user-row.owner td.user-cell {
     cursor: default;
     font-weight: 500;
 }
@@ -668,10 +664,10 @@ user-select: none;
 
 .day-cell {
     position: relative;
-    min-height: 40px;
-    max-height: 40px;
-    min-width: 70px;
-    max-width: 70px;
+    min-height: 50px;
+    max-height: 50px;
+    min-width: 80px;
+    max-width: 80px;
     overflow: hidden;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -707,20 +703,20 @@ user-select: none;
 }
 
 .shift-badge {
-    min-height: 28px;
-    min-width: 56px;
-    max-height: 28px;
-    max-width: 56px;
+    min-height: 34px;
+    min-width: 66px;
+    max-height: 34px;
+    max-width: 66px;
     text-align: center;
     background: #e0f2fe;
-    border-radius: 3px;
+    border-radius: 4px;
     position: relative;
     z-index: 1;
     align-items: center; /* Центрирование по горизонтали */
     justify-content: center; /* Центрирование по вертикали */
-    padding: 0.3rem 0.2rem;
-    font-size: 0.45rem;
-    line-height: 1.1;
+    padding: 0.4rem 0.3rem;
+    font-size: 0.5rem;
+    line-height: 1.2;
     white-space: normal;
     word-break: break-word;
     margin: 1px;
@@ -979,7 +975,7 @@ user-select: none;
     display: block;
     margin-top: 0.2rem;
     color: #64748b;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
 }
 
 .template-time {
@@ -1302,7 +1298,6 @@ body.fullscreen-active #fullscreenOverlay {
 #selectAllFriends:hover {
     background-color: rgba(37, 99, 235, 0.1);
     border-color: #2563eb;
-    background-color: #2563eb;
 }
 
 #selectAllFriends i {
@@ -1680,6 +1675,7 @@ body.fullscreen-active #fullscreenOverlay {
 }
 
 #confirmClearAllModal .modal-header h4 {
+    font-size: 1rem !important;
     margin: 0;
     color: #dc2626;
     font-size: 1.25rem;
@@ -1698,7 +1694,6 @@ body.fullscreen-active #fullscreenOverlay {
 #confirmClearAllModal .modal-body p {
     margin: 0 0 8px 0;
     color: #333;
-    font-size: 1.05rem;
     line-height: 1.5;
 }
 
@@ -1810,7 +1805,7 @@ body.fullscreen-active #fullscreenOverlay {
 }
 
 .color-preview-title {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
     color: #64748b;
     margin-bottom: 0.6rem;
 }
