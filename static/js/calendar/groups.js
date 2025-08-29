@@ -236,11 +236,23 @@ async function loadGroupData(groupId) {
 async function loadCalendarMembers(containerId, selectedMemberIds = []) {
     try {
         // Получаем список всех участников календаря
-        const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`);
+        const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
         const members = await membersResponse.json();
         
         // Получаем список всех групп календаря
-        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
         const groupsData = await groupsResponse.json();
         
         if (members && members.length > 0) {
@@ -1330,12 +1342,24 @@ async function handleUserDrop(evt) {
 async function updateCalendarAfterGroupChange() {
     try {
         // Получаем обновленные данные о группах
-        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`);
+        const groupsResponse = await fetch(`/api/get_calendar_groups/${currentCalendarId}`, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
         const groupsData = await groupsResponse.json();
         
         if (groupsData.success) {
             // Получаем список всех участников календаря
-            const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`);
+            const membersResponse = await fetch(`/calendar/${currentCalendarId}/members`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             const members = await membersResponse.json();
             console.log('=== DIAG: updateCalendarAfterGroupChange ===');
             console.log('Groups (raw from API):', groupsData.groups.map(g => ({ id: g.id, name: g.name, pos: g.position, members: g.members.map(m=>m.id) })));

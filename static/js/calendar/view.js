@@ -333,6 +333,8 @@ function getUserDisplayName(user, includeYouLabel = false) {
 
             // Запрашиваем текущих участников календаря
             const membersResponse = await fetch(`/calendar/${calendarId}/members`, {
+                method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
@@ -346,6 +348,8 @@ function getUserDisplayName(user, includeYouLabel = false) {
 
             // Запрашиваем список друзей текущего пользователя
             const friendsResponse = await fetch('/api/get_friends', {
+                method: 'GET',
+                credentials: 'same-origin',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }

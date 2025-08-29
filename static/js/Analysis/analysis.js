@@ -436,18 +436,75 @@ class AnalysisPage {
     }
 
     updateTimeSlots(timeSlots) {
-        const slots = ['morning', 'day', 'evening', 'night'];
+        const templatesContainer = document.getElementById('shiftTemplates');
         
-        slots.forEach(slot => {
-            const data = timeSlots[slot] || { percentage: 0 };
-            const fillElement = document.querySelector(`[data-slot="${slot}"]`);
-            const percentElement = document.getElementById(`${slot}Percent`);
+        if (!templatesContainer) return;
+        
+        templatesContainer.innerHTML = '';
+        
+        if (!timeSlots.templates || timeSlots.templates.length === 0) {
+            templatesContainer.innerHTML = '<div class="no-templates">Нет созданных смен с указанным временем</div>';
+            return;
+        }
+        
+        timeSlots.templates.forEach(template => {
+            const templateElement = document.createElement('div');
+            templateElement.className = 'template-item';
             
-            if (fillElement && percentElement) {
-                fillElement.style.width = `${data.percentage}%`;
-                percentElement.textContent = `${Math.round(data.percentage)}%`;
-            }
+            templateElement.innerHTML = `
+                <div class="template-header">
+                    <div class="template-info">
+                        <span class="template-title">${template.title}</span>
+                        <span class="template-badge shift-badge ${template.color_class}">${template.time_range}</span>
+                    </div>
+                    <div class="template-stats">
+                        <span class="template-count">${template.count} ${template.count === 1 ? 'смена' : 'смен'}</span>
+                        <span class="template-percentage">${Math.round(template.percentage)}%</span>
+                    </div>
+                </div>
+                <div class="template-bar">
+                    <div class="template-fill" style="width: ${template.percentage}%"></div>
+                </div>
+            `;
+            
+            // Add click handler to show template details
+            templateElement.addEventListener('click', () => {
+                this.showTemplateDetails(template);
+            });
+            
+            templatesContainer.appendChild(templateElement);
         });
+    }
+    
+    showTemplateDetails(template) {
+        const modal = document.createElement('div');
+        modal.className = 'shifts-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Смены "${template.title}" (${template.time_range})</h3>
+                    <button class="close-btn" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="template-summary">
+                        <p><strong>Всего использований:</strong> ${template.count}</p>
+                        <p><strong>Процент от всех смен:</strong> ${Math.round(template.percentage)}%</p>
+                    </div>
+                    <h4>Список смен:</h4>
+                    ${template.shifts.map(shift => `
+                        <div class="shift-item-full">
+                            <div class="shift-main">
+                                <span class="shift-title">${shift.title}</span>
+                            </div>
+                            <div class="shift-meta">
+                                <span class="shift-date">${shift.date}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     }
 
     updateCharts(data) {
@@ -701,17 +758,11 @@ class AnalysisPage {
         document.getElementById('avgShiftDuration').textContent = '0ч 0м';
         document.getElementById('topTemplate').textContent = '-';
 
-        // Clear time slots
-        const slots = ['morning', 'day', 'evening', 'night'];
-        slots.forEach(slot => {
-            const fillElement = document.querySelector(`[data-slot="${slot}"]`);
-            const percentElement = document.getElementById(`${slot}Percent`);
-            
-            if (fillElement && percentElement) {
-                fillElement.style.width = '0%';
-                percentElement.textContent = '0%';
-            }
-        });
+        // Clear shift templates
+        const templatesContainer = document.getElementById('shiftTemplates');
+        if (templatesContainer) {
+            templatesContainer.innerHTML = '';
+        }
 
         // Clear charts
         Object.values(this.charts).forEach(chart => {
@@ -1032,10 +1083,26 @@ class AnalysisPage {
 
         // Keep the "All types" option and clear the rest
         const allOption = shiftTypesOptions.querySelector('.all-option');
-        shiftTypesOptions.innerHTML = '';
-        if (allOption) {
-            shiftTypesOptions.appendChild(allOption);
-        }
+        const allOptionHTML = allOption ? allOption.outerHTML : `
+            <div class="shift-type-option all-option" data-value="">
+                <div class="shift-type-checkbox">
+                    <input type="checkbox" id="all-shift-types" checked>
+                    <label for="all-shift-types"></label>
+                </div>
+                <div class="shift-type-info">
+                    <div class="shift-type-color">
+                        <i class="bi bi-palette-fill"></i>
+                    </div>
+                    <div class="shift-type-details">
+                        <div class="shift-type-name">Все типы</div>
+                        <div class="shift-type-description">Показать все</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Clear all options and add the "All types" option back
+        shiftTypesOptions.innerHTML = allOptionHTML;
 
         // Add shift type options
         shiftTypes.forEach(shiftType => {
@@ -1050,7 +1117,7 @@ class AnalysisPage {
                 </div>
                 <div class="shift-type-info">
                     <div class="shift-type-color" style="background-color: ${shiftType.color};">
-                        ${shiftType.color_name.charAt(0)}
+                        ${shiftType.color_name ? shiftType.color_name.charAt(0).toUpperCase() : shiftType.color_class.charAt(0).toUpperCase()}
                     </div>
                     <div class="shift-type-details">
                         <div class="shift-type-name">${shiftType.title}</div>
@@ -1061,8 +1128,10 @@ class AnalysisPage {
             shiftTypesOptions.appendChild(option);
         });
 
-        // Initialize shift types dropdown functionality
-        this.initializeShiftTypesDropdown();
+        // Re-initialize shift types dropdown functionality after updating content
+        setTimeout(() => {
+            this.initializeShiftTypesDropdown();
+        }, 0);
     }
 
     updateHiddenShiftTypeSelect(shiftTypes) {
@@ -1389,30 +1458,53 @@ class AnalysisPage {
     }
 
     showError(message) {
-        // Show error toast or message
+        // Use the standard toast system from base.js
         console.error(message);
         
-        // You can implement a toast notification system here
-        const toast = document.createElement('div');
-        toast.className = 'error-toast';
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #ef4444;
-            color: white;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            z-index: 1001;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.remove();
-        }, 5000);
+        if (window.toastManager) {
+            window.toastManager.show(message, 'danger', 3000);
+        } else {
+            // Fallback if toastManager is not available
+            const container = document.querySelector('.toast-container') || document.getElementById('toastContainer');
+            if (container) {
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-danger';
+                toast.innerHTML = `
+                    <div>${message}</div>
+                    <button type="button" class="toast-close">&times;</button>
+                `;
+                
+                container.appendChild(toast);
+                
+                // Add show class after a brief delay
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 10);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    toast.classList.add('hide');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }, 3000);
+                
+                // Close button functionality
+                const closeBtn = toast.querySelector('.toast-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        toast.classList.add('hide');
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 300);
+                    });
+                }
+            }
+        }
     }
 }
 

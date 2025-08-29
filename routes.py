@@ -1000,55 +1000,566 @@ def register_routes(app):
         if not calendar_ids:
             return jsonify([])
         
+        # Проверяем доступ к календарям
+        accessible_calendars = []
+        for calendar_id in calendar_ids:
+            calendar = Calendar.query.get(calendar_id)
+            if calendar and (calendar.owner_id == current_user.id or current_user in calendar.members):
+                accessible_calendars.append(calendar_id)
+        
+        if not accessible_calendars:
+            return jsonify([])
+        
         try:
-            # Получаем уникальные типы смен из шаблонов и смен
-            shift_types = set()
+            # Получаем уникальные типы смен из ShiftTemplate
+            template_types = (
+                db.session.query(ShiftTemplate.color_class, ShiftTemplate.title)
+                .filter(ShiftTemplate.calendar_id.in_(accessible_calendars))
+                .distinct()
+                .all()
+            )
             
-            for calendar_id in calendar_ids:
-                calendar = Calendar.query.get(calendar_id)
-                if calendar and (calendar.owner_id == current_user.id or current_user in calendar.members):
-                    # Получаем типы из шаблонов смен
-                    templates = ShiftTemplate.query.filter_by(calendar_id=calendar_id).all()
-                    for template in templates:
-                        shift_types.add((template.color_class, template.title))
-                    
-                    # Получаем типы из существующих смен
-                    shifts = Shift.query.filter_by(calendar_id=calendar_id).all()
-                    for shift in shifts:
-                        shift_types.add((shift.color_class, shift.title))
+            # Получаем уникальные типы смен из Shift
+            shift_types = (
+                db.session.query(Shift.color_class, Shift.title)
+                .filter(Shift.calendar_id.in_(accessible_calendars))
+                .distinct()
+                .all()
+            )
             
-            # Преобразуем в список словарей с информацией о цвете
-            color_map = {
-                'badge-color-1': {'name': 'Роза', 'color': '#ffb3b3'},
-                'badge-color-2': {'name': 'Персик', 'color': '#ffd0a8'},
-                'badge-color-3': {'name': 'Лимон', 'color': '#fff2b3'},
-                'badge-color-4': {'name': 'Лайм', 'color': '#f4ffb3'},
-                'badge-color-5': {'name': 'Яблоко', 'color': '#e4ffb3'},
-                'badge-color-6': {'name': 'Мята', 'color': '#b3ffe1'},
-                'badge-color-7': {'name': 'Лёд', 'color': '#b3f4ff'},
-                'badge-color-8': {'name': 'Небо', 'color': '#b3d6ff'},
-                'badge-color-9': {'name': 'Сирень', 'color': '#d1b3ff'},
-                'badge-color-10': {'name': 'Орхидея', 'color': '#f0b3ff'}
-            }
+            # Объединяем и убираем дубликаты
+            all_types = {}
+            for color_class, title in template_types + shift_types:
+                if color_class and color_class not in all_types:
+                    all_types[color_class] = title
             
+            # Преобразуем в список с дополнительной информацией
             result = []
-            for color_class, title in shift_types:
-                color_info = color_map.get(color_class, {'name': 'Неизвестный', 'color': '#cccccc'})
+            for color_class, title in all_types.items():
+                # Получаем hex цвет из CSS класса
+                color_map = {
+                    'red': '#dc3545',
+                    'blue': '#007bff', 
+                    'green': '#28a745',
+                    'yellow': '#ffc107',
+                    'purple': '#6f42c1',
+                    'orange': '#fd7e14',
+                    'pink': '#e83e8c',
+                    'cyan': '#17a2b8',
+                    'gray': '#6c757d',
+                    'dark': '#343a40'
+                }
+                
                 result.append({
                     'color_class': color_class,
-                    'title': title,
-                    'color_name': color_info['name'],
-                    'color': color_info['color']
+                    'title': title or color_class.title(),
+                    'color': color_map.get(color_class, '#6c757d')
                 })
             
-            # Сортируем по названию цвета
-            result.sort(key=lambda x: x['color_name'])
-            
             return jsonify(result)
-        
+            
         except Exception as e:
             app.logger.error(f"Error getting calendar shift types: {str(e)}")
             return jsonify([])
+
+    @app.route('/calendar/<int:calendar_id>/members', methods=['GET'])
+    @login_required
+    def get_calendar_members_route(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        # Проверка доступа
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            abort(403)
+
+        # Возвращаем участников с их позицией из calendar_members, отсортированных по позиции (возрастание)
+        # Владелец не включается (для групп он не нужен)
+        rows = (
+            db.session.query(User.id, User.username, User.first_name, User.last_name, User.avatar, calendar_members.c.position)
+            .join(calendar_members, (calendar_members.c.user_id == User.id) & (calendar_members.c.calendar_id == calendar.id))
+            .order_by(calendar_members.c.position.asc(), User.id.asc())
+            .all()
+        )
+
+        members = [
+            {
+                'id': r.id,
+                'username': r.username,
+                'first_name': r.first_name,
+                'last_name': r.last_name,
+                'avatar': r.avatar,
+                'position': int(r.position) if r.position is not None else None,
+            }
+            for r in rows
+        ]
+
+        return jsonify(members)
+
+    @app.route('/api/get_calendar_groups/<int:calendar_id>', methods=['GET'])
+    @login_required
+    def get_calendar_groups_route(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        # Возвращаем группы в порядке позиции (новые выше), при равной позиции — по id (новые выше)
+        groups = (
+            Group.query
+            .filter_by(calendar_id=calendar_id)
+            .order_by(Group.position.desc(), Group.id.desc())
+            .all()
+        )
+        groups_data = []
+        
+        for group in groups:
+            groups_data.append({
+                'id': group.id,
+                'name': group.name,
+                'color': group.color,
+                'owner_id': group.owner_id,
+                'position': group.position,
+                'members': [
+                    {
+                        'id': m.id,
+                        'username': m.username,
+                        'first_name': m.first_name,
+                        'last_name': m.last_name,
+                        'avatar': m.avatar
+                    } for m in group.members
+                ]
+            })
+
+        return jsonify({'success': True, 'groups': groups_data})
+
+    @app.route('/calendar/<int:calendar_id>/shifts', methods=['GET'])
+    @login_required
+    def get_calendar_shifts(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        # Проверка доступа
+        if calendar.owner_id != current_user.id and current_user not in calendar.members:
+            abort(403)
+
+        # Получаем месяц из параметров запроса
+        month = request.args.get('month')
+        if month:
+            try:
+                current_month = datetime.strptime(month, '%Y-%m-%d').date().replace(day=1)
+            except ValueError:
+                current_month = datetime.utcnow().date().replace(day=1)
+        else:
+            current_month = datetime.utcnow().date().replace(day=1)
+
+        # Получаем все дни месяца
+        next_month = current_month.replace(day=28) + timedelta(days=4)
+        last_day = next_month - timedelta(days=next_month.day)
+
+        shifts = Shift.query.filter(
+            Shift.calendar_id == calendar_id,
+            Shift.date >= current_month,
+            Shift.date <= last_day
+        ).all()
+
+        # Формируем список смен
+        shifts_data = []
+        for shift in shifts:
+            shift_data = {
+                'id': shift.id,
+                'user_id': shift.user_id,
+                'date': shift.date.strftime('%Y-%m-%d'),
+                'title': shift.title,
+                'color_class': shift.color_class,
+                'show_time': shift.show_time
+            }
+            
+            if shift.show_time and shift.start_time and shift.end_time:
+                shift_data['start_time'] = shift.start_time.strftime('%H:%M')
+                shift_data['end_time'] = shift.end_time.strftime('%H:%M')
+            
+            shifts_data.append(shift_data)
+
+        return jsonify(shifts_data)
+
+    @app.route('/api/create_group', methods=['POST'])
+    @login_required
+    def create_group():
+        data = request.get_json()
+        calendar_id = data.get('calendar_id')
+        name = data.get('name')
+        color = data.get('color', 'badge-color-1')
+        user_ids = data.get('user_ids', [])
+
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+
+        try:
+            # Получаем максимальную позицию для групп в этом календаре
+            max_position = db.session.query(db.func.max(Group.position)).filter(
+                Group.calendar_id == calendar_id
+            ).scalar() or 0
+            
+            # Новая группа получает позицию на 1 больше максимальной
+            new_position = max_position + 1
+            
+            group = Group(
+                name=name,
+                color=color,
+                calendar_id=calendar_id,
+                owner_id=current_user.id,
+                position=new_position
+            )
+            db.session.add(group)
+            db.session.flush()  # Получаем ID группы
+
+            # Добавляем участников в группу (исключаем создателя календаря)
+            for user_id in user_ids:
+                user = User.query.get(user_id)
+                if user and user in calendar.members and user.id != calendar.owner_id:
+                    group.members.append(user)
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'group': {
+                    'id': group.id,
+                    'name': group.name,
+                    'color': group.color,
+                    'position': group.position,
+                    'members': [
+                        {
+                            'id': m.id,
+                            'username': m.username,
+                            'first_name': m.first_name,
+                            'last_name': m.last_name,
+                            'avatar': m.avatar
+                        } for m in group.members
+                    ]
+                }
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/calendar/<int:calendar_id>/update-positions', methods=['POST'])
+    @login_required
+    def update_calendar_positions(calendar_id):
+        if not request.is_json:
+            return jsonify({'success': False, 'error': 'Invalid content type'}), 400
+
+        calendar = Calendar.query.get_or_404(calendar_id)
+
+        if calendar.owner_id != current_user.id:
+                return jsonify({
+                    'success': False,
+                    'error': 'Forbidden',
+                    'message': 'Только владелец календаря может изменять порядок участников'
+                }), 403
+
+        try:
+            data = request.get_json() or {}
+            # Поддерживаем оба формата: { "positions": {"<uid>": pos} } и {"<uid>": pos}
+            positions = data.get('positions') if isinstance(data, dict) and 'positions' in data else data
+
+            if not isinstance(positions, dict) or not positions:
+                return jsonify({'success': False, 'error': 'Empty positions data'}), 400
+
+            # Приводим ключи и значения к int и валидируем
+            try:
+                normalized = {int(uid): int(pos) for uid, pos in positions.items()}
+            except Exception:
+                return jsonify({'success': False, 'error': 'Positions must be a dict of {user_id:int -> position:int}'}), 400
+
+            valid_user_ids = {m.id for m in calendar.members}
+            for uid in normalized.keys():
+                if uid not in valid_user_ids:
+                    return jsonify({'success': False, 'error': f'Invalid user ID: {uid}'}), 400
+
+            # Обновляем позиции по одной записи
+            for uid, pos in normalized.items():
+                db.session.execute(
+                    calendar_members.update()
+                    .where(calendar_members.c.calendar_id == calendar.id)
+                    .where(calendar_members.c.user_id == uid)
+                    .values(position=pos)
+                )
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': 'Positions updated successfully',
+                'updated_count': len(normalized)
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/update_group_positions/<int:calendar_id>', methods=['POST'])
+    @login_required
+    def update_group_positions(calendar_id):
+        """Обновляет порядок групп в календаре.
+        Ожидает JSON вида { "order": [group_id_top, group_id_next, ...] }
+        Позиции присваиваются так, чтобы первый элемент имел наибольшую позицию (для order_by desc).
+        """
+        calendar = Calendar.query.get_or_404(calendar_id)
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Изменять порядок групп может только владелец календаря'}), 403
+
+        data = request.get_json(silent=True) or {}
+        order = data.get('order')
+        if not isinstance(order, list) or not all(isinstance(i, int) for i in order):
+            return jsonify({'success': False, 'error': 'Некорректный формат данных'}), 400
+
+        # Получаем все группы календаря
+        groups = Group.query.filter_by(calendar_id=calendar_id).all()
+        group_map = {g.id: g for g in groups}
+
+        # Фильтруем входной порядок только по существующим группам этого календаря
+        filtered_order = [gid for gid in order if gid in group_map]
+        if not filtered_order:
+            return jsonify({'success': False, 'error': 'Список групп пуст или неверен'}), 400
+
+        try:
+            # Максимальная позиция присваивается верхнему элементу
+            max_pos = len(filtered_order)
+            for idx, gid in enumerate(filtered_order):
+                group_map[gid].position = max_pos - idx
+
+            db.session.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/update_group/<int:group_id>', methods=['PUT'])
+    @login_required
+    def update_group(group_id):
+        group = Group.query.get_or_404(group_id)
+        
+        # Проверяем права доступа
+        if group.owner_id != current_user.id and group.calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+        
+        data = request.get_json()
+        name = data.get('name')
+        color = data.get('color')
+        user_ids = data.get('user_ids', [])
+        
+        if not name:
+            return jsonify({'success': False, 'error': 'Название группы обязательно'}), 400
+        
+        try:
+            # Обновляем название и цвет группы
+            group.name = name
+            if color:
+                group.color = color
+            
+            # Получаем текущих участников группы
+            current_members = set(m.id for m in group.members)
+            new_members = set(user_ids)
+            
+            # Удаляем участников, которых нет в новом списке
+            to_remove = current_members - new_members
+            for user_id in to_remove:
+                user = User.query.get(user_id)
+                if user and user in group.members:
+                    group.members.remove(user)
+            
+            # Добавляем новых участников
+            to_add = new_members - current_members
+            for user_id in to_add:
+                user = User.query.get(user_id)
+                if user and user in group.calendar.members and user.id != group.calendar.owner_id:
+                    group.members.append(user)
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'group': {
+                    'id': group.id,
+                    'name': group.name,
+                    'color': group.color,
+                    'position': group.position,
+                    'members': [
+                        {
+                            'id': m.id,
+                            'username': m.username,
+                            'first_name': m.first_name,
+                            'last_name': m.last_name,
+                            'avatar': m.avatar
+                        } for m in group.members
+                    ]
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/delete_group/<int:group_id>', methods=['DELETE'])
+    @login_required
+    def delete_group(group_id):
+        group = Group.query.get_or_404(group_id)
+        
+        # Проверяем права доступа
+        if group.owner_id != current_user.id and group.calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+        
+        try:
+            # Удаляем группу (участники остаются в календаре)
+            db.session.delete(group)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Группа "{group.name}" удалена'
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/remove_member_from_group/<int:group_id>/<int:user_id>', methods=['POST'])
+    @login_required
+    def remove_member_from_group(group_id, user_id):
+        group = Group.query.get_or_404(group_id)
+        user = User.query.get_or_404(user_id)
+        
+        # Проверяем, что пользователь является владельцем группы ИЛИ владельцем календаря
+        if group.owner_id != current_user.id and group.calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещен'}), 403
+        
+        # Проверяем, что пользователь состоит в группе
+        if user not in group.members:
+            return jsonify({'success': False, 'error': 'Пользователь не состоит в этой группе'}), 400
+        
+        try:
+            # Удаляем пользователя из группы
+            group.members.remove(user)
+            
+            # Удаляем пользователя из календаря
+            if user in group.calendar.members:
+                group.calendar.members.remove(user)
+                
+                # Удаляем все смены пользователя в этом календаре
+                Shift.query.filter_by(calendar_id=group.calendar.id, user_id=user.id).delete()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'{user.username} удален из группы и календаря',
+                'removed_user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.avatar
+                }
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/calendar/<int:calendar_id>/clear-all-shifts', methods=['POST'])
+    @login_required
+    def clear_all_shifts(calendar_id):
+        calendar = Calendar.query.get_or_404(calendar_id)
+        
+        # Проверка прав доступа - только владелец может очищать смены
+        if calendar.owner_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Доступ запрещён'}), 403
+        
+        try:
+            # Получаем месяц из запроса
+            data = request.get_json() or {}
+            month = data.get('month')
+            
+            if month:
+                try:
+                    # Парсим месяц и определяем диапазон дат
+                    current_month = datetime.strptime(month, '%Y-%m-%d').date().replace(day=1)
+                    next_month = current_month.replace(day=28) + timedelta(days=4)
+                    last_day = next_month - timedelta(days=next_month.day)
+                    
+                    # Удаляем смены только за указанный месяц
+                    deleted_count = Shift.query.filter(
+                        Shift.calendar_id == calendar.id,
+                        Shift.date >= current_month,
+                        Shift.date <= last_day
+                    ).delete()
+                except ValueError:
+                    # Если месяц некорректный, удаляем все смены
+                    deleted_count = Shift.query.filter_by(calendar_id=calendar.id).delete()
+            else:
+                # Если месяц не указан, удаляем все смены календаря
+                deleted_count = Shift.query.filter_by(calendar_id=calendar.id).delete()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Удалено смен: {deleted_count}',
+                'deleted_count': deleted_count
+            })
+            
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error clearing shifts: {str(e)}")
+            return jsonify({'success': False, 'error': 'Ошибка при удалении смен'}), 500
+
+    @app.route('/upload_avatar', methods=['POST'])
+    @login_required
+    def upload_avatar():
+        try:
+            if 'avatar' not in request.files:
+                return jsonify({'success': False, 'message': 'Файл не выбран'}), 400
+
+            file = request.files['avatar']
+            if file.filename == '':
+                return jsonify({'success': False, 'message': 'Файл не выбран'}), 400
+
+            if file and allowed_file(file.filename):
+                # Создаем безопасное имя файла с уникальным идентификатором
+                filename = secure_filename(file.filename)
+                file_extension = filename.rsplit('.', 1)[1].lower()
+                unique_filename = f"avatar_{current_user.id}_{int(datetime.now().timestamp())}.{file_extension}"
+                
+                # Путь для сохранения файла
+                upload_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', unique_filename)
+                
+                # Создаем директорию если её нет
+                os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+                
+                # Удаляем старый аватар если он не дефолтный
+                if current_user.avatar and current_user.avatar != 'default_avatar.svg':
+                    old_avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', current_user.avatar)
+                    if os.path.exists(old_avatar_path):
+                        try:
+                            os.remove(old_avatar_path)
+                        except OSError:
+                            pass  # Игнорируем ошибки удаления старого файла
+                
+                # Сохраняем новый файл
+                file.save(upload_path)
+                
+                # Обновляем аватар пользователя в базе данных
+                current_user.avatar = unique_filename
+                db.session.commit()
+                
+                # Возвращаем успешный ответ с URL нового аватара
+                avatar_url = url_for('static', filename=f'images/{unique_filename}')
+                return jsonify({
+                    'success': True,
+                    'message': 'Аватар успешно обновлен',
+                    'avatar_url': avatar_url
+                })
+            else:
+                return jsonify({'success': False, 'message': 'Неподдерживаемый формат файла'}), 400
+
+        except Exception as e:
+            app.logger.error(f"Error uploading avatar: {str(e)}")
+            return jsonify({'success': False, 'message': 'Ошибка при загрузке аватара'}), 500
 
 def apply_filters(query, filters):
     """Apply filters to shift query"""
@@ -1952,7 +2463,7 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None):
 
 
 def calculate_time_slots(calendar_ids, start_date, end_date, filters=None):
-    """Calculate time slot distribution"""
+    """Calculate shift template usage distribution"""
     query = Shift.query.filter(
         Shift.calendar_id.in_(calendar_ids),
         Shift.date >= start_date,
@@ -1965,45 +2476,55 @@ def calculate_time_slots(calendar_ids, start_date, end_date, filters=None):
     shifts = query.all()
     
     if not shifts:
-        return {
-            'morning': {'percentage': 0},
-            'day': {'percentage': 0},
-            'evening': {'percentage': 0},
-            'night': {'percentage': 0}
-        }
+        return {'templates': []}
     
-    slot_counts = {'morning': 0, 'day': 0, 'evening': 0, 'night': 0}
+    # Group shifts by their time ranges (template-like grouping)
+    template_data = {}
     
     for shift in shifts:
-        # Only count shifts that show time
-        if shift.show_time:
-            hour = shift.start_time.hour
+        if shift.show_time and shift.start_time and shift.end_time:
+            # Create a key based on time range
+            time_range = f"{shift.start_time.strftime('%H:%M')} - {shift.end_time.strftime('%H:%M')}"
             
-            if 6 <= hour < 12:
-                slot_counts['morning'] += 1
-            elif 12 <= hour < 18:
-                slot_counts['day'] += 1
-            elif 18 <= hour < 24:
-                slot_counts['evening'] += 1
-            else:  # 0 <= hour < 6
-                slot_counts['night'] += 1
+            if time_range not in template_data:
+                template_data[time_range] = {
+                    'title': shift.title,  # Use first shift's title as template name
+                    'time_range': time_range,
+                    'count': 0,
+                    'color_class': shift.color_class,
+                    'shifts': []
+                }
+            
+            template_data[time_range]['count'] += 1
+            template_data[time_range]['shifts'].append({
+                'id': shift.id,
+                'title': shift.title,
+                'date': shift.date.strftime('%Y-%m-%d'),
+                'user_id': shift.user_id
+            })
     
-    # Only count shifts with time for percentage calculation
-    shifts_with_time = [shift for shift in shifts if shift.show_time]
-    total_shifts = len(shifts_with_time)
+    # Calculate total shifts for percentage
+    total_shifts = len([s for s in shifts if s.show_time and s.start_time and s.end_time])
     
     if total_shifts == 0:
-        return {
-            'morning': {'percentage': 0},
-            'day': {'percentage': 0},
-            'evening': {'percentage': 0},
-            'night': {'percentage': 0}
-        }
+        return {'templates': []}
     
-    return {
-        slot: {'percentage': (count / total_shifts) * 100}
-        for slot, count in slot_counts.items()
-    }
+    # Convert to list and calculate percentages
+    templates_list = []
+    for time_range, data in template_data.items():
+        templates_list.append({
+            'title': data['title'],
+            'time_range': time_range,
+            'percentage': (data['count'] / total_shifts) * 100,
+            'count': data['count'],
+            'color_class': data['color_class'],
+            'shifts': data['shifts']
+        })
+    
+    # Sort by usage count (most used first)
+    templates_list.sort(key=lambda x: x['count'], reverse=True)
+    
+    return {'templates': templates_list}
 
 
 def calculate_work_time_distribution(calendar_ids, start_date, end_date, filters=None):

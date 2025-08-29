@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 // === Toast уведомления ===
-const toastManager = {
+window.toastManager = {
     toasts: new Set(),
 
     createContainer() {
