@@ -57,11 +57,17 @@
             {% for calendar in calendars %}
             <div class="calendar-checkbox">
                 <input type="checkbox" id="calendar_{{ calendar.id }}" value="{{ calendar.id }}" 
-                       class="calendar-input" {% if loop.first %}checked{% endif %}>
+                       class="calendar-input" data-role="{{ calendar_roles[calendar.id] }}" {% if loop.first %}checked{% endif %}>
                 <label for="calendar_{{ calendar.id }}" class="calendar-label">
                     <i class="bi bi-calendar-week"></i>
                     <span>{{ calendar.name }}</span>
-                    <small>{{ calendar.members|length + 1 }} участников</small>
+                    <small>
+                        {% if calendar_roles[calendar.id] == 'creator' %}
+                            {{ calendar.members|length + 1 }} участников (владелец)
+                        {% else %}
+                            Участник
+                        {% endif %}
+                    </small>
                 </label>
             </div>
             {% endfor %}
@@ -194,6 +200,17 @@
         </div>
     </section>
 
+    <!-- Информационная панель для участников -->
+    <div class="info-panel" id="participantInfo" style="display: none;">
+        <div class="info-content">
+            <i class="bi bi-info-circle"></i>
+            <div class="info-text">
+                <strong>Персональная статистика</strong>
+                <p>Вы видите статистику только по своим сменам. Разделы "Анализ команды", "Баланс нагрузки" и "Анализ покрытия расписания" скрыты, так как вы не являетесь создателем выбранных календарей.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Статистика по сменам -->
     <section class="stats-section">
         <div class="section-header">
@@ -254,8 +271,8 @@
         </div>
     </section>
 
-    <!-- Анализ команды -->
-    <section class="team-section">
+    <!-- Анализ команды (только для создателей календарей) -->
+    <section class="team-section" id="teamSection">
         <div class="section-header">
             <h2><i class="bi bi-people-fill"></i> Анализ команды</h2>
         </div>

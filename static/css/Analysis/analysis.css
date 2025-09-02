@@ -1475,22 +1475,55 @@
     margin-left: auto;
 }
 
-/* Loading Overlay */
+/* Info panel for participants */
+.info-panel {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: 1px solid #90caf9;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+}
+
+.info-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.info-content i {
+    font-size: 1.5rem;
+    color: #1976d2;
+    flex-shrink: 0;
+}
+
+.info-text strong {
+    color: #1565c0;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.info-text p {
+    color: #424242;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Loading overlay */
 .loading-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-}
-
-.loading-overlay.show {
-    display: flex;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
 }
 
 .loading-spinner {

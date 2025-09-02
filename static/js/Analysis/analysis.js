@@ -43,6 +43,7 @@ class AnalysisPage {
     init() {
         this.bindEvents();
         this.initializeCalendarSelection();
+        this.updateParticipantInfoVisibility();
         
         // Check if Chart.js is loaded
         if (typeof Chart === 'undefined') {
@@ -124,6 +125,7 @@ class AnalysisPage {
         document.querySelectorAll('.calendar-input').forEach(checkbox => {
             checkbox.addEventListener('change', () => {
                 this.updateSelectedCalendars();
+                this.updateParticipantInfoVisibility();
                 this.loadUserOptions(); // Reload users when calendars change
                 this.loadShiftTypeOptions(); // Reload shift types when calendars change
                 this.loadAnalysisData();
@@ -228,6 +230,37 @@ class AnalysisPage {
         this.selectedCalendars = Array.from(checkboxes)
             .filter(cb => cb.checked)
             .map(cb => parseInt(cb.value));
+    }
+
+    updateParticipantInfoVisibility() {
+        const checkboxes = document.querySelectorAll('.calendar-input:checked');
+        const participantInfo = document.getElementById('participantInfo');
+        const teamSection = document.getElementById('teamSection');
+        
+        if (!participantInfo) return;
+        
+        // Check if user is creator of any selected calendar
+        let isCreatorOfAny = false;
+        checkboxes.forEach(checkbox => {
+            if (checkbox.dataset.role === 'creator') {
+                isCreatorOfAny = true;
+            }
+        });
+        
+        // Show info panel only if user is not creator of any selected calendar
+        if (checkboxes.length > 0 && !isCreatorOfAny) {
+            participantInfo.style.display = 'block';
+            // Hide team analysis section for participants
+            if (teamSection) {
+                teamSection.style.display = 'none';
+            }
+        } else {
+            participantInfo.style.display = 'none';
+            // Show team analysis section for creators
+            if (teamSection) {
+                teamSection.style.display = 'block';
+            }
+        }
     }
 
     showLoading() {

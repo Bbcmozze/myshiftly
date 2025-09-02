@@ -798,11 +798,17 @@ def register_routes(app):
                 unique_calendars.append(calendar)
                 seen_ids.add(calendar.id)
         
+        # Определяем роль пользователя для каждого календаря
+        calendar_roles = {}
+        for calendar in unique_calendars:
+            calendar_roles[calendar.id] = 'creator' if calendar.owner_id == current_user.id else 'participant'
+        
         current_month = datetime.utcnow().date().replace(day=1)
         
         return render_template(
             'Analysis/analysis.html',
             calendars=unique_calendars,
+            calendar_roles=calendar_roles,
             current_month=current_month
         )
 
@@ -849,11 +855,13 @@ def register_routes(app):
                 return jsonify({'error': 'No calendars selected'}), 400
             
             accessible_calendars = []
+            user_calendar_roles = {}  # Track user's role in each calendar
             for calendar_id in calendar_ids:
                 try:
                     calendar = Calendar.query.get(calendar_id)
                     if calendar and (calendar.owner_id == current_user.id or current_user in calendar.members):
                         accessible_calendars.append(calendar_id)
+                        user_calendar_roles[calendar_id] = 'creator' if calendar.owner_id == current_user.id else 'participant'
                 except Exception as e:
                     app.logger.error(f"Error checking calendar {calendar_id}: {str(e)}")
             
@@ -876,37 +884,37 @@ def register_routes(app):
                 
                 # Calculate each section separately with error handling
                 try:
-                    analysis_data['shift_stats'] = calculate_shift_stats(accessible_calendars, start_date, end_date, filters)
+                    analysis_data['shift_stats'] = calculate_shift_stats(accessible_calendars, start_date, end_date, filters, current_user.id, user_calendar_roles)
                 except Exception as e:
                     app.logger.error(f"Error in shift_stats: {str(e)}")
                     analysis_data['shift_stats'] = {'total_hours': 0, 'total_shifts': 0, 'avg_duration': 0, 'top_template': None}
                 
                 try:
-                    analysis_data['team_analysis'] = calculate_team_analysis(accessible_calendars, start_date, end_date, filters)
+                    analysis_data['team_analysis'] = calculate_team_analysis(accessible_calendars, start_date, end_date, filters, current_user.id, user_calendar_roles)
                 except Exception as e:
                     app.logger.error(f"Error in team_analysis: {str(e)}")
                     analysis_data['team_analysis'] = {'activity_ranking': [], 'coverage_data': [], 'workload_balance': {'labels': [], 'values': []}}
                 
                 try:
-                    analysis_data['time_slots'] = calculate_time_slots(accessible_calendars, start_date, end_date, filters)
+                    analysis_data['time_slots'] = calculate_time_slots(accessible_calendars, start_date, end_date, filters, current_user.id, user_calendar_roles)
                 except Exception as e:
                     app.logger.error(f"Error in time_slots: {str(e)}")
                     analysis_data['time_slots'] = {'morning': {'percentage': 0}, 'day': {'percentage': 0}, 'evening': {'percentage': 0}, 'night': {'percentage': 0}}
                 
                 try:
-                    analysis_data['work_time_distribution'] = calculate_work_time_distribution(accessible_calendars, start_date, end_date, filters)
+                    analysis_data['work_time_distribution'] = calculate_work_time_distribution(accessible_calendars, start_date, end_date, filters, current_user.id, user_calendar_roles)
                 except Exception as e:
                     app.logger.error(f"Error in work_time_distribution: {str(e)}")
                     analysis_data['work_time_distribution'] = {'labels': [], 'values': []}
                 
                 try:
-                    analysis_data['weekday_activity'] = calculate_weekday_activity(accessible_calendars, start_date, end_date, filters)
+                    analysis_data['weekday_activity'] = calculate_weekday_activity(accessible_calendars, start_date, end_date, filters, current_user.id, user_calendar_roles)
                 except Exception as e:
                     app.logger.error(f"Error in weekday_activity: {str(e)}")
                     analysis_data['weekday_activity'] = {'hours': [0] * 7}
                 
                 try:
-                    analysis_data['trends_data'] = calculate_trends_data(accessible_calendars, period, month, filters)
+                    analysis_data['trends_data'] = calculate_trends_data(accessible_calendars, period, month, filters, current_user.id, user_calendar_roles)
                 except Exception as e:
                     app.logger.error(f"Error in trends_data: {str(e)}")
                     analysis_data['trends_data'] = {'hours': {'labels': [], 'values': []}, 'shifts': {'labels': [], 'values': []}, 'people': {'labels': [], 'values': []}}
@@ -927,12 +935,12 @@ def register_routes(app):
                             comp_start_date, comp_end_date = get_month_range(comp_month)
                         
                         analysis_data['comparison'] = {
-                            'shift_stats': calculate_shift_stats(accessible_calendars, comp_start_date, comp_end_date, filters),
-                            'team_analysis': calculate_team_analysis(accessible_calendars, comp_start_date, comp_end_date, filters),
-                            'time_slots': calculate_time_slots(accessible_calendars, comp_start_date, comp_end_date, filters),
-                            'work_time_distribution': calculate_work_time_distribution(accessible_calendars, comp_start_date, comp_end_date, filters),
-                            'weekday_activity': calculate_weekday_activity(accessible_calendars, comp_start_date, comp_end_date, filters),
-                            'trends_data': calculate_trends_data(accessible_calendars, comp_period, comp_month, filters)
+                            'shift_stats': calculate_shift_stats(accessible_calendars, comp_start_date, comp_end_date, filters, current_user.id, user_calendar_roles),
+                            'team_analysis': calculate_team_analysis(accessible_calendars, comp_start_date, comp_end_date, filters, current_user.id, user_calendar_roles),
+                            'time_slots': calculate_time_slots(accessible_calendars, comp_start_date, comp_end_date, filters, current_user.id, user_calendar_roles),
+                            'work_time_distribution': calculate_work_time_distribution(accessible_calendars, comp_start_date, comp_end_date, filters, current_user.id, user_calendar_roles),
+                            'weekday_activity': calculate_weekday_activity(accessible_calendars, comp_start_date, comp_end_date, filters, current_user.id, user_calendar_roles),
+                            'trends_data': calculate_trends_data(accessible_calendars, comp_period, comp_month, filters, current_user.id, user_calendar_roles)
                         }
                     except Exception as e:
                         app.logger.error(f"Error in comparison data: {str(e)}")
@@ -2294,13 +2302,19 @@ def get_year_range(month_str):
         return start_date, end_date
 
 
-def calculate_shift_stats(calendar_ids, start_date, end_date, filters=None):
+def calculate_shift_stats(calendar_ids, start_date, end_date, filters=None, user_id=None, user_calendar_roles=None):
     """Calculate shift statistics"""
     query = Shift.query.filter(
         Shift.calendar_id.in_(calendar_ids),
         Shift.date >= start_date,
         Shift.date <= end_date
     )
+    
+    # If user is only a participant (not creator of any selected calendars), show only their shifts
+    if user_id and user_calendar_roles:
+        is_creator_of_any = any(role == 'creator' for role in user_calendar_roles.values())
+        if not is_creator_of_any:
+            query = query.filter(Shift.user_id == user_id)
     
     if filters:
         query = apply_filters(query, filters)
@@ -2352,7 +2366,7 @@ def calculate_shift_stats(calendar_ids, start_date, end_date, filters=None):
     }
 
 
-def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None):
+def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None, user_id=None, user_calendar_roles=None):
     """Calculate team analysis data"""
     # Get all users involved in shifts
     query = db.session.query(Shift, User).join(User, Shift.user_id == User.id).filter(
@@ -2360,6 +2374,12 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None):
         Shift.date >= start_date,
         Shift.date <= end_date
     )
+    
+    # If user is only a participant (not creator of any selected calendars), show only their shifts
+    if user_id and user_calendar_roles:
+        is_creator_of_any = any(role == 'creator' for role in user_calendar_roles.values())
+        if not is_creator_of_any:
+            query = query.filter(Shift.user_id == user_id)
     
     if filters:
         # Apply filters to the Shift part of the query
@@ -2462,13 +2482,19 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None):
     }
 
 
-def calculate_time_slots(calendar_ids, start_date, end_date, filters=None):
-    """Calculate shift template usage distribution"""
+def calculate_time_slots(calendar_ids, start_date, end_date, filters=None, user_id=None, user_calendar_roles=None):
+    """Calculate time slot distribution"""
     query = Shift.query.filter(
         Shift.calendar_id.in_(calendar_ids),
         Shift.date >= start_date,
         Shift.date <= end_date
     )
+    
+    # If user is only a participant (not creator of any selected calendars), show only their shifts
+    if user_id and user_calendar_roles:
+        is_creator_of_any = any(role == 'creator' for role in user_calendar_roles.values())
+        if not is_creator_of_any:
+            query = query.filter(Shift.user_id == user_id)
     
     if filters:
         query = apply_filters(query, filters)
@@ -2527,13 +2553,19 @@ def calculate_time_slots(calendar_ids, start_date, end_date, filters=None):
     return {'templates': templates_list}
 
 
-def calculate_work_time_distribution(calendar_ids, start_date, end_date, filters=None):
+def calculate_work_time_distribution(calendar_ids, start_date, end_date, filters=None, user_id=None, user_calendar_roles=None):
     """Calculate work time distribution by user"""
     query = db.session.query(Shift, User).join(User, Shift.user_id == User.id).filter(
         Shift.calendar_id.in_(calendar_ids),
         Shift.date >= start_date,
         Shift.date <= end_date
     )
+    
+    # If user is only a participant (not creator of any selected calendars), show only their shifts
+    if user_id and user_calendar_roles:
+        is_creator_of_any = any(role == 'creator' for role in user_calendar_roles.values())
+        if not is_creator_of_any:
+            query = query.filter(Shift.user_id == user_id)
     
     if filters:
         if filters.get('users'):
@@ -2596,13 +2628,19 @@ def calculate_work_time_distribution(calendar_ids, start_date, end_date, filters
     }
 
 
-def calculate_weekday_activity(calendar_ids, start_date, end_date, filters=None):
+def calculate_weekday_activity(calendar_ids, start_date, end_date, filters=None, user_id=None, user_calendar_roles=None):
     """Calculate activity by weekday"""
     query = Shift.query.filter(
         Shift.calendar_id.in_(calendar_ids),
         Shift.date >= start_date,
         Shift.date <= end_date
     )
+    
+    # If user is only a participant (not creator of any selected calendars), show only their shifts
+    if user_id and user_calendar_roles:
+        is_creator_of_any = any(role == 'creator' for role in user_calendar_roles.values())
+        if not is_creator_of_any:
+            query = query.filter(Shift.user_id == user_id)
     
     if filters:
         query = apply_filters(query, filters)
@@ -2629,9 +2667,10 @@ def calculate_weekday_activity(calendar_ids, start_date, end_date, filters=None)
     }
 
 
-def calculate_trends_data(calendar_ids, period, month_str, filters=None):
-    """Calculate trends data for different metrics"""
-    # Get data for the last 12 periods
+def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=None, user_calendar_roles=None):
+    """Calculate trends data over time"""
+    # Get date ranges for the last several periods
+    periods = []
     trends_data = {
         'hours': {'labels': [], 'values': []},
         'shifts': {'labels': [], 'values': []},
@@ -2639,7 +2678,7 @@ def calculate_trends_data(calendar_ids, period, month_str, filters=None):
     }
     
     try:
-        base_date = datetime.strptime(month_str, '%Y-%m').date()
+        base_date = datetime.strptime(month, '%Y-%m').date()
     except ValueError:
         base_date = datetime.utcnow().date()
     
@@ -2666,6 +2705,12 @@ def calculate_trends_data(calendar_ids, period, month_str, filters=None):
             Shift.date >= start_date,
             Shift.date <= end_date
         )
+        
+        # If user is only a participant (not creator of any selected calendars), show only their shifts
+        if user_id and user_calendar_roles:
+            is_creator_of_any = any(role == 'creator' for role in user_calendar_roles.values())
+            if not is_creator_of_any:
+                query = query.filter(Shift.user_id == user_id)
         
         if filters:
             query = apply_filters(query, filters)
