@@ -2684,8 +2684,16 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
     
     for i in range(11, -1, -1):  # Last 12 periods
         if period == 'month':
-            period_date = base_date.replace(day=1) - timedelta(days=32 * i)
-            period_date = period_date.replace(day=1)
+            # Calculate month by subtracting months properly
+            year = base_date.year
+            month_num = base_date.month - i
+            
+            # Handle year rollover
+            while month_num <= 0:
+                month_num += 12
+                year -= 1
+            
+            period_date = datetime(year, month_num, 1).date()
             start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
             label = period_date.strftime('%b %Y')
         elif period == 'year':
@@ -2694,8 +2702,14 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
             end_date = datetime(year, 12, 31).date()
             label = str(year)
         else:  # week or quarter - simplified to month for now
-            period_date = base_date.replace(day=1) - timedelta(days=32 * i)
-            period_date = period_date.replace(day=1)
+            year = base_date.year
+            month_num = base_date.month - i
+            
+            while month_num <= 0:
+                month_num += 12
+                year -= 1
+                
+            period_date = datetime(year, month_num, 1).date()
             start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
             label = period_date.strftime('%b %Y')
         

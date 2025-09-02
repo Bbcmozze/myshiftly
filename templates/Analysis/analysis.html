@@ -206,7 +206,7 @@
             <i class="bi bi-info-circle"></i>
             <div class="info-text">
                 <strong>Персональная статистика</strong>
-                <p>Вы видите статистику только по своим сменам. Разделы "Анализ команды", "Баланс нагрузки" и "Анализ покрытия расписания" скрыты, так как вы не являетесь создателем выбранных календарей.</p>
+                <p>Вы видите статистику только по своим сменам. Разделы "Анализ команды", "Баланс нагрузки", "Анализ покрытия расписания" и "Распределение рабочего времени" скрыты, так как вы не являетесь создателем выбранных календарей.</p>
             </div>
         </div>
     </div>
@@ -260,7 +260,7 @@
         </div>
 
         <div class="charts-row">
-            <div class="chart-container">
+            <div class="chart-container" id="workTimeContainer">
                 <h3>Распределение рабочего времени</h3>
                 <canvas id="workTimeChart"></canvas>
             </div>
@@ -332,10 +332,10 @@
         <div class="trends-container">
             <div class="trend-chart-container">
                 <h3>График загрузки по месяцам</h3>
-                <div class="chart-controls">
+                <div class="chart-controls" id="chartControls">
                     <button class="chart-btn active" data-metric="hours">Часы</button>
                     <button class="chart-btn" data-metric="shifts">Смены</button>
-                    <button class="chart-btn" data-metric="people">Участники</button>
+                    <button class="chart-btn" data-metric="people" id="peopleBtn">Участники</button>
                 </div>
                 <canvas id="trendsChart"></canvas>
             </div>

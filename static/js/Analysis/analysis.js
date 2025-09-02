@@ -236,6 +236,8 @@ class AnalysisPage {
         const checkboxes = document.querySelectorAll('.calendar-input:checked');
         const participantInfo = document.getElementById('participantInfo');
         const teamSection = document.getElementById('teamSection');
+        const workTimeContainer = document.getElementById('workTimeContainer');
+        const peopleBtn = document.getElementById('peopleBtn');
         
         if (!participantInfo) return;
         
@@ -254,11 +256,46 @@ class AnalysisPage {
             if (teamSection) {
                 teamSection.style.display = 'none';
             }
+            // Hide work time distribution chart for participants
+            if (workTimeContainer) {
+                workTimeContainer.style.display = 'none';
+            }
+            // Hide participants button in trends chart
+            if (peopleBtn) {
+                peopleBtn.style.display = 'none';
+                // If people metric is currently selected, switch to hours
+                if (this.currentMetric === 'people') {
+                    this.currentMetric = 'hours';
+                    document.querySelector('.chart-btn[data-metric="hours"]').classList.add('active');
+                    document.querySelector('.chart-btn[data-metric="people"]').classList.remove('active');
+                    if (this.lastTrendsData) {
+                        this.updateTrendsChart(this.currentMetric, this.lastTrendsData);
+                    }
+                }
+            }
+            // Add participant mode class to charts row for full width layout
+            const chartsRow = document.querySelector('.charts-row');
+            if (chartsRow) {
+                chartsRow.classList.add('participant-mode');
+            }
         } else {
             participantInfo.style.display = 'none';
             // Show team analysis section for creators
             if (teamSection) {
                 teamSection.style.display = 'block';
+            }
+            // Show work time distribution chart for creators
+            if (workTimeContainer) {
+                workTimeContainer.style.display = 'block';
+            }
+            // Show participants button in trends chart
+            if (peopleBtn) {
+                peopleBtn.style.display = 'block';
+            }
+            // Remove participant mode class for normal layout
+            const chartsRow = document.querySelector('.charts-row');
+            if (chartsRow) {
+                chartsRow.classList.remove('participant-mode');
             }
         }
     }

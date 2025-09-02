@@ -1509,6 +1509,11 @@
     font-size: 0.9rem;
 }
 
+/* Chart layout adjustments for participants */
+.charts-row.participant-mode {
+    grid-template-columns: 1fr;
+}
+
 /* Loading overlay */
 .loading-overlay {
     position: fixed;
