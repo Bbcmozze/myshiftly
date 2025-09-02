@@ -2678,12 +2678,33 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
     }
     
     try:
-        base_date = datetime.strptime(month, '%Y-%m').date()
+        if period == 'week' and 'W' in month:
+            # Parse week format: 2024-W35
+            year, week = month.split('-W')
+            base_date = datetime.strptime(f'{year}-W{week}-1', '%Y-W%W-%w').date()
+        elif period == 'quarter' and 'Q' in month:
+            # Parse quarter format: 2024-Q3
+            year, quarter = month.split('-Q')
+            quarter_month = (int(quarter) - 1) * 3 + 1
+            base_date = datetime(int(year), quarter_month, 1).date()
+        elif period == 'year' and len(month) == 4:
+            # Parse year format: 2024
+            base_date = datetime(int(month), 1, 1).date()
+        else:
+            # Parse month format: 2024-08
+            base_date = datetime.strptime(month, '%Y-%m').date()
     except ValueError:
         base_date = datetime.utcnow().date()
     
     for i in range(11, -1, -1):  # Last 12 periods
-        if period == 'month':
+        if period == 'week':
+            # Calculate week by subtracting weeks
+            target_date = base_date - timedelta(weeks=i)
+            # Get start of week (Monday)
+            start_date = target_date - timedelta(days=target_date.weekday())
+            end_date = start_date + timedelta(days=6)
+            label = f"Неделя {start_date.strftime('%d.%m')} - {end_date.strftime('%d.%m.%Y')}"
+        elif period == 'month':
             # Calculate month by subtracting months properly
             year = base_date.year
             month_num = base_date.month - i
@@ -2696,22 +2717,35 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
             period_date = datetime(year, month_num, 1).date()
             start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
             label = period_date.strftime('%b %Y')
+        elif period == 'quarter':
+            # Calculate quarter by subtracting quarters
+            base_quarter = (base_date.month - 1) // 3 + 1
+            base_year = base_date.year
+            
+            target_quarter = base_quarter - i
+            target_year = base_year
+            
+            while target_quarter <= 0:
+                target_quarter += 4
+                target_year -= 1
+            
+            start_month = (target_quarter - 1) * 3 + 1
+            start_date = datetime(target_year, start_month, 1).date()
+            
+            if start_month + 2 <= 12:
+                end_month = start_month + 2
+                end_year = target_year
+            else:
+                end_month = (start_month + 2) - 12
+                end_year = target_year + 1
+            
+            end_date = datetime(end_year, end_month + 1, 1).date() - timedelta(days=1) if end_month < 12 else datetime(end_year, 12, 31).date()
+            label = f"Q{target_quarter} {target_year}"
         elif period == 'year':
             year = base_date.year - i
             start_date = datetime(year, 1, 1).date()
             end_date = datetime(year, 12, 31).date()
             label = str(year)
-        else:  # week or quarter - simplified to month for now
-            year = base_date.year
-            month_num = base_date.month - i
-            
-            while month_num <= 0:
-                month_num += 12
-                year -= 1
-                
-            period_date = datetime(year, month_num, 1).date()
-            start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
-            label = period_date.strftime('%b %Y')
         
         # Get shifts for this period
         query = Shift.query.filter(

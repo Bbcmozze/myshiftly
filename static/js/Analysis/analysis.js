@@ -44,6 +44,7 @@ class AnalysisPage {
         this.bindEvents();
         this.initializeCalendarSelection();
         this.updateParticipantInfoVisibility();
+        this.updateDatePickers();
         
         // Check if Chart.js is loaded
         if (typeof Chart === 'undefined') {
@@ -89,11 +90,28 @@ class AnalysisPage {
         // Period selector changes
         document.getElementById('periodSelect').addEventListener('change', (e) => {
             this.currentPeriod = e.target.value;
+            this.updateDatePickers();
+            this.loadAnalysisData();
+        });
+
+        // Date picker event listeners
+        document.getElementById('weekPicker').addEventListener('change', (e) => {
+            this.currentMonth = e.target.value;
             this.loadAnalysisData();
         });
 
         document.getElementById('monthPicker').addEventListener('change', (e) => {
             this.currentMonth = e.target.value;
+            this.loadAnalysisData();
+        });
+
+        document.getElementById('quarterPicker').addEventListener('change', (e) => {
+            this.currentMonth = e.target.value;
+            this.loadAnalysisData();
+        });
+
+        document.getElementById('yearPicker').addEventListener('change', (e) => {
+            this.currentMonth = e.target.value + '-01';
             this.loadAnalysisData();
         });
 
@@ -103,7 +121,8 @@ class AnalysisPage {
             const comparisonPeriod = document.getElementById('comparisonPeriod');
             if (this.comparisonMode) {
                 comparisonPeriod.style.display = 'flex';
-                document.getElementById('comparisonMonthPicker').value = this.comparisonMonth;
+                this.updateComparisonDatePickers();
+                this.setDefaultComparisonValues();
             } else {
                 comparisonPeriod.style.display = 'none';
             }
@@ -113,10 +132,27 @@ class AnalysisPage {
         // Comparison period selectors
         document.getElementById('comparisonPeriodSelect').addEventListener('change', (e) => {
             this.comparisonPeriod = e.target.value;
+            this.updateComparisonDatePickers();
+            if (this.comparisonMode) this.loadAnalysisData();
+        });
+
+        // Comparison date picker event listeners
+        document.getElementById('comparisonWeekPicker').addEventListener('change', (e) => {
+            this.comparisonMonth = e.target.value;
             if (this.comparisonMode) this.loadAnalysisData();
         });
 
         document.getElementById('comparisonMonthPicker').addEventListener('change', (e) => {
+            this.comparisonMonth = e.target.value;
+            if (this.comparisonMode) this.loadAnalysisData();
+        });
+
+        document.getElementById('comparisonQuarterPicker').addEventListener('change', (e) => {
+            this.comparisonMonth = e.target.value;
+            if (this.comparisonMode) this.loadAnalysisData();
+        });
+
+        document.getElementById('comparisonYearPicker').addEventListener('change', (e) => {
             this.comparisonMonth = e.target.value;
             if (this.comparisonMode) this.loadAnalysisData();
         });
@@ -294,9 +330,106 @@ class AnalysisPage {
             }
             // Remove participant mode class for normal layout
             const chartsRow = document.querySelector('.charts-row');
-            if (chartsRow) {
-                chartsRow.classList.remove('participant-mode');
-            }
+            chartsRow.classList.remove('participant-mode');
+        }
+    }
+
+    updateDatePickers() {
+        // Hide all date pickers first
+        document.getElementById('weekPicker').style.display = 'none';
+        document.getElementById('monthPicker').style.display = 'none';
+        document.getElementById('quarterPicker').style.display = 'none';
+        document.getElementById('yearPicker').style.display = 'none';
+
+        // Show appropriate picker based on selected period
+        switch(this.currentPeriod) {
+            case 'week':
+                document.getElementById('weekPicker').style.display = 'inline-block';
+                // Set current week if not set
+                if (!document.getElementById('weekPicker').value) {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const week = this.getWeekNumber(now);
+                    document.getElementById('weekPicker').value = `${year}-W${week.toString().padStart(2, '0')}`;
+                }
+                break;
+            case 'month':
+                document.getElementById('monthPicker').style.display = 'inline-block';
+                break;
+            case 'quarter':
+                document.getElementById('quarterPicker').style.display = 'inline-block';
+                // Set current quarter if not set
+                if (!document.getElementById('quarterPicker').value) {
+                    const now = new Date();
+                    const quarter = Math.ceil((now.getMonth() + 1) / 3);
+                    document.getElementById('quarterPicker').value = `${now.getFullYear()}-Q${quarter}`;
+                }
+                break;
+            case 'year':
+                document.getElementById('yearPicker').style.display = 'inline-block';
+                break;
+        }
+    }
+
+    getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    updateComparisonDatePickers() {
+        // Hide all comparison date pickers first
+        document.getElementById('comparisonWeekPicker').style.display = 'none';
+        document.getElementById('comparisonMonthPicker').style.display = 'none';
+        document.getElementById('comparisonQuarterPicker').style.display = 'none';
+        document.getElementById('comparisonYearPicker').style.display = 'none';
+
+        // Show appropriate picker based on comparison period
+        switch(this.comparisonPeriod) {
+            case 'week':
+                document.getElementById('comparisonWeekPicker').style.display = 'inline-block';
+                break;
+            case 'month':
+                document.getElementById('comparisonMonthPicker').style.display = 'inline-block';
+                break;
+            case 'quarter':
+                document.getElementById('comparisonQuarterPicker').style.display = 'inline-block';
+                break;
+            case 'year':
+                document.getElementById('comparisonYearPicker').style.display = 'inline-block';
+                break;
+        }
+    }
+
+    setDefaultComparisonValues() {
+        const now = new Date();
+        
+        switch(this.comparisonPeriod) {
+            case 'week':
+                const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                const year = lastWeek.getFullYear();
+                const week = this.getWeekNumber(lastWeek);
+                this.comparisonMonth = `${year}-W${week.toString().padStart(2, '0')}`;
+                document.getElementById('comparisonWeekPicker').value = this.comparisonMonth;
+                break;
+            case 'month':
+                const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                this.comparisonMonth = lastMonth.toISOString().slice(0, 7);
+                document.getElementById('comparisonMonthPicker').value = this.comparisonMonth;
+                break;
+            case 'quarter':
+                const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
+                const lastQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
+                const quarterYear = currentQuarter === 1 ? now.getFullYear() - 1 : now.getFullYear();
+                this.comparisonMonth = `${quarterYear}-Q${lastQuarter}`;
+                document.getElementById('comparisonQuarterPicker').value = this.comparisonMonth;
+                break;
+            case 'year':
+                this.comparisonMonth = (now.getFullYear() - 1).toString();
+                document.getElementById('comparisonYearPicker').value = this.comparisonMonth;
+                break;
         }
     }
 
@@ -409,24 +542,46 @@ class AnalysisPage {
             console.error('Missing DOM elements:', missingElements);
         }
         
-        this.updateShiftStats(data.shift_stats);
-        this.updateTeamAnalysis(data.team_analysis);
-        this.updateTimeSlots(data.time_slots);
-        this.updateWeekdayActivity(data.weekday_activity);
-        this.updateWorkTimeDistribution(data.work_time_distribution);
+        this.updateShiftStats(data.shift_stats, data.comparison?.shift_stats);
+        this.updateTeamAnalysis(data.team_analysis, data.comparison?.team_analysis);
+        this.updateTimeSlots(data.time_slots, data.comparison?.time_slots);
+        this.updateWeekdayActivity(data.weekday_activity, data.comparison?.weekday_activity);
+        this.updateWorkTimeDistribution(data.work_time_distribution, data.comparison?.work_time_distribution);
         this.lastTrendsData = data.trends_data;
-        this.updateCharts(data);
+        this.updateCharts(data, data.comparison);
     }
 
-    updateShiftStats(stats) {
+    updateShiftStats(stats, comparisonStats) {
         console.log('Updating shift stats:', stats);
         const totalHoursEl = document.getElementById('totalHours');
         const totalShiftsEl = document.getElementById('totalShifts');
         const avgShiftDurationEl = document.getElementById('avgShiftDuration');
         const topTemplateEl = document.getElementById('topTemplate');
         
-        if (totalHoursEl) totalHoursEl.textContent = this.formatHours(stats.total_hours);
-        if (totalShiftsEl) totalShiftsEl.textContent = stats.total_shifts;
+        if (totalHoursEl) {
+            let content = this.formatHours(stats.total_hours);
+            if (comparisonStats && this.comparisonMode) {
+                const diff = stats.total_hours - comparisonStats.total_hours;
+                const percentage = comparisonStats.total_hours > 0 ? ((diff / comparisonStats.total_hours) * 100).toFixed(1) : 0;
+                const arrow = diff > 0 ? '↗' : diff < 0 ? '↘' : '→';
+                const color = diff > 0 ? 'green' : diff < 0 ? 'red' : 'gray';
+                content += ` <span style="color: ${color}; font-size: 0.8em;">${arrow} ${percentage}%</span>`;
+            }
+            totalHoursEl.innerHTML = content;
+        }
+        
+        if (totalShiftsEl) {
+            let content = stats.total_shifts;
+            if (comparisonStats && this.comparisonMode) {
+                const diff = stats.total_shifts - comparisonStats.total_shifts;
+                const percentage = comparisonStats.total_shifts > 0 ? ((diff / comparisonStats.total_shifts) * 100).toFixed(1) : 0;
+                const arrow = diff > 0 ? '↗' : diff < 0 ? '↘' : '→';
+                const color = diff > 0 ? 'green' : diff < 0 ? 'red' : 'gray';
+                content += ` <span style="color: ${color}; font-size: 0.8em;">${arrow} ${percentage}%</span>`;
+            }
+            totalShiftsEl.innerHTML = content;
+        }
+        
         if (avgShiftDurationEl) avgShiftDurationEl.textContent = this.formatDuration(stats.avg_duration);
         if (topTemplateEl) topTemplateEl.textContent = stats.top_template || 'Нет данных';
     }
@@ -577,10 +732,10 @@ class AnalysisPage {
         document.body.appendChild(modal);
     }
 
-    updateCharts(data) {
+    updateCharts(data, comparisonData) {
         this.updateWorkTimeChart(data.work_time_distribution);
         this.updateWeekdayChart(data.weekday_activity);
-        this.updateTrendsChart(this.currentMetric, data.trends_data);
+        this.updateTrendsChart(this.currentMetric, data.trends_data, comparisonData?.trends_data);
     }
 
     updateWorkTimeChart(data) {
@@ -719,7 +874,7 @@ class AnalysisPage {
         });
     }
 
-    updateTrendsChart(metric, data) {
+    updateTrendsChart(metric, data, comparisonData) {
         const ctx = document.getElementById('trendsChart').getContext('2d');
         
         if (this.charts.trends) {
@@ -728,23 +883,44 @@ class AnalysisPage {
 
         const metricData = data[metric] || { labels: [], values: [] };
         
+        const datasets = [{
+            label: 'Текущий период',
+            data: metricData.values,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6
+        }];
+
+        // Add comparison dataset if comparison mode is enabled
+        if (comparisonData && this.comparisonMode) {
+            const comparisonMetricData = comparisonData[metric] || { labels: [], values: [] };
+            datasets.push({
+                label: 'Период сравнения',
+                data: comparisonMetricData.values,
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                borderDash: [5, 5]
+            });
+        }
+        
         this.charts.trends = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: metricData.labels,
-                datasets: [{
-                    label: this.getMetricLabel(metric),
-                    data: metricData.values,
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -754,7 +930,7 @@ class AnalysisPage {
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: this.comparisonMode && comparisonData
                     }
                 },
                 scales: {
@@ -1423,51 +1599,57 @@ class AnalysisPage {
         }
     }
 
-    updateWeekdayActivity(data) {
-        console.log('Updating weekday activity:', data);
-        const canvas = document.getElementById('weekdayChart');
-        if (!canvas) {
-            console.error('weekdayChart canvas not found');
+    updateWeekdayActivity(weekdayData, comparisonWeekdayData) {
+        if (!weekdayData || !weekdayData.hours) {
+            console.log('No weekday activity data available');
             return;
         }
         
-        const ctx = canvas.getContext('2d');
+        const ctx = document.getElementById('weekdayChart').getContext('2d');
         
         if (this.charts.weekday) {
             this.charts.weekday.destroy();
         }
-
+        
+        const datasets = [{
+            label: 'Текущий период',
+            data: weekdayData.hours,
+            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+            borderColor: 'rgb(59, 130, 246)',
+            borderWidth: 1
+        }];
+        
+        // Add comparison dataset if comparison mode is enabled
+        if (comparisonWeekdayData && this.comparisonMode) {
+            datasets.push({
+                label: 'Период сравнения',
+                data: comparisonWeekdayData.hours,
+                backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                borderColor: 'rgb(239, 68, 68)',
+                borderWidth: 1
+            });
+        }
+        
         this.charts.weekday = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-                datasets: [{
-                    label: 'Часы работы',
-                    data: data.hours,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: {
-                    duration: 300
-                },
                 plugins: {
                     legend: {
-                        display: false
+                        display: this.comparisonMode && comparisonWeekdayData
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value + 'ч';
-                            }
+                        title: {
+                            display: true,
+                            text: 'Часы'
                         }
                     }
                 }
@@ -1475,7 +1657,7 @@ class AnalysisPage {
         });
     }
 
-    updateWorkTimeDistribution(data) {
+    updateWorkTimeDistribution(data, comparisonData) {
         console.log('Updating work time distribution:', data);
         const canvas = document.getElementById('workTimeChart');
         if (!canvas) {
@@ -1489,22 +1671,42 @@ class AnalysisPage {
             this.charts.workTime.destroy();
         }
 
+        const datasets = [{
+            label: 'Текущий период',
+            data: data.values || [],
+            backgroundColor: [
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(168, 85, 247, 0.8)'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+        }];
+
+        // Add comparison dataset if comparison mode is enabled
+        if (comparisonData && this.comparisonMode) {
+            datasets.push({
+                label: 'Период сравнения',
+                data: comparisonData.values || [],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.4)',
+                    'rgba(34, 197, 94, 0.4)',
+                    'rgba(245, 158, 11, 0.4)',
+                    'rgba(239, 68, 68, 0.4)',
+                    'rgba(168, 85, 247, 0.4)'
+                ],
+                borderWidth: 1,
+                borderColor: '#ffffff'
+            });
+        }
+
         this.charts.workTime = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: data.labels || [],
-                datasets: [{
-                    data: data.values || [],
-                    backgroundColor: [
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(34, 197, 94, 0.8)',
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(168, 85, 247, 0.8)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -1515,6 +1717,7 @@ class AnalysisPage {
                 plugins: {
                     legend: {
                         position: 'bottom',
+                        display: this.comparisonMode && comparisonData,
                         labels: {
                             padding: 20,
                             usePointStyle: true
