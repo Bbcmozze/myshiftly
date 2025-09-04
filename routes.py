@@ -1592,7 +1592,7 @@ def register_routes(app):
         total_calendars = Calendar.query.filter_by(owner_id=current_user.id).count()
         total_friends = current_user.friends.count()
         
-        return render_template('profile.html', 
+        return render_template('profile/profile.html', 
                              total_shifts=shifts_with_time,
                              total_calendars=total_calendars, 
                              total_friends=total_friends,
