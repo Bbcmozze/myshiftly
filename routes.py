@@ -2375,8 +2375,8 @@ def calculate_shift_stats(calendar_ids, start_date, end_date, filters=None, user
             duration = (end_time - start_time).total_seconds() / 60
             total_minutes += duration
         
-        # Track template usage
-        if shift.template_id:
+        # Track template usage only for shifts with time
+        if shift.show_time and shift.template_id:
             template = ShiftTemplate.query.get(shift.template_id)
             if template:
                 template_usage[template.title] = template_usage.get(template.title, 0) + 1
@@ -2389,7 +2389,7 @@ def calculate_shift_stats(calendar_ids, start_date, end_date, filters=None, user
     
     return {
         'total_hours': round(total_hours, 1),
-        'total_shifts': len(shifts),
+        'total_shifts': len(shifts_with_time),
         'avg_duration': round(avg_duration),
         'top_template': top_template
     }
@@ -2454,7 +2454,7 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None, us
                 'total_shifts': 0
             }
         
-        # Only calculate duration for shifts that show time
+        # Only calculate duration and count shifts that show time
         if shift.show_time:
             # Calculate shift duration
             start_time = datetime.combine(shift.date, shift.start_time)
@@ -2465,8 +2465,7 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None, us
             
             duration = (end_time - start_time).total_seconds() / 3600
             user_stats[user.id]['total_hours'] += duration
-        
-        user_stats[user.id]['total_shifts'] += 1
+            user_stats[user.id]['total_shifts'] += 1
     
     # Create activity ranking
     activity_ranking = []
@@ -2486,6 +2485,13 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None, us
     activity_ranking.sort(key=lambda x: x['total_hours'], reverse=True)
     
     # Calculate coverage data (simplified - by day of month)
+    # Русские названия месяцев
+    russian_months = {
+        1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+        5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+        9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+    }
+    
     current_date = start_date
     while current_date <= end_date:
         day_shifts = [s for s, u in shifts if s.date == current_date]
@@ -2493,6 +2499,9 @@ def calculate_team_analysis(calendar_ids, start_date, end_date, filters=None, us
         
         coverage_data.append({
             'day': current_date.day,
+            'month': current_date.month,
+            'month_name': russian_months[current_date.month],
+            'full_date': current_date.strftime('%Y-%m-%d'),
             'coverage_percent': coverage_percent,
             'shifts_count': len(day_shifts)
         })
@@ -2537,29 +2546,34 @@ def calculate_time_slots(calendar_ids, start_date, end_date, filters=None, user_
     template_data = {}
     
     for shift in shifts:
+        # Handle shifts with time
         if shift.show_time and shift.start_time and shift.end_time:
-            # Create a key based on time range
             time_range = f"{shift.start_time.strftime('%H:%M')} - {shift.end_time.strftime('%H:%M')}"
-            
-            if time_range not in template_data:
-                template_data[time_range] = {
-                    'title': shift.title,  # Use first shift's title as template name
-                    'time_range': time_range,
-                    'count': 0,
-                    'color_class': shift.color_class,
-                    'shifts': []
-                }
-            
-            template_data[time_range]['count'] += 1
-            template_data[time_range]['shifts'].append({
-                'id': shift.id,
+            template_key = f"{shift.title}|{time_range}"
+        # Handle shifts without time
+        else:
+            time_range = "Без времени"
+            template_key = f"{shift.title}|{time_range}"
+        
+        if template_key not in template_data:
+            template_data[template_key] = {
                 'title': shift.title,
-                'date': shift.date.strftime('%Y-%m-%d'),
-                'user_id': shift.user_id
-            })
+                'time_range': time_range,
+                'count': 0,
+                'color_class': shift.color_class,
+                'shifts': []
+            }
+        
+        template_data[template_key]['count'] += 1
+        template_data[template_key]['shifts'].append({
+            'id': shift.id,
+            'title': shift.title,
+            'date': shift.date.strftime('%Y-%m-%d'),
+            'user_id': shift.user_id
+        })
     
-    # Calculate total shifts for percentage
-    total_shifts = len([s for s in shifts if s.show_time and s.start_time and s.end_time])
+    # Calculate total shifts for percentage (include all shifts for seasonal patterns)
+    total_shifts = len(shifts)
     
     if total_shifts == 0:
         return {'templates': []}
@@ -2576,8 +2590,8 @@ def calculate_time_slots(calendar_ids, start_date, end_date, filters=None, user_
             'shifts': data['shifts']
         })
     
-    # Sort by usage count (most used first)
-    templates_list.sort(key=lambda x: x['count'], reverse=True)
+    # Sort by usage count (most used first), then by title for same counts
+    templates_list.sort(key=lambda x: (-x['count'], x['title']))
     
     return {'templates': templates_list}
 
@@ -2679,17 +2693,19 @@ def calculate_weekday_activity(calendar_ids, start_date, end_date, filters=None,
     weekday_hours = [0] * 7  # Monday = 0, Sunday = 6
     
     for shift in shifts:
-        weekday = shift.date.weekday()
-        
-        # Calculate shift duration
-        start_time = datetime.combine(shift.date, shift.start_time)
-        end_time = datetime.combine(shift.date, shift.end_time)
-        
-        if end_time < start_time:
-            end_time += timedelta(days=1)
-        
-        duration = (end_time - start_time).total_seconds() / 3600
-        weekday_hours[weekday] += duration
+        # Only calculate duration for shifts that show time
+        if shift.show_time:
+            weekday = shift.date.weekday()
+            
+            # Calculate shift duration
+            start_time = datetime.combine(shift.date, shift.start_time)
+            end_time = datetime.combine(shift.date, shift.end_time)
+            
+            if end_time < start_time:
+                end_time += timedelta(days=1)
+            
+            duration = (end_time - start_time).total_seconds() / 3600
+            weekday_hours[weekday] += duration
     
     return {
         'hours': [round(hours, 1) for hours in weekday_hours]
@@ -2819,6 +2835,7 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
         
         # Calculate metrics
         total_hours = 0
+        shifts_with_time = 0
         unique_users = set()
         
         for shift in shifts:
@@ -2833,6 +2850,7 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
                 
                 duration = (end_time - start_time).total_seconds() / 3600
                 total_hours += duration
+                shifts_with_time += 1
             
             unique_users.add(shift.user_id)
         
@@ -2840,7 +2858,7 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
         trends_data['hours']['values'].append(round(total_hours, 1))
         
         trends_data['shifts']['labels'].append(label)
-        trends_data['shifts']['values'].append(len(shifts))
+        trends_data['shifts']['values'].append(shifts_with_time)
         
         trends_data['people']['labels'].append(label)
         trends_data['people']['values'].append(len(unique_users))

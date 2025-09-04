@@ -88,7 +88,7 @@
         <div class="calendars-selector" id="calendarsSelector">
             {% for calendar in calendars %}
             <div class="calendar-checkbox">
-                <input type="checkbox" id="calendar_{{ calendar.id }}" value="{{ calendar.id }}" 
+                <input type="radio" name="calendar-selection" id="calendar_{{ calendar.id }}" value="{{ calendar.id }}" 
                        class="calendar-input" data-role="{{ calendar_roles[calendar.id] }}" {% if loop.first %}checked{% endif %}>
                 <label for="calendar_{{ calendar.id }}" class="calendar-label">
                     <i class="bi bi-calendar-week"></i>
@@ -200,23 +200,6 @@
                     </div>
                 </div>
                 
-                <div class="filter-card">
-                    <div class="filter-icon">
-                        <i class="bi bi-hourglass"></i>
-                    </div>
-                    <div class="filter-content">
-                        <label class="filter-label">Длительность</label>
-                        <div class="custom-select-wrapper">
-                            <select id="durationFilter" class="custom-select">
-                                <option value="">Любая длительность</option>
-                                <option value="short">⚡ Короткие (&lt;4ч)</option>
-                                <option value="medium">⏰ Средние (4-8ч)</option>
-                                <option value="long">🔥 Длинные (&gt;8ч)</option>
-                            </select>
-                            <i class="bi bi-chevron-down select-arrow"></i>
-                        </div>
-                    </div>
-                </div>
             </div>
             
             <div class="filter-actions">

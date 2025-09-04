@@ -32,8 +32,7 @@ class AnalysisPage {
         this.comparisonMonth = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
         this.filters = {
             users: [],
-            shiftType: '',
-            duration: ''
+            shiftType: ''
         };
         this.cache = new Map();
         
@@ -91,27 +90,47 @@ class AnalysisPage {
         document.getElementById('periodSelect').addEventListener('change', (e) => {
             this.currentPeriod = e.target.value;
             this.updateDatePickers();
+            this.loadUserOptions(); // Reload users when period changes
+            this.loadShiftTypeOptions(); // Reload shift types when period changes
             this.loadAnalysisData();
         });
 
         // Date picker event listeners
         document.getElementById('weekPicker').addEventListener('change', (e) => {
             this.currentMonth = e.target.value;
+            console.log('Week picker changed to:', this.currentMonth);
+            setTimeout(() => {
+                console.log('Loading user and shift type options for week change');
+                this.loadUserOptions(); // Reload users when week changes
+                this.loadShiftTypeOptions(); // Reload shift types when week changes
+            }, 100);
             this.loadAnalysisData();
         });
 
         document.getElementById('monthPicker').addEventListener('change', (e) => {
             this.currentMonth = e.target.value;
+            console.log('Month picker changed to:', this.currentMonth);
+            this.loadUserOptions(); // Reload users when month changes
+            this.loadShiftTypeOptions(); // Reload shift types when month changes
             this.loadAnalysisData();
         });
 
         document.getElementById('quarterPicker').addEventListener('change', (e) => {
             this.currentMonth = e.target.value;
+            console.log('Quarter picker changed to:', this.currentMonth);
+            setTimeout(() => {
+                console.log('Loading user and shift type options for quarter change');
+                this.loadUserOptions(); // Reload users when quarter changes
+                this.loadShiftTypeOptions(); // Reload shift types when quarter changes
+            }, 100);
             this.loadAnalysisData();
         });
 
         document.getElementById('yearPicker').addEventListener('change', (e) => {
             this.currentMonth = e.target.value;
+            console.log('Year picker changed to:', this.currentMonth);
+            this.loadUserOptions(); // Reload users when year changes
+            this.loadShiftTypeOptions(); // Reload shift types when year changes
             this.loadAnalysisData();
         });
 
@@ -197,7 +216,6 @@ class AnalysisPage {
                 // Reset hidden selects
                 const userFilter = document.getElementById('userFilter');
                 const shiftTypeFilter = document.getElementById('shiftTypeFilter');
-                const durationFilter = document.getElementById('durationFilter');
                 
                 if (userFilter) {
                     Array.from(userFilter.options).forEach(option => option.selected = false);
@@ -207,17 +225,14 @@ class AnalysisPage {
                     Array.from(shiftTypeFilter.options).forEach(option => option.selected = false);
                     shiftTypeFilter.options[0].selected = true; // Select "All types"
                 }
-                if (durationFilter) durationFilter.value = '';
                 
                 // Reset custom dropdowns UI
                 this.resetParticipantsDropdown();
-                this.resetShiftTypesDropdown();
+                this.resetShiftTypeDropdown();
                 
-                // Update filters and reload data
                 this.filters = {
                     users: [],
-                    shiftType: [],
-                    duration: ''
+                    shiftType: []
                 };
                 
                 this.loadAnalysisData();
@@ -232,7 +247,7 @@ class AnalysisPage {
         }
 
         // Filter changes - only update filter state, don't load data
-        ['userFilter', 'shiftTypeFilter', 'durationFilter'].forEach(filterId => {
+        ['userFilter', 'shiftTypeFilter'].forEach(filterId => {
             const element = document.getElementById(filterId);
             if (element) {
                 element.addEventListener('change', (e) => {
@@ -255,38 +270,34 @@ class AnalysisPage {
     }
 
     initializeCalendarSelection() {
-        const checkboxes = document.querySelectorAll('.calendar-input');
-        this.selectedCalendars = Array.from(checkboxes)
-            .filter(cb => cb.checked)
-            .map(cb => parseInt(cb.value));
+        const selectedRadio = document.querySelector('.calendar-input:checked');
+        this.selectedCalendars = selectedRadio ? [parseInt(selectedRadio.value)] : [];
     }
 
     updateSelectedCalendars() {
-        const checkboxes = document.querySelectorAll('.calendar-input');
-        this.selectedCalendars = Array.from(checkboxes)
-            .filter(cb => cb.checked)
-            .map(cb => parseInt(cb.value));
+        const selectedRadio = document.querySelector('.calendar-input:checked');
+        this.selectedCalendars = selectedRadio ? [parseInt(selectedRadio.value)] : [];
     }
 
     updateParticipantInfoVisibility() {
-        const checkboxes = document.querySelectorAll('.calendar-input:checked');
+        const selectedRadio = document.querySelector('.calendar-input:checked');
         const participantInfo = document.getElementById('participantInfo');
         const teamSection = document.getElementById('teamSection');
         const workTimeContainer = document.getElementById('workTimeContainer');
         const peopleBtn = document.getElementById('peopleBtn');
+        const filterToggle = document.getElementById('filterToggle');
+        const advancedFilters = document.getElementById('advancedFilters');
         
         if (!participantInfo) return;
         
-        // Check if user is creator of any selected calendar
+        // Check if user is creator of selected calendar
         let isCreatorOfAny = false;
-        checkboxes.forEach(checkbox => {
-            if (checkbox.dataset.role === 'creator') {
-                isCreatorOfAny = true;
-            }
-        });
+        if (selectedRadio && selectedRadio.dataset.role === 'creator') {
+            isCreatorOfAny = true;
+        }
         
-        // Show info panel only if user is not creator of any selected calendar
-        if (checkboxes.length > 0 && !isCreatorOfAny) {
+        // Show info panel only if user is not creator of selected calendar
+        if (selectedRadio && !isCreatorOfAny) {
             participantInfo.style.display = 'block';
             // Hide team analysis section for participants
             if (teamSection) {
@@ -295,6 +306,13 @@ class AnalysisPage {
             // Hide work time distribution chart for participants
             if (workTimeContainer) {
                 workTimeContainer.style.display = 'none';
+            }
+            // Hide advanced filters for participants
+            if (filterToggle) {
+                filterToggle.style.display = 'none';
+            }
+            if (advancedFilters) {
+                advancedFilters.style.display = 'none';
             }
             // Hide participants button in trends chart
             if (peopleBtn) {
@@ -319,6 +337,10 @@ class AnalysisPage {
             // Show team analysis section for creators
             if (teamSection) {
                 teamSection.style.display = 'block';
+            }
+            // Show advanced filters for creators
+            if (filterToggle) {
+                filterToggle.style.display = 'block';
             }
             // Show work time distribution chart for creators
             if (workTimeContainer) {
@@ -646,32 +668,126 @@ class AnalysisPage {
 
     updateCoverageGrid(coverageData) {
         const container = document.getElementById('coverageGrid');
+        const coverageAnalysis = container.closest('.coverage-analysis');
+        
         container.innerHTML = '';
 
-        // Add day headers
-        const dayHeaders = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-        dayHeaders.forEach(day => {
-            const header = document.createElement('div');
-            header.className = 'coverage-day-header';
-            header.textContent = day;
-            header.style.cssText = `
-                text-align: center;
-                font-weight: 600;
-                color: #6b7280;
-                padding: 0.5rem;
-                font-size: 0.8rem;
-            `;
-            container.appendChild(header);
-        });
+        // Check if we should use horizontal layout (quarter or year periods)
+        const useHorizontalLayout = this.currentPeriod === 'quarter' || this.currentPeriod === 'year';
+        
+        if (useHorizontalLayout) {
+            // Add horizontal layout class
+            coverageAnalysis.classList.add('horizontal-layout');
+            
+            // Group data by months
+            const monthsData = {};
+            coverageData.forEach(day => {
+                if (!monthsData[day.month]) {
+                    monthsData[day.month] = {
+                        name: day.month_name,
+                        days: []
+                    };
+                }
+                monthsData[day.month].days.push(day);
+            });
 
-        // Add coverage days
-        coverageData.forEach(day => {
-            const dayElement = document.createElement('div');
-            dayElement.className = `coverage-day ${this.getCoverageClass(day.coverage_percent)}`;
-            dayElement.textContent = day.day;
-            dayElement.title = `${day.coverage_percent}% покрытие, ${day.shifts_count} смен`;
-            container.appendChild(dayElement);
-        });
+            // Create horizontal layout with month tables
+            Object.keys(monthsData).forEach(monthKey => {
+                const monthData = monthsData[monthKey];
+                
+                // Create month table container
+                const monthTable = document.createElement('div');
+                monthTable.className = 'coverage-month-table';
+                
+                // Month title
+                const monthTitle = document.createElement('div');
+                monthTitle.className = 'coverage-month-title';
+                monthTitle.textContent = monthData.name;
+                monthTable.appendChild(monthTitle);
+                
+                // Day headers
+                const dayHeaders = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+                const monthGrid = document.createElement('div');
+                monthGrid.className = 'coverage-month-grid';
+                
+                dayHeaders.forEach(day => {
+                    const header = document.createElement('div');
+                    header.className = 'coverage-day-header';
+                    header.textContent = day;
+                    header.style.cssText = `
+                        text-align: center;
+                        font-weight: 600;
+                        color: #6b7280;
+                        padding: 0.25rem;
+                        font-size: 0.7rem;
+                    `;
+                    monthGrid.appendChild(header);
+                });
+                
+                // Add days
+                monthData.days.forEach(day => {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = `coverage-day ${this.getCoverageClass(day.coverage_percent)}`;
+                    dayElement.textContent = day.day;
+                    dayElement.title = `${day.full_date}: ${day.coverage_percent}% покрытие, ${day.shifts_count} смен`;
+                    monthGrid.appendChild(dayElement);
+                });
+                
+                monthTable.appendChild(monthGrid);
+                container.appendChild(monthTable);
+            });
+            
+        } else {
+            // Remove horizontal layout class
+            coverageAnalysis.classList.remove('horizontal-layout');
+            
+            // Use vertical layout (original code)
+            const dayHeaders = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+            dayHeaders.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'coverage-day-header';
+                header.textContent = day;
+                header.style.cssText = `
+                    text-align: center;
+                    font-weight: 600;
+                    color: #6b7280;
+                    padding: 0.5rem;
+                    font-size: 0.8rem;
+                `;
+                container.appendChild(header);
+            });
+
+            // Add coverage days with month separators
+            let currentMonth = null;
+            coverageData.forEach((day, index) => {
+                // Add month separator if month changed
+                if (day.month !== currentMonth) {
+                    const monthSeparator = document.createElement('div');
+                    monthSeparator.className = 'coverage-month-separator';
+                    monthSeparator.textContent = day.month_name;
+                    monthSeparator.style.cssText = `
+                        grid-column: 1 / -1;
+                        text-align: center;
+                        font-weight: 700;
+                        color: #374151;
+                        background: #f9fafb;
+                        padding: 0.5rem;
+                        margin: 0.25rem 0;
+                        border-radius: 4px;
+                        font-size: 0.9rem;
+                        border: 1px solid #e5e7eb;
+                    `;
+                    container.appendChild(monthSeparator);
+                    currentMonth = day.month;
+                }
+
+                const dayElement = document.createElement('div');
+                dayElement.className = `coverage-day ${this.getCoverageClass(day.coverage_percent)}`;
+                dayElement.textContent = day.day;
+                dayElement.title = `${day.full_date}: ${day.coverage_percent}% покрытие, ${day.shifts_count} смен`;
+                container.appendChild(dayElement);
+            });
+        }
     }
 
     getCoverageClass(percent) {
@@ -701,8 +817,7 @@ class AnalysisPage {
             templateElement.innerHTML = `
                 <div class="template-header">
                     <div class="template-info">
-                        <span class="template-title">${template.title}</span>
-                        <span class="template-badge shift-badge ${template.color_class}">${template.time_range}</span>
+                        <span class="template-badge shift-badge ${template.color_class}" title="${template.time_range}">${template.time_range.includes('|') ? (template.time_range.split('|')[0].length > 8 ? template.time_range.substring(0, 8) + '...|' + template.time_range.split('|')[1] : template.time_range) : template.time_range}</span>
                     </div>
                     <div class="template-stats">
                         <span class="template-count">${template.count} ${template.count === 1 ? 'смена' : 'смен'}</span>
@@ -959,10 +1074,16 @@ class AnalysisPage {
                     y: {
                         beginAtZero: true,
                         ticks: {
+                            stepSize: metric === 'people' ? 1 : undefined,
                             callback: function(value) {
-                                return metric === 'hours' ? value + 'ч' : 
-                                       metric === 'shifts' ? value : 
-                                       value + ' чел.';
+                                if (metric === 'hours') {
+                                    return value + 'ч';
+                                } else if (metric === 'shifts') {
+                                    return Math.round(value);
+                                } else if (metric === 'people') {
+                                    return Math.round(value) + ' чел.';
+                                }
+                                return value;
                             }
                         }
                     }
@@ -1042,12 +1163,10 @@ class AnalysisPage {
     updateFilters() {
         const userFilter = document.getElementById('userFilter');
         const shiftTypeFilter = document.getElementById('shiftTypeFilter');
-        const durationFilter = document.getElementById('durationFilter');
         
         this.filters = {
             users: Array.from(userFilter.selectedOptions).map(option => option.value).filter(v => v),
-            shiftType: Array.from(shiftTypeFilter.selectedOptions).map(option => option.value).filter(v => v),
-            duration: durationFilter.value
+            shiftType: Array.from(shiftTypeFilter.selectedOptions).map(option => option.value).filter(v => v)
         };
     }
 
@@ -1079,6 +1198,42 @@ class AnalysisPage {
         } catch (error) {
             console.error('Error loading user options:', error);
         }
+    }
+
+    resetParticipantsDropdown() {
+        const placeholder = document.querySelector('.participants-placeholder');
+        const allOption = document.getElementById('participantsOptions')?.querySelector('.all-option input[type="checkbox"]');
+        const otherCheckboxes = document.querySelectorAll('#participantsOptions .participant-option:not(.all-option) input[type="checkbox"]');
+        
+        if (placeholder) {
+            placeholder.textContent = 'Все участники';
+        }
+        
+        if (allOption) {
+            allOption.checked = true;
+        }
+        
+        otherCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+
+    resetShiftTypeDropdown() {
+        const placeholder = document.querySelector('.shift-types-placeholder');
+        const allOption = document.getElementById('shiftTypesOptions')?.querySelector('.all-option input[type="checkbox"]');
+        const otherCheckboxes = document.querySelectorAll('#shiftTypesOptions .shift-type-option:not(.all-option):not(.no-shifts) input[type="checkbox"]');
+        
+        if (placeholder) {
+            placeholder.textContent = 'Все типы';
+        }
+        
+        if (allOption) {
+            allOption.checked = true;
+        }
+        
+        otherCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
     }
 
     updateParticipantsList(users) {
@@ -1132,8 +1287,13 @@ class AnalysisPage {
             participantsOptions.appendChild(option);
         });
 
+        // Clear any existing dropdown state
+        this.clearDropdownState();
+        
         // Initialize participant dropdown functionality
-        this.initializeParticipantsDropdown();
+        setTimeout(() => {
+            this.initializeParticipantsDropdown();
+        }, 50);
     }
 
     updateHiddenSelect(users) {
@@ -1157,6 +1317,19 @@ class AnalysisPage {
         });
     }
 
+    clearDropdownState() {
+        // Close any open dropdowns
+        const participantsList = document.getElementById('participantsList');
+        const shiftTypesList = document.getElementById('shiftTypesList');
+        const participantsTrigger = document.getElementById('participantsTrigger');
+        const shiftTypesTrigger = document.getElementById('shiftTypesTrigger');
+        
+        if (participantsList) participantsList.classList.remove('show');
+        if (shiftTypesList) shiftTypesList.classList.remove('show');
+        if (participantsTrigger) participantsTrigger.classList.remove('active');
+        if (shiftTypesTrigger) shiftTypesTrigger.classList.remove('active');
+    }
+
     initializeParticipantsDropdown() {
         const trigger = document.getElementById('participantsTrigger');
         const list = document.getElementById('participantsList');
@@ -1165,10 +1338,20 @@ class AnalysisPage {
         const placeholder = document.querySelector('.participants-placeholder');
         const hiddenSelect = document.getElementById('userFilter');
 
-        if (!trigger || !list || !search || !options) return;
+        if (!trigger || !list || !search || !options) {
+            console.log('Missing elements for participants dropdown:', {trigger, list, search, options});
+            return;
+        }
+
+        // Remove existing event listeners to prevent duplicates
+        const newTrigger = trigger.cloneNode(true);
+        trigger.parentNode.replaceChild(newTrigger, trigger);
+        
+        // Get fresh reference
+        const currentTrigger = document.getElementById('participantsTrigger');
 
         // Toggle dropdown
-        trigger.addEventListener('click', (e) => {
+        currentTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
             const isOpen = list.classList.contains('show');
             
@@ -1349,6 +1532,8 @@ class AnalysisPage {
             return;
         }
 
+        console.log('Updating shift types list with', shiftTypes.length, 'types');
+
         // Keep the "All types" option and clear the rest
         const allOption = shiftTypesOptions.querySelector('.all-option');
         const allOptionHTML = allOption ? allOption.outerHTML : `
@@ -1372,34 +1557,61 @@ class AnalysisPage {
         // Clear all options and add the "All types" option back
         shiftTypesOptions.innerHTML = allOptionHTML;
 
-        // Add shift type options
-        shiftTypes.forEach(shiftType => {
-            const option = document.createElement('div');
-            option.className = 'shift-type-option';
-            option.dataset.value = shiftType.color_class;
+        // Check if we have shift types
+        if (shiftTypes.length === 0) {
+            // Hide "All types" option when no shifts
+            shiftTypesOptions.innerHTML = '';
             
-            option.innerHTML = `
-                <div class="shift-type-checkbox">
-                    <input type="checkbox" id="shift-type-${shiftType.color_class}">
-                    <label for="shift-type-${shiftType.color_class}"></label>
-                </div>
+            // Add "No shifts" message
+            const noShiftsOption = document.createElement('div');
+            noShiftsOption.className = 'shift-type-option no-shifts';
+            noShiftsOption.style.cursor = 'default';
+            noShiftsOption.innerHTML = `
                 <div class="shift-type-info">
-                    <div class="shift-type-color" style="background-color: ${shiftType.color};">
-                        ${shiftType.color_name ? shiftType.color_name.charAt(0).toUpperCase() : shiftType.color_class.charAt(0).toUpperCase()}
+                    <div class="shift-type-color">
+                        <i class="bi bi-info-circle"></i>
                     </div>
                     <div class="shift-type-details">
-                        <div class="shift-type-name">${shiftType.title}</div>
+                        <div class="shift-type-name">Нет смен</div>
+                        <div class="shift-type-description">В выбранном периоде нет смен</div>
                     </div>
                 </div>
             `;
-            
-            shiftTypesOptions.appendChild(option);
-        });
+            shiftTypesOptions.appendChild(noShiftsOption);
+        } else {
+            // Add shift type options
+            shiftTypes.forEach(shiftType => {
+                const option = document.createElement('div');
+                option.className = 'shift-type-option';
+                option.dataset.value = shiftType.color_class;
+                
+                option.innerHTML = `
+                    <div class="shift-type-checkbox">
+                        <input type="checkbox" id="shift-type-${shiftType.color_class}">
+                        <label for="shift-type-${shiftType.color_class}"></label>
+                    </div>
+                    <div class="shift-type-info">
+                        <div class="shift-type-color ${shiftType.color_class}">
+                            ${shiftType.color_name ? shiftType.color_name.charAt(0).toUpperCase() : shiftType.color_class.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="shift-type-details">
+                            <div class="shift-type-name">${shiftType.title}</div>
+                        </div>
+                    </div>
+                `;
+                
+                shiftTypesOptions.appendChild(option);
+            });
+        }
 
-        // Re-initialize shift types dropdown functionality after updating content
+        // Clear any existing dropdown state
+        this.clearDropdownState();
+        
+        // Initialize shift types dropdown functionality
         setTimeout(() => {
+            console.log('Initializing shift types dropdown after update');
             this.initializeShiftTypesDropdown();
-        }, 0);
+        }, 50);
     }
 
     updateHiddenShiftTypeSelect(shiftTypes) {
@@ -1429,43 +1641,58 @@ class AnalysisPage {
         const search = document.getElementById('shiftTypesSearch');
         const options = document.getElementById('shiftTypesOptions');
 
-        if (!trigger || !list || !search || !options) return;
+        if (!trigger || !list || !search || !options) {
+            console.log('Missing elements for shift types dropdown:', {trigger, list, search, options});
+            return;
+        }
+
+        console.log('Initializing shift types dropdown - elements found');
+
+        // Remove existing event listeners to prevent duplicates
+        const newTrigger = trigger.cloneNode(true);
+        trigger.parentNode.replaceChild(newTrigger, trigger);
+        
+        // Get fresh reference
+        const currentTrigger = document.getElementById('shiftTypesTrigger');
 
         // Toggle dropdown
-        trigger.addEventListener('click', (e) => {
+        currentTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
             const isOpen = list.classList.contains('show');
             
             if (isOpen) {
                 list.classList.remove('show');
-                trigger.classList.remove('active');
+                currentTrigger.classList.remove('active');
             } else {
                 list.classList.add('show');
-                trigger.classList.add('active');
+                currentTrigger.classList.add('active');
                 search.focus();
             }
         });
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
-            if (!trigger.contains(e.target) && !list.contains(e.target)) {
+            if (!currentTrigger.contains(e.target) && !list.contains(e.target)) {
                 list.classList.remove('show');
-                trigger.classList.remove('active');
+                currentTrigger.classList.remove('active');
             }
         });
 
         // Search functionality
         search.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
-            const shiftTypeOptions = options.querySelectorAll('.shift-type-option:not(.all-option)');
+            const shiftTypeOptions = options.querySelectorAll('.shift-type-option:not(.all-option):not(.no-shifts)');
             
             shiftTypeOptions.forEach(option => {
-                const name = option.querySelector('.shift-type-name').textContent.toLowerCase();
-                
-                if (name.includes(searchTerm)) {
-                    option.style.display = 'flex';
-                } else {
-                    option.style.display = 'none';
+                const nameElement = option.querySelector('.shift-type-name');
+                if (nameElement) {
+                    const name = nameElement.textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm)) {
+                        option.style.display = 'flex';
+                    } else {
+                        option.style.display = 'none';
+                    }
                 }
             });
         });
@@ -1475,7 +1702,14 @@ class AnalysisPage {
             const option = e.target.closest('.shift-type-option');
             if (!option) return;
 
+            // Ignore clicks on "No shifts" option
+            if (option.classList.contains('no-shifts')) {
+                return;
+            }
+
             const checkbox = option.querySelector('input[type="checkbox"]');
+            if (!checkbox) return; // Safety check
+            
             const isAllOption = option.classList.contains('all-option');
             
             // Toggle checkbox when clicking anywhere on the option
