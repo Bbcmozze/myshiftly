@@ -693,7 +693,7 @@ main {
 }
 
 .search-result-item {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.8rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -724,6 +724,7 @@ main {
 }
 
 .search-result-name {
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--text-color);
     white-space: nowrap;
@@ -732,7 +733,7 @@ main {
 }
 
 .search-result-username {
-    font-size: 0.9rem;
+    font-size: 0.6rem;
     color: #64748b;
     white-space: nowrap;
     overflow: hidden;
@@ -744,13 +745,14 @@ main {
 }
 
 .no-results {
+    font-size: 0.8rem;
     padding: 1rem;
     color: #64748b;
     text-align: center;
 }
 
 .search-result-already-friends {
-    font-size: 0.875rem;
+    font-size: 0.7rem;
     color: #64748b;
     font-style: italic;
 }
