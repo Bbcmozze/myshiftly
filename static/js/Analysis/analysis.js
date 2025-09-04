@@ -111,7 +111,7 @@ class AnalysisPage {
         });
 
         document.getElementById('yearPicker').addEventListener('change', (e) => {
-            this.currentMonth = e.target.value + '-01';
+            this.currentMonth = e.target.value;
             this.loadAnalysisData();
         });
 
@@ -350,23 +350,39 @@ class AnalysisPage {
                     const now = new Date();
                     const year = now.getFullYear();
                     const week = this.getWeekNumber(now);
-                    document.getElementById('weekPicker').value = `${year}-W${week.toString().padStart(2, '0')}`;
+                    const weekValue = `${year}-W${week.toString().padStart(2, '0')}`;
+                    document.getElementById('weekPicker').value = weekValue;
+                    this.currentMonth = weekValue;
                 }
                 break;
             case 'month':
                 document.getElementById('monthPicker').style.display = 'inline-block';
+                // Set current month if not set
+                if (!document.getElementById('monthPicker').value) {
+                    const now = new Date();
+                    const monthValue = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+                    document.getElementById('monthPicker').value = monthValue;
+                    this.currentMonth = monthValue;
+                }
                 break;
             case 'quarter':
                 document.getElementById('quarterPicker').style.display = 'inline-block';
-                // Set current quarter if not set
-                if (!document.getElementById('quarterPicker').value) {
-                    const now = new Date();
-                    const quarter = Math.ceil((now.getMonth() + 1) / 3);
-                    document.getElementById('quarterPicker').value = `${now.getFullYear()}-Q${quarter}`;
-                }
+                // Always set current quarter
+                const now = new Date();
+                const quarter = Math.ceil((now.getMonth() + 1) / 3);
+                const currentQuarter = `${now.getFullYear()}-Q${quarter}`;
+                document.getElementById('quarterPicker').value = currentQuarter;
+                this.currentMonth = currentQuarter;
                 break;
             case 'year':
                 document.getElementById('yearPicker').style.display = 'inline-block';
+                // Set current year if not set
+                if (!document.getElementById('yearPicker').value) {
+                    const now = new Date();
+                    const yearValue = now.getFullYear().toString();
+                    document.getElementById('yearPicker').value = yearValue;
+                    this.currentMonth = yearValue;
+                }
                 break;
         }
     }
@@ -461,6 +477,12 @@ class AnalysisPage {
             this.showLoading();
 
             try {
+                console.log('Sending request with:', {
+                    period: this.currentPeriod,
+                    month: this.currentMonth,
+                    calendar_ids: this.selectedCalendars
+                });
+                
                 const requestData = {
                     period: this.currentPeriod,
                     month: this.currentMonth,

@@ -2227,11 +2227,21 @@ def apply_filters(query, filters):
 def get_week_range(month_str):
     """Get start and end date for a week period"""
     try:
-        date = datetime.strptime(month_str, '%Y-%m').date()
-        # Get the first day of the week containing the first day of the month
-        start_date = date - timedelta(days=date.weekday())
-        end_date = start_date + timedelta(days=6)
-        return start_date, end_date
+        if 'W' in month_str:
+            # Parse week format: 2025-W35
+            year, week = month_str.split('-W')
+            # Use ISO week date parsing
+            date = datetime.strptime(f'{year}-W{week.zfill(2)}-1', '%Y-W%W-%w').date()
+            start_date = date - timedelta(days=date.weekday())
+            end_date = start_date + timedelta(days=6)
+            return start_date, end_date
+        else:
+            # Old format fallback
+            date = datetime.strptime(month_str, '%Y-%m').date()
+            # Get the first day of the week containing the first day of the month
+            start_date = date - timedelta(days=date.weekday())
+            end_date = start_date + timedelta(days=6)
+            return start_date, end_date
     except ValueError:
         # Fallback to current week
         today = datetime.utcnow().date()
@@ -2259,18 +2269,37 @@ def get_month_range(month_str):
 def get_quarter_range(month_str):
     """Get start and end date for a quarter period"""
     try:
-        date = datetime.strptime(month_str, '%Y-%m').date()
-        quarter = (date.month - 1) // 3 + 1
-        start_month = (quarter - 1) * 3 + 1
-        start_date = date.replace(month=start_month, day=1)
-        
-        if quarter == 4:
-            end_date = date.replace(year=date.year + 1, month=1, day=1) - timedelta(days=1)
+        if 'Q' in month_str:
+            # Parse quarter format: 2025-Q3
+            year, quarter = month_str.split('-Q')
+            year = int(year)
+            quarter = int(quarter)
+            start_month = (quarter - 1) * 3 + 1
+            start_date = datetime(year, start_month, 1).date()
+            
+            if quarter == 4:
+                end_date = datetime(year, 12, 31).date()
+            else:
+                end_month = quarter * 3
+                import calendar
+                last_day = calendar.monthrange(year, end_month)[1]
+                end_date = datetime(year, end_month, last_day).date()
+            
+            return start_date, end_date
         else:
-            end_month = quarter * 3 + 1
-            end_date = date.replace(month=end_month, day=1) - timedelta(days=1)
-        
-        return start_date, end_date
+            # Old format fallback
+            date = datetime.strptime(month_str, '%Y-%m').date()
+            quarter = (date.month - 1) // 3 + 1
+            start_month = (quarter - 1) * 3 + 1
+            start_date = date.replace(month=start_month, day=1)
+            
+            if quarter == 4:
+                end_date = date.replace(year=date.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                end_month = quarter * 3 + 1
+                end_date = date.replace(month=end_month, day=1) - timedelta(days=1)
+            
+            return start_date, end_date
     except ValueError:
         # Fallback to current quarter
         today = datetime.utcnow().date()
@@ -2681,25 +2710,30 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
         if period == 'week' and 'W' in month:
             # Parse week format: 2024-W35
             year, week = month.split('-W')
-            base_date = datetime.strptime(f'{year}-W{week}-1', '%Y-W%W-%w').date()
+            # Use ISO week date parsing
+            base_date = datetime.strptime(f'{year}-W{week.zfill(2)}-1', '%Y-W%W-%w').date()
+            print(f"Week parsing: {month} -> {base_date}")
         elif period == 'quarter' and 'Q' in month:
             # Parse quarter format: 2024-Q3
             year, quarter = month.split('-Q')
             quarter_month = (int(quarter) - 1) * 3 + 1
             base_date = datetime(int(year), quarter_month, 1).date()
+            print(f"Quarter parsing: {month} -> {base_date} (Q{quarter} {year})")
         elif period == 'year' and len(month) == 4:
             # Parse year format: 2024
             base_date = datetime(int(month), 1, 1).date()
         else:
             # Parse month format: 2024-08
             base_date = datetime.strptime(month, '%Y-%m').date()
-    except ValueError:
+    except ValueError as e:
+        print(f"Error parsing {month}: {e}")
         base_date = datetime.utcnow().date()
     
     for i in range(11, -1, -1):  # Last 12 periods
         if period == 'week':
-            # Calculate week by subtracting weeks
-            target_date = base_date - timedelta(weeks=i)
+            # Calculate each week going backwards from the selected week
+            weeks_back = i  # i goes from 11 to 0, so 11 weeks back to current week
+            target_date = base_date - timedelta(weeks=weeks_back)
             # Get start of week (Monday)
             start_date = target_date - timedelta(days=target_date.weekday())
             end_date = start_date + timedelta(days=6)
@@ -2718,11 +2752,12 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
             start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
             label = period_date.strftime('%b %Y')
         elif period == 'quarter':
-            # Calculate quarter by subtracting quarters
+            # Calculate each quarter going backwards from the selected quarter
             base_quarter = (base_date.month - 1) // 3 + 1
             base_year = base_date.year
             
-            target_quarter = base_quarter - i
+            quarters_back = i  # i goes from 11 to 0, so 11 quarters back to current quarter
+            target_quarter = base_quarter - quarters_back
             target_year = base_year
             
             while target_quarter <= 0:
@@ -2732,14 +2767,26 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
             start_month = (target_quarter - 1) * 3 + 1
             start_date = datetime(target_year, start_month, 1).date()
             
-            if start_month + 2 <= 12:
-                end_month = start_month + 2
-                end_year = target_year
+            # Calculate end of quarter - last day of third month
+            end_month = start_month + 2
+            if end_month == 12:
+                end_date = datetime(target_year, 12, 31).date()
+            elif end_month in [3, 6, 9]:  # March, June, September
+                if end_month == 3:  # March - check for leap year
+                    if target_year % 4 == 0 and (target_year % 100 != 0 or target_year % 400 == 0):
+                        end_date = datetime(target_year, 3, 31).date()
+                    else:
+                        end_date = datetime(target_year, 3, 31).date()
+                elif end_month == 6:  # June
+                    end_date = datetime(target_year, 6, 30).date()
+                else:  # September
+                    end_date = datetime(target_year, 9, 30).date()
             else:
-                end_month = (start_month + 2) - 12
-                end_year = target_year + 1
+                # For other months, use calendar to get last day
+                import calendar
+                last_day = calendar.monthrange(target_year, end_month)[1]
+                end_date = datetime(target_year, end_month, last_day).date()
             
-            end_date = datetime(end_year, end_month + 1, 1).date() - timedelta(days=1) if end_month < 12 else datetime(end_year, 12, 31).date()
             label = f"Q{target_quarter} {target_year}"
         elif period == 'year':
             year = base_date.year - i
@@ -2753,6 +2800,11 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
             Shift.date >= start_date,
             Shift.date <= end_date
         )
+        
+        # Debug logging
+        print(f"Period {period}, i={i}, Label: {label}, Start: {start_date}, End: {end_date}")
+        shift_count = query.count()
+        print(f"Found {shift_count} shifts for period {label}")
         
         # If user is only a participant (not creator of any selected calendars), show only their shifts
         if user_id and user_calendar_roles:
