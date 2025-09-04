@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - My Shiftly{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1><i class="bi bi-person-circle"></i> Мой профиль</h1>
+        <p class="profile-subtitle">Управление личной информацией и настройками</p>
+    </div>
+
+    <div class="profile-content">
+        <!-- Карточка сотрудника -->
+        <div class="employee-card">
+            <div class="employee-card-header">
+                <div class="employee-avatar-section">
+                    <div class="employee-avatar-container">
+                        <img src="{{ url_for('static', filename='images/' + current_user.avatar) }}" 
+                             alt="Аватар" class="employee-avatar" id="profileAvatar">
+                        <div class="avatar-actions">
+                            <button class="avatar-action-btn" id="changeAvatarBtn" title="Изменить фото">
+                                <i class="bi bi-camera-fill"></i>
+                            </button>
+                            {% if current_user.avatar != 'default_avatar.svg' %}
+                            <button class="avatar-action-btn delete-avatar" id="deleteAvatarBtn" title="Удалить фото">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="employee-info">
+                    <h2 class="employee-name">
+                        {{ current_user.first_name }} {{ current_user.last_name }}
+                    </h2>
+                    <p class="employee-username">@{{ current_user.username }}</p>
+                    <p class="employee-join-date">
+                        <i class="bi bi-calendar-check"></i>
+                        В команде с {{ current_user.created_at|to_msk('%d.%m.%Y') }}
+                    </p>
+                </div>
+
+                <!-- Кнопка Достижения -->
+                <div class="achievements-section">
+                    <button class="achievements-btn" id="achievementsBtn" title="Достижения">
+                        <i class="bi bi-trophy-fill"></i>
+                        <span>Достижения</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Статистика активности -->
+            <div class="stats-section">
+                <h3><i class="bi bi-graph-up"></i> Статистика активности</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_shifts }}</div>
+                            <div class="stat-label">Отработано смен</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_hours }}</div>
+                            <div class="stat-label">Часов работы</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-week"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_calendars }}</div>
+                            <div class="stat-label">Создано календарей</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_friends }}</div>
+                            <div class="stat-label">Коллег</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Персональные данные -->
+            <div class="personal-data-section">
+                <div class="section-header">
+                    <h3><i class="bi bi-person-gear"></i> Персональные данные</h3>
+                    <button class="edit-btn" id="editPersonalBtn">
+                        <i class="bi bi-pencil-square"></i> Редактировать
+                    </button>
+                </div>
+                
+                <div class="personal-data-content" id="personalDataContent">
+                    <div class="data-row">
+                        <label>Имя:</label>
+                        <span class="data-value" data-field="first_name">{{ current_user.first_name }}</span>
+                    </div>
+                    <div class="data-row">
+                        <label>Фамилия:</label>
+                        <span class="data-value" data-field="last_name">{{ current_user.last_name }}</span>
+                    </div>
+                    <div class="data-row">
+                        <label>Имя пользователя:</label>
+                        <span class="data-value" data-field="username">{{ current_user.username }}</span>
+                    </div>
+                    <div class="data-row">
+                        <label>Email:</label>
+                        <span class="data-value" data-field="email">{{ current_user.email }}</span>
+                    </div>
+                    <div class="data-row">
+                        <label>Возраст:</label>
+                        <span class="data-value" data-field="age">{{ current_user.age or 'Не указан' }}</span>
+                    </div>
+                    <div class="data-row">
+                        <label>Телефон:</label>
+                        <span class="data-value" data-field="phone">{{ current_user.phone or 'Не указан' }}</span>
+                    </div>
+                </div>
+
+                <!-- Форма редактирования (скрыта по умолчанию) -->
+                <div class="personal-data-edit" id="personalDataEdit" style="display: none;">
+                    <form id="personalDataForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editFirstName">Имя:</label>
+                                <input type="text" id="editFirstName" name="first_name" value="{{ current_user.first_name }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editLastName">Фамилия:</label>
+                                <input type="text" id="editLastName" name="last_name" value="{{ current_user.last_name }}" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editUsername">Имя пользователя:</label>
+                                <input type="text" id="editUsername" name="username" value="{{ current_user.username }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editEmail">Email:</label>
+                                <input type="email" id="editEmail" name="email" value="{{ current_user.email }}" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editAge">Возраст:</label>
+                                <input type="number" id="editAge" name="age" value="{{ current_user.age or '' }}" min="16" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="editPhone">Телефон:</label>
+                                <input type="tel" id="editPhone" name="phone" value="{{ current_user.phone or '' }}" placeholder="+7 (999) 123-45-67">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="save-btn">
+                                <i class="bi bi-check-lg"></i> Сохранить
+                            </button>
+                            <button type="button" class="cancel-btn" id="cancelEditBtn">
+                                <i class="bi bi-x-lg"></i> Отмена
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Смена пароля -->
+            <div class="password-section">
+                <div class="section-header">
+                    <h3><i class="bi bi-shield-lock"></i> Безопасность</h3>
+                    <button class="edit-btn" id="changePasswordBtn">
+                        <i class="bi bi-key"></i> Сменить пароль
+                    </button>
+                </div>
+                
+                <!-- Форма смены пароля (скрыта по умолчанию) -->
+                <div class="password-change-form" id="passwordChangeForm" style="display: none;">
+                    <form id="passwordForm">
+                        <!-- Скрытое поле username для доступности -->
+                        <input type="text" name="username" value="{{ current_user.username }}" autocomplete="username" style="display: none;" readonly>
+                        <div class="form-group">
+                            <label for="currentPassword">Текущий пароль:</label>
+                            <input type="password" id="currentPassword" name="current_password" autocomplete="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">Новый пароль:</label>
+                            <input type="password" id="newPassword" name="new_password" autocomplete="new-password" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Подтвердите новый пароль:</label>
+                            <input type="password" id="confirmPassword" name="confirm_password" autocomplete="new-password" required minlength="6">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="save-btn">
+                                <i class="bi bi-check-lg"></i> Изменить пароль
+                            </button>
+                            <button type="button" class="cancel-btn" id="cancelPasswordBtn">
+                                <i class="bi bi-x-lg"></i> Отмена
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления аватара -->
+<div id="deleteAvatarModal" class="delete-modal-overlay" style="display: none;">
+    <div class="delete-modal">
+        <div class="delete-modal-header">
+            <h3><i class="bi bi-exclamation-triangle-fill"></i> Подтверждение удаления</h3>
+        </div>
+        <div class="delete-modal-body">
+            <p>Вы уверены, что хотите удалить свой аватар?</p>
+            <p class="delete-modal-warning">Это действие нельзя будет отменить.</p>
+        </div>
+        <div class="delete-modal-actions">
+            <button class="delete-confirm-btn" id="confirmDeleteBtn">
+                <i class="bi bi-trash-fill"></i> Удалить
+            </button>
+            <button class="delete-cancel-btn" id="cancelDeleteBtn">
+                <i class="bi bi-x-lg"></i> Отмена
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для загрузки аватара (используем существующее из base.html) -->
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

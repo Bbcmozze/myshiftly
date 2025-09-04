@@ -45,6 +45,8 @@ class User(db.Model, UserMixin):
     avatar = db.Column(db.String(200), default='default_avatar.svg')  # Изменено на SVG
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
+    age = db.Column(db.Integer, nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
     friends = db.relationship(
         'User', secondary=friends,
         primaryjoin=(friends.c.user_id == id),
@@ -123,7 +125,7 @@ class ShiftTemplate(db.Model):
 
 
 def ensure_user_columns():
-    """Гарантирует наличие колонок first_name/last_name в таблице user (SQLite)."""
+    """Гарантирует наличие колонок first_name/last_name/age/phone в таблице user (SQLite)."""
     try:
         with db.engine.connect() as conn:
             # Получаем список колонок таблицы user
@@ -136,6 +138,12 @@ def ensure_user_columns():
                 conn.execute(text('ALTER TABLE "user" ADD COLUMN first_name VARCHAR(50) NOT NULL DEFAULT ""'))
             if 'last_name' not in columns:
                 conn.execute(text('ALTER TABLE "user" ADD COLUMN last_name VARCHAR(50) NOT NULL DEFAULT ""'))
+            
+            # Добавляем новые колонки age и phone (nullable)
+            if 'age' not in columns:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN age INTEGER'))
+            if 'phone' not in columns:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN phone VARCHAR(20)'))
 
             # Если колонки есть, но допускают NULL или пустые значения — создаём защитные триггеры
             # PRAGMA table_info: (cid, name, type, notnull, dflt_value, pk)

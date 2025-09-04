@@ -1569,6 +1569,120 @@ def register_routes(app):
             app.logger.error(f"Error uploading avatar: {str(e)}")
             return jsonify({'success': False, 'message': 'Ошибка при загрузке аватара'}), 500
 
+    # Profile routes
+    @app.route('/profile')
+    @login_required
+    def profile():
+        # Подсчет статистики пользователя
+        user_shifts = Shift.query.filter_by(user_id=current_user.id).all()
+        
+        # Подсчитываем только смены с указанным временем
+        shifts_with_time = 0
+        total_hours = 0
+        for shift in user_shifts:
+            if shift.show_time:
+                shifts_with_time += 1
+                start_time = datetime.combine(shift.date, shift.start_time)
+                end_time = datetime.combine(shift.date, shift.end_time)
+                if end_time < start_time:
+                    end_time += timedelta(days=1)
+                duration = (end_time - start_time).total_seconds() / 3600
+                total_hours += duration
+        
+        total_calendars = Calendar.query.filter_by(owner_id=current_user.id).count()
+        total_friends = current_user.friends.count()
+        
+        return render_template('profile.html', 
+                             total_shifts=shifts_with_time,
+                             total_calendars=total_calendars, 
+                             total_friends=total_friends,
+                             total_hours=round(total_hours, 1))
+
+    @app.route('/profile/update', methods=['POST'])
+    @login_required
+    def update_profile():
+        try:
+            data = request.get_json()
+            
+            # Обновление персональных данных
+            if 'first_name' in data:
+                current_user.first_name = data['first_name'].strip()
+            if 'last_name' in data:
+                current_user.last_name = data['last_name'].strip()
+            if 'username' in data:
+                username = data['username'].strip()
+                # Проверка уникальности username
+                if username != current_user.username:
+                    existing_user = User.query.filter_by(username=username).first()
+                    if existing_user:
+                        return jsonify({'success': False, 'message': 'Имя пользователя уже занято'}), 400
+                    current_user.username = username
+            if 'email' in data:
+                email = data['email'].strip()
+                # Проверка уникальности email
+                if email != current_user.email:
+                    existing_user = User.query.filter_by(email=email).first()
+                    if existing_user:
+                        return jsonify({'success': False, 'message': 'Email уже используется'}), 400
+                    current_user.email = email
+            if 'age' in data:
+                age = data.get('age')
+                current_user.age = int(age) if age and str(age).isdigit() else None
+            if 'phone' in data:
+                current_user.phone = data['phone'].strip() if data['phone'] else None
+            
+            db.session.commit()
+            return jsonify({'success': True, 'message': 'Профиль обновлен'})
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Ошибка обновления: {str(e)}'}), 500
+
+    @app.route('/profile/change-password', methods=['POST'])
+    @login_required
+    def change_password():
+        try:
+            data = request.get_json()
+            current_password = data.get('current_password')
+            new_password = data.get('new_password')
+            
+            if not current_password or not new_password:
+                return jsonify({'success': False, 'message': 'Заполните все поля'}), 400
+            
+            # Проверка текущего пароля
+            if not check_password_hash(current_user.password_hash, current_password):
+                return jsonify({'success': False, 'message': 'Неверный текущий пароль'}), 400
+            
+            # Обновление пароля
+            current_user.password_hash = generate_password_hash(new_password)
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': 'Пароль успешно изменен'})
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Ошибка смены пароля: {str(e)}'}), 500
+
+    @app.route('/profile/delete-avatar', methods=['POST'])
+    @login_required
+    def delete_avatar():
+        try:
+            # Удаляем старый аватар, если он не дефолтный
+            if current_user.avatar and current_user.avatar != 'default_avatar.svg':
+                old_avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], current_user.avatar)
+                if os.path.exists(old_avatar_path):
+                    os.remove(old_avatar_path)
+            
+            # Устанавливаем дефолтный аватар
+            current_user.avatar = 'default_avatar.svg'
+            db.session.commit()
+            
+            return jsonify({'success': True, 'message': 'Аватар удален', 'avatar_url': url_for('static', filename='images/default_avatar.svg')})
+            
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Ошибка удаления аватара: {str(e)}'}), 500
+
 def apply_filters(query, filters):
     """Apply filters to shift query"""
     if not filters:
@@ -2319,11 +2433,18 @@ def get_quarter_range(month_str):
 def get_year_range(month_str):
     """Get start and end date for a year period"""
     try:
-        date = datetime.strptime(month_str, '%Y-%m').date()
-        start_date = date.replace(month=1, day=1)
-        end_date = date.replace(month=12, day=31)
+        # For year period, month_str is just the year (e.g., '2024')
+        if len(month_str) == 4 and month_str.isdigit():
+            year = int(month_str)
+        else:
+            # Try parsing as year-month format and extract year
+            date = datetime.strptime(month_str, '%Y-%m').date()
+            year = date.year
+        
+        start_date = datetime(year, 1, 1).date()
+        end_date = datetime(year, 12, 31).date()
         return start_date, end_date
-    except ValueError:
+    except (ValueError, TypeError):
         # Fallback to current year
         today = datetime.utcnow().date()
         start_date = today.replace(month=1, day=1)
@@ -2766,7 +2887,14 @@ def calculate_trends_data(calendar_ids, period, month, filters=None, user_id=Non
             
             period_date = datetime(year, month_num, 1).date()
             start_date, end_date = get_month_range(period_date.strftime('%Y-%m'))
-            label = period_date.strftime('%b %Y')
+            
+            # Russian month names
+            russian_months = {
+                1: 'Янв', 2: 'Фев', 3: 'Мар', 4: 'Апр',
+                5: 'Май', 6: 'Июн', 7: 'Июл', 8: 'Авг',
+                9: 'Сен', 10: 'Окт', 11: 'Ноя', 12: 'Дек'
+            }
+            label = f"{russian_months[month_num]} {year}"
         elif period == 'quarter':
             # Calculate each quarter going backwards from the selected quarter
             base_quarter = (base_date.month - 1) // 3 + 1

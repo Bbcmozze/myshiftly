@@ -134,7 +134,7 @@
             <p class="user-username">@{{ current_user.username }}</p>
         </div>
         <ul class="sidebar-nav">
-            <li class="menu-list"><a href="#"><i class="bi bi-person-badge"></i> Профиль</a></li>
+            <li class="menu-list"><a href="{{ url_for('profile') }}"><i class="bi bi-person-badge"></i> Профиль</a></li>
             <li class="menu-list"><a href="{{ url_for('my_calendars') }}"><i class="bi bi-calendar-week"></i> Мои календари</a></li>
             <hr class="sidebar-separator">
             <li class="menu-list"><a href="{{ url_for('create_calendar') }}"><i class="bi bi-calendar-plus-fill"></i> Создать календарь</a></li>

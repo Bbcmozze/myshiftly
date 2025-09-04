@@ -799,11 +799,20 @@ async function handleAvatarSave() {
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Обновляем аватар на странице
+                    // Обновляем аватар в сайдбаре
                     const userAvatar = document.getElementById('userAvatar');
                     if (userAvatar && data.avatar_url) {
                         userAvatar.src = data.avatar_url + '?t=' + Date.now();
                     }
+
+                    // Отправляем событие для обновления аватара на других страницах
+                    const avatarUpdatedEvent = new CustomEvent('avatarUpdated', {
+                        detail: {
+                            avatarUrl: data.avatar_url + '?t=' + Date.now(),
+                            success: true
+                        }
+                    });
+                    document.dispatchEvent(avatarUpdatedEvent);
 
                     toastManager.show('Аватар успешно обновлен!', 'success');
                     closeCropModal();
