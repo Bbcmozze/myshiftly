@@ -1,36 +1,284 @@
 {% extends "base.html" %}
 
-{% block title %}Главная - My Shiftly{% endblock %}
+{% block title %}My Shiftly - Умное управление сменами{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="welcome-section">
-    {% if not current_user.is_authenticated %}
-        <h2>Добро пожаловать в My Shiftly</h2>
-        <p>Удобное управление графиками смен для вашей команды</p>
-        <div class="auth-actions">
-            <a href="{{ url_for('login') }}" class="btn btn-primary">Войти</a>
-            <a href="{{ url_for('register') }}" class="btn btn-outline">Регистрация</a>
+{% if not current_user.is_authenticated %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-background">
+        <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
         </div>
-    {% else %}
-        <h2>Добро пожаловать, {{ current_user.username }}!</h2>
-        <div class="dashboard">
-            <div class="card">
-                <h3>Ваш график</h3>
-                <p>Ближайшая смена: завтра в 09:00</p>
+    </div>
+    <div class="container">
+        <div class="hero-content fade-in-up">
+            <h1 class="hero-title">
+                <span class="gradient-text">My Shiftly</span>
+                <br>Умное управление сменами
+            </h1>
+            <p class="hero-subtitle">
+                Революционная платформа для планирования рабочих смен, 
+                которая делает управление командой простым и эффективным
+            </p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-large pulse">
+                    <span>Начать бесплатно</span>
+                    <i class="icon-arrow-right"></i>
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline btn-large">
+                    Войти в систему
+                </a>
             </div>
-            <div class="card">
-                <h3>Статистика</h3>
-                <p>Отработано часов в этом месяце: 120</p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">1000+</span>
+                    <span class="stat-label">Довольных пользователей</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">99.9%</span>
+                    <span class="stat-label">Время работы</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Поддержка</span>
+                </div>
             </div>
         </div>
-    {% endif %}
-</div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <h2 class="section-title">Почему выбирают My Shiftly?</h2>
+            <p class="section-subtitle">
+                Мы создали идеальное решение для управления сменами, 
+                которое экономит время и повышает эффективность работы
+            </p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card slide-in-left" data-delay="0">
+                <div class="feature-icon">
+                    <div class="icon-calendar"></div>
+                </div>
+                <h3>Интуитивное планирование</h3>
+                <p>Создавайте и редактируйте графики смен в несколько кликов. Визуальный календарь делает планирование максимально простым.</p>
+                <div class="feature-screenshot">
+                    <img src="{{ url_for('static', filename='images/screenshots/calendar.png') }}" 
+                         alt="Скриншот календаря My Shiftly" 
+                         class="screenshot-image">
+                </div>
+            </div>
+            
+            <div class="feature-card slide-in-right" data-delay="100">
+                <div class="feature-icon">
+                    <div class="icon-team"></div>
+                </div>
+                <h3>Командная работа</h3>
+                <p>Добавляйте участников, создавайте группы, управляйте правами доступа. Все в одном месте для максимальной координации.</p>
+                <div class="feature-screenshot">
+                    <!-- Место для скриншота управления командой -->
+                    <div class="screenshot-placeholder">
+                        <span>👥 Скриншот команды</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-card slide-in-left" data-delay="200">
+                <div class="feature-icon">
+                    <div class="icon-template"></div>
+                </div>
+                <h3>Шаблоны смен</h3>
+                <p>Создавайте шаблоны для повторяющихся смен. Настраивайте цвета, время и описания для быстрого планирования.</p>
+                <div class="feature-screenshot">
+                    <!-- Место для скриншота шаблонов -->
+                    <div class="screenshot-placeholder">
+                        <span>📋 Скриншот шаблонов</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-card slide-in-right" data-delay="300">
+                <div class="feature-icon">
+                    <div class="icon-analytics"></div>
+                </div>
+                <h3>Аналитика и отчеты</h3>
+                <p>Отслеживайте рабочее время, анализируйте загруженность сотрудников и получайте детальные отчеты.</p>
+                <div class="feature-screenshot">
+                    <!-- Место для скриншота аналитики -->
+                    <div class="screenshot-placeholder">
+                        <span>📊 Скриншот аналитики</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="benefits-section">
+    <div class="container">
+        <div class="benefits-content">
+            <div class="benefits-text fade-in-left">
+                <h2>Преимущества My Shiftly</h2>
+                <div class="benefit-list">
+                    <div class="benefit-item">
+                        <div class="benefit-icon">✨</div>
+                        <div class="benefit-text">
+                            <h4>Экономия времени</h4>
+                            <p>Автоматизация планирования сокращает время на составление графиков на 80%</p>
+                        </div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">🎯</div>
+                        <div class="benefit-text">
+                            <h4>Точность планирования</h4>
+                            <p>Исключите ошибки в графиках благодаря умным алгоритмам проверки</p>
+                        </div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">📱</div>
+                        <div class="benefit-text">
+                            <h4>Доступность везде</h4>
+                            <p>Работайте с графиками с любого устройства в любое время</p>
+                        </div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">🔒</div>
+                        <div class="benefit-text">
+                            <h4>Безопасность данных</h4>
+                            <p>Ваши данные защищены современными методами шифрования</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="benefits-visual fade-in-right">
+                <!-- Место для большого скриншота интерфейса -->
+                <div class="main-screenshot">
+                    <div class="screenshot-placeholder large">
+                        <span>🖥️ Главный скриншот интерфейса</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How it Works Section -->
+<section class="how-it-works-section">
+    <div class="container">
+        <div class="section-header fade-in-up">
+            <h2 class="section-title">Как это работает?</h2>
+            <p class="section-subtitle">Три простых шага до идеального графика смен</p>
+        </div>
+        
+        <div class="steps-container">
+            <div class="step-item fade-in-up" data-delay="0">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Создайте календарь</h3>
+                    <p>Зарегистрируйтесь и создайте свой первый календарь смен за несколько секунд</p>
+                </div>
+            </div>
+            
+            <div class="step-connector"></div>
+            
+            <div class="step-item fade-in-up" data-delay="200">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Добавьте команду</h3>
+                    <p>Пригласите сотрудников и настройте их роли и права доступа</p>
+                </div>
+            </div>
+            
+            <div class="step-connector"></div>
+            
+            <div class="step-item fade-in-up" data-delay="400">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Планируйте смены</h3>
+                    <p>Используйте шаблоны и интуитивный интерфейс для быстрого создания графиков</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-content fade-in-up">
+            <h2>Готовы начать?</h2>
+            <p>Присоединяйтесь к тысячам довольных пользователей уже сегодня</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('register') }}" class="btn btn-primary btn-large pulse">
+                    Создать аккаунт бесплатно
+                </a>
+                <div class="cta-note">
+                    <small>✓ Без кредитной карты ✓ Мгновенная активация ✓ 30 дней бесплатно</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% else %}
+<!-- Dashboard for authenticated users -->
+<section class="dashboard-section">
+    <div class="container">
+        <div class="welcome-header fade-in-up">
+            <h1>Добро пожаловать, {{ current_user.first_name or current_user.username }}! 👋</h1>
+            <p>Вот краткий обзор ваших календарей и активности</p>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="dashboard-card slide-in-left">
+                <div class="card-header">
+                    <h3>Мои календари</h3>
+                    <a href="{{ url_for('my_calendars') }}" class="btn btn-small">Все календари</a>
+                </div>
+                <div class="card-content">
+                    <p>Управляйте своими рабочими графиками</p>
+                    <a href="{{ url_for('create_calendar') }}" class="btn btn-primary">Создать календарь</a>
+                </div>
+            </div>
+            
+            <div class="dashboard-card slide-in-right">
+                <div class="card-header">
+                    <h3>Друзья и команда</h3>
+                    <a href="{{ url_for('friends_page') }}" class="btn btn-small">Управление</a>
+                </div>
+                <div class="card-content">
+                    <p>Добавляйте коллег и создавайте команды</p>
+                    <a href="{{ url_for('friends_page') }}" class="btn btn-outline">Найти друзей</a>
+                </div>
+            </div>
+            
+            <div class="dashboard-card slide-in-up">
+                <div class="card-header">
+                    <h3>Аналитика</h3>
+                    <a href="{{ url_for('analysis') }}" class="btn btn-small">Подробнее</a>
+                </div>
+                <div class="card-content">
+                    <p>Анализируйте рабочее время и эффективность</p>
+                    <a href="{{ url_for('analysis') }}" class="btn btn-outline">Открыть отчеты</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/friends/search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
 {% endblock %}
