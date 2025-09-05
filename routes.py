@@ -1736,6 +1736,92 @@ def register_routes(app):
         """Страница настроек пользователя"""
         return render_template('settings/settings.html')
 
+    #############УДАЛИТЬ ПОСЛЕ ТЕСТА САЙТА############
+    @app.route('/add_test_users')
+    @login_required
+    def add_test_users():
+        try:
+            current_user_id = current_user.id
+            test_users = [
+                {"username": "leonardo_dicaprio", "email": "1@mail.ru", "password": "123123", "first_name": "Леонардо", "last_name": "ДиКаприо", "avatar": "leonardo.png"},
+                {"username": "brad_pitt", "email": "2@mail.ru", "password": "123123", "first_name": "Брэд", "last_name": "Питт", "avatar": "brad.png"},
+                {"username": "angelina_jolie", "email": "3@mail.ru", "password": "123123", "first_name": "Анджелина", "last_name": "Джоли", "avatar": "angelina.png"},
+                {"username": "robert_downey", "email": "4@mail.ru", "password": "123123", "first_name": "Роберт", "last_name": "Дауни", "avatar": "robert.png"},
+                {"username": "scarlett_johansson", "email": "5@mail.ru", "password": "123123", "first_name": "Скарлетт", "last_name": "Йоханссон", "avatar": "scarlett.png"},
+                {"username": "tom_cruise", "email": "6@mail.ru", "password": "123123", "first_name": "Том", "last_name": "Круз", "avatar": "tom.png"},
+                {"username": "jennifer_lawrence", "email": "7@mail.ru", "password": "123123", "first_name": "Дженнифер", "last_name": "Лоуренс", "avatar": "jennifer.png"},
+                {"username": "will_smith", "email": "8@mail.ru", "password": "123123", "first_name": "Уилл", "last_name": "Смит", "avatar": "will.png"},
+                {"username": "emma_stone", "email": "9@mail.ru", "password": "123123", "first_name": "Эмма", "last_name": "Стоун", "avatar": "emma.png"},
+                {"username": "ryan_gosling", "email": "10@mail.ru", "password": "123123", "first_name": "Райан", "last_name": "Гослинг", "avatar": "ryan.png"},
+                {"username": "margot_robbie", "email": "11@mail.ru", "password": "123123", "first_name": "Марго", "last_name": "Робби", "avatar": "margot.png"},
+                {"username": "chris_hemsworth", "email": "12@mail.ru", "password": "123123", "first_name": "Крис", "last_name": "Хемсворт", "avatar": "chris.png"},
+                {"username": "natalie_portman", "email": "13@mail.ru", "password": "123123", "first_name": "Натали", "last_name": "Портман", "avatar": "natalie.png"},
+                {"username": "johnny_depp", "email": "14@mail.ru", "password": "123123", "first_name": "Джонни", "last_name": "Депп", "avatar": "johnny.png"},
+                {"username": "anne_hathaway", "email": "15@mail.ru", "password": "123123", "first_name": "Энн", "last_name": "Хэтэуэй", "avatar": "anne.png"},
+                {"username": "matthew_mcconaughey", "email": "16@mail.ru", "password": "123123", "first_name": "Мэттью", "last_name": "МакКонахи", "avatar": "matthew.png"},
+                {"username": "charlize_theron", "email": "17@mail.ru", "password": "123123", "first_name": "Шарлиз", "last_name": "Терон", "avatar": "charlize.png"},
+                {"username": "christian_bale", "email": "18@mail.ru", "password": "123123", "first_name": "Кристиан", "last_name": "Бэйл", "avatar": "christian.png"},
+                {"username": "amy_adams", "email": "19@mail.ru", "password": "123123", "first_name": "Эми", "last_name": "Адамс", "avatar": "amy.png"},
+                {"username": "hugh_jackman", "email": "20@mail.ru", "password": "123123", "first_name": "Хью", "last_name": "Джекман", "avatar": "hugh.png"}
+            ]
+
+            added_users = []
+
+            for user_data in test_users:
+                # Проверяем, существует ли пользователь
+                existing_user = User.query.filter(
+                    (User.username == user_data["username"]) |
+                    (User.email == user_data["email"])
+                ).first()
+
+                if not existing_user:
+                    # Создаем нового пользователя
+                    user_id = generate_user_id()
+                    while User.query.get(user_id):
+                        user_id = generate_user_id()
+
+                    hashed_password = generate_password_hash(user_data["password"])
+                    
+                    # Проверяем наличие файла аватара
+                    avatar_filename = user_data.get("avatar")
+                    avatar_path = None
+                    if avatar_filename:
+                        avatar_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'static'), 'images', avatar_filename)
+                        if not os.path.exists(avatar_path):
+                            avatar_filename = None  # Если файл не существует, используем дефолтный аватар
+                    
+                    new_user = User(
+                        id=user_id,
+                        username=user_data["username"],
+                        email=user_data["email"],
+                        password_hash=hashed_password,
+                        first_name=user_data["first_name"],
+                        last_name=user_data["last_name"],
+                        avatar=avatar_filename
+                    )
+                    db.session.add(new_user)
+                    added_users.append(new_user)
+
+            # Сохраняем всех пользователей
+            db.session.commit()
+
+            # Добавляем друзей для текущего пользователя
+            current_user_obj = User.query.get(current_user_id)
+            for user in added_users:
+                if user not in current_user_obj.friends:
+                    current_user_obj.friends.append(user)
+                    user.friends.append(current_user_obj)
+
+            db.session.commit()
+
+            flash(f"Добавлено {len(added_users)} тестовых пользователей и установлены дружеские связи", "success")
+            return redirect(url_for('friends_page'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Ошибка: {str(e)}", "danger")
+            return redirect(url_for('friends_page'))
+
 def apply_filters(query, filters):
     """Apply filters to shift query"""
     if not filters:
@@ -2258,82 +2344,6 @@ def apply_filters(query, filters):
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
-
-    #############УДАЛИТЬ ПОСЛЕ ТЕСТА САЙТА############
-    @app.route('/add_test_users')
-    @login_required
-    def add_test_users():
-        try:
-            current_user_id = current_user.id
-            test_users = [
-                {"username": "test_user1", "email": "test1@example.com", "password": "password123", "first_name": "Иван", "last_name": "Иванов"},
-                {"username": "test_user2", "email": "test2@example.com", "password": "password123", "first_name": "Пётр", "last_name": "Петров"},
-                {"username": "test_user3", "email": "test3@example.com", "password": "password123", "first_name": "Сергей", "last_name": "Сергеев"},
-                {"username": "test_user4", "email": "test4@example.com", "password": "password123", "first_name": "Алексей", "last_name": "Алексеев"},
-                {"username": "test_user5", "email": "test5@example.com", "password": "password123", "first_name": "Дмитрий", "last_name": "Дмитриев"},
-                {"username": "test_user6", "email": "test6@example.com", "password": "password123", "first_name": "Максим", "last_name": "Максимов"},
-                {"username": "test_user7", "email": "test7@example.com", "password": "password123", "first_name": "Николай", "last_name": "Николаев"},
-                {"username": "test_user8", "email": "test8@example.com", "password": "password123", "first_name": "Андрей", "last_name": "Андреев"},
-                {"username": "test_user9", "email": "test9@example.com", "password": "password123", "first_name": "Михаил", "last_name": "Михайлов"},
-                {"username": "test_user10", "email": "test10@example.com", "password": "password123", "first_name": "Егор", "last_name": "Егоров"},
-                {"username": "test_user11", "email": "test11@example.com", "password": "password123", "first_name": "Кирилл", "last_name": "Кириллов"},
-                {"username": "test_user12", "email": "test12@example.com", "password": "password123", "first_name": "Роман", "last_name": "Романов"},
-                {"username": "test_user13", "email": "test13@example.com", "password": "password123", "first_name": "Владимир", "last_name": "Владимиров"},
-                {"username": "test_user14", "email": "test14@example.com", "password": "password123", "first_name": "Антон", "last_name": "Антонов"},
-                {"username": "test_user15", "email": "test15@example.com", "password": "password123", "first_name": "Георгий", "last_name": "Георгиев"},
-                {"username": "test_user16", "email": "test16@example.com", "password": "password123", "first_name": "Артур", "last_name": "Артуров"},
-                {"username": "test_user17", "email": "test17@example.com", "password": "password123", "first_name": "Лев", "last_name": "Львов"},
-                {"username": "test_user18", "email": "test18@example.com", "password": "password123", "first_name": "Тимофей", "last_name": "Тимофеев"},
-                {"username": "test_user19", "email": "test19@example.com", "password": "password123", "first_name": "Илья", "last_name": "Ильин"},
-                {"username": "test_user20", "email": "test20@example.com", "password": "password123", "first_name": "Степан", "last_name": "Степанов"}
-            ]
-
-            added_users = []
-
-            for user_data in test_users:
-                # Проверяем, существует ли пользователь
-                existing_user = User.query.filter(
-                    (User.username == user_data["username"]) |
-                    (User.email == user_data["email"])
-                ).first()
-
-                if not existing_user:
-                    # Создаем нового пользователя
-                    user_id = generate_user_id()
-                    while User.query.get(user_id):
-                        user_id = generate_user_id()
-
-                    hashed_password = generate_password_hash(user_data["password"])
-                    new_user = User(
-                        id=user_id,
-                        username=user_data["username"],
-                        email=user_data["email"],
-                        password_hash=hashed_password,
-                        first_name=user_data["first_name"],
-                        last_name=user_data["last_name"]
-                    )
-                    db.session.add(new_user)
-                    added_users.append(new_user)
-
-            # Сохраняем всех пользователей
-            db.session.commit()
-
-            # Добавляем друзей для текущего пользователя
-            current_user_obj = User.query.get(current_user_id)
-            for user in added_users:
-                if user not in current_user_obj.friends:
-                    current_user_obj.friends.append(user)
-                    user.friends.append(current_user_obj)
-
-            db.session.commit()
-
-            flash(f"Добавлено {len(added_users)} тестовых пользователей и установлены дружеские связи", "success")
-            return redirect(url_for('friends_page'))
-
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Ошибка: {str(e)}", "danger")
-            return redirect(url_for('friends_page'))
 
     @app.route('/upload_avatar', methods=['POST'])
     @login_required
