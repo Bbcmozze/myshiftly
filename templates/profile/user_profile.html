@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% from "friends/macroc.html" import pluralize, pluralize_word_only %}
+
+{% block title %}{{ user.first_name }} {{ user.last_name }} - My Shiftly{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-nav">
+            <a href="{{ url_for('friends_page') }}" class="back-btn">
+                <i class="bi bi-arrow-left"></i> Назад к коллегам
+            </a>
+        </div>
+        <h1><i class="bi bi-person-circle"></i> Профиль коллеги</h1>
+        <p class="profile-subtitle">Информация о {{ user.first_name }} {{ user.last_name }}</p>
+    </div>
+
+    <div class="profile-content">
+        <!-- Карточка сотрудника -->
+        <div class="employee-card">
+            <div class="employee-card-header">
+                <div class="employee-avatar-section">
+                    <div class="employee-avatar-container">
+                        <img src="{{ url_for('static', filename='images/' + user.avatar) }}" 
+                             alt="Аватар {{ user.first_name }}" class="employee-avatar">
+                    </div>
+                </div>
+                
+                <div class="employee-info">
+                    <h2 class="employee-name">
+                        {{ user.first_name }} {{ user.last_name }}
+                    </h2>
+                    <p class="employee-username">@{{ user.username }}</p>
+                    <p class="employee-join-date">
+                        <i class="bi bi-calendar-check"></i>
+                        В команде с {{ user.created_at|to_msk('%d.%m.%Y') }}
+                    </p>
+                </div>
+
+                <!-- Статус коллеги -->
+                <div class="colleague-status">
+                    {% if is_friend %}
+                        <div class="status-badge colleague">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Коллега</span>
+                        </div>
+                    {% else %}
+                        <div class="status-badge user">
+                            <i class="bi bi-person"></i>
+                            <span>Пользователь</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Статистика активности -->
+            <div class="stats-section">
+                <h3><i class="bi bi-graph-up"></i> Статистика активности</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_shifts }}</div>
+                            <div class="stat-label">Отработано смен</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_hours }}</div>
+                            <div class="stat-label">Часов работы</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-calendar-week"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_calendars }}</div>
+                            <div class="stat-label">Создано календарей</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-number">{{ total_friends }}</div>
+                            <div class="stat-label">{{ pluralize_word_only(total_friends, 'Коллега', 'Коллеги', 'Коллег') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Публичная информация -->
+            <div class="public-info-section">
+                <div class="section-header">
+                    <h3><i class="bi bi-info-circle"></i> Публичная информация</h3>
+                </div>
+                
+                <div class="public-info-content">
+                    <div class="info-row">
+                        <label>Имя:</label>
+                        <span class="info-value">{{ user.first_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Фамилия:</label>
+                        <span class="info-value">{{ user.last_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Имя пользователя:</label>
+                        <span class="info-value">{{ user.username }}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Email:</label>
+                        <span class="info-value">{{ user.email }}</span>
+                    </div>
+                    {% if user.age %}
+                    <div class="info-row">
+                        <label>Возраст:</label>
+                        <span class="info-value">{{ user.age }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.phone %}
+                    <div class="info-row">
+                        <label>Телефон:</label>
+                        <span class="info-value">{{ user.phone }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Действия с коллегой -->
+            <div class="colleague-actions-section">
+                <div class="section-header">
+                    <h3><i class="bi bi-gear"></i> Действия</h3>
+                </div>
+                
+                <div class="colleague-actions">
+                    <button class="action-btn message-btn" onclick="showToast('Функция сообщений будет доступна в следующих версиях', 'info')">
+                        <i class="bi bi-chat-dots"></i>
+                        Написать сообщение
+                    </button>
+                    
+                    {% if is_friend %}
+                        <form action="{{ url_for('delete_friend', friend_id=user.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="action-btn danger-btn" onclick="return confirm('Вы уверены, что хотите удалить {{ user.first_name }} из коллег?')">
+                                <i class="bi bi-person-dash"></i>
+                                Удалить из коллег
+                            </button>
+                        </form>
+                    {% else %}
+                        <form action="{{ url_for('send_friend_request') }}" method="POST" style="display: inline;">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <button type="submit" class="action-btn success-btn">
+                                <i class="bi bi-person-plus"></i>
+                                Добавить в коллеги
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Функция для показа Toast уведомлений
+function showToast(message, type = 'info') {
+    if (window.toastManager) {
+        window.toastManager.show(message, type, 3000);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}

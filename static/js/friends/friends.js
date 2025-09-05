@@ -98,6 +98,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Обработчик клика на карточки друзей для открытия профиля
+    const initializeFriendCardClicks = () => {
+        const friendCards = document.querySelectorAll('.friend-card');
+        
+        friendCards.forEach(card => {
+            // Добавляем курсор pointer для указания кликабельности
+            card.style.cursor = 'pointer';
+            
+            card.addEventListener('click', (e) => {
+                // Проверяем, что клик не был по кнопке удаления
+                if (e.target.closest('.friend-actions') || e.target.closest('button')) {
+                    return; // Не открываем профиль, если кликнули по кнопке
+                }
+                
+                // Получаем username из data-атрибута
+                const username = card.getAttribute('data-username');
+                if (username) {
+                    // Переходим к профилю пользователя
+                    window.location.href = `/profile/${username}`;
+                }
+            });
+            
+            // Добавляем hover эффект
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+                card.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+                card.style.transition = 'all 0.3s ease';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+                card.style.boxShadow = '';
+            });
+        });
+    };
+    
+    // Инициализируем обработчики кликов
+    initializeFriendCardClicks();
+
     // Остальной код (управление dropdown и т.д.)
     const addBtn = document.getElementById('addFriendToggle');
     const addForm = document.getElementById('addFriendForm');

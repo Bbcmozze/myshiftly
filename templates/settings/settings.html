@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки - My Shiftly{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings/settings.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1><i class="bi bi-gear-fill"></i> Настройки</h1>
+        <p class="settings-subtitle">Персонализируйте свой опыт работы с приложением</p>
+    </div>
+
+    <!-- Навигация по разделам настроек -->
+    <div class="settings-navigation">
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="appearance">
+                <i class="bi bi-palette-fill"></i>
+                <span>Внешний вид</span>
+            </button>
+            <button class="nav-tab" data-tab="localization">
+                <i class="bi bi-globe"></i>
+                <span>Локализация</span>
+            </button>
+            <button class="nav-tab" data-tab="notifications">
+                <i class="bi bi-bell-fill"></i>
+                <span>Уведомления</span>
+            </button>
+            <button class="nav-tab" data-tab="security">
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>Безопасность</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="settings-content">
+        <!-- Внешний вид и интерфейс -->
+        <div class="tab-content active" id="appearance-tab">
+            <div class="settings-section">
+                <div class="section-header">
+                    <h2><i class="bi bi-palette-fill"></i> Внешний вид и интерфейс</h2>
+                    <p class="section-description">Настройте внешний вид приложения под свои предпочтения</p>
+                </div>
+            
+            <div class="settings-grid">
+                <!-- Темы оформления -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Тема оформления</h3>
+                        <p>Выберите предпочитаемую цветовую схему</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="theme-selector">
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="light" checked>
+                                <span class="theme-preview light-theme">
+                                    <i class="bi bi-sun-fill"></i>
+                                    Светлая
+                                </span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="dark">
+                                <span class="theme-preview dark-theme">
+                                    <i class="bi bi-moon-fill"></i>
+                                    Темная
+                                </span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="auto">
+                                <span class="theme-preview auto-theme">
+                                    <i class="bi bi-circle-half"></i>
+                                    Авто
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Цветовые схемы -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Акцентный цвет</h3>
+                        <p>Основной цвет элементов интерфейса</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="color-selector">
+                            <label class="color-option">
+                                <input type="radio" name="accent-color" value="blue" checked>
+                                <span class="color-preview blue-color"></span>
+                                Синий
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent-color" value="green">
+                                <span class="color-preview green-color"></span>
+                                Зеленый
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent-color" value="purple">
+                                <span class="color-preview purple-color"></span>
+                                Фиолетовый
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="accent-color" value="orange">
+                                <span class="color-preview orange-color"></span>
+                                Оранжевый
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Размер шрифта -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Размер шрифта</h3>
+                        <p>Настройте удобный размер текста</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="font-size">
+                            <option value="small">Маленький</option>
+                            <option value="medium" selected>Средний</option>
+                            <option value="large">Большой</option>
+                            <option value="extra-large">Очень большой</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Плотность интерфейса -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Плотность интерфейса</h3>
+                        <p>Количество информации на экране</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="density">
+                            <option value="compact">Компактный</option>
+                            <option value="normal" selected>Обычный</option>
+                            <option value="spacious">Просторный</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Анимации -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Анимации</h3>
+                        <p>Плавные переходы и эффекты</p>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="animations" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Локализация и форматы -->
+        <div class="tab-content" id="localization-tab">
+            <div class="settings-section">
+            <div class="section-header">
+                <h2><i class="bi bi-globe"></i> Локализация и форматы</h2>
+                <p class="section-description">Настройте региональные параметры и форматы отображения</p>
+            </div>
+            
+            <div class="settings-grid">
+                <!-- Часовой пояс -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Часовой пояс</h3>
+                        <p>Выберите ваш часовой пояс</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="timezone">
+                            <option value="Europe/Moscow" selected>Москва (UTC+3)</option>
+                            <option value="Europe/Kiev">Киев (UTC+2)</option>
+                            <option value="Europe/Minsk">Минск (UTC+3)</option>
+                            <option value="Asia/Yekaterinburg">Екатеринбург (UTC+5)</option>
+                            <option value="Asia/Novosibirsk">Новосибирск (UTC+7)</option>
+                            <option value="Asia/Krasnoyarsk">Красноярск (UTC+7)</option>
+                            <option value="Asia/Irkutsk">Иркутск (UTC+8)</option>
+                            <option value="Asia/Vladivostok">Владивосток (UTC+10)</option>
+                            <option value="Europe/London">Лондон (UTC+0)</option>
+                            <option value="America/New_York">Нью-Йорк (UTC-5)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Формат времени -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Формат времени</h3>
+                        <p>12-часовой или 24-часовой формат</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="time-format" value="12h">
+                                <span class="radio-custom"></span>
+                                12 часов (2:30 PM)
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="time-format" value="24h" checked>
+                                <span class="radio-custom"></span>
+                                24 часа (14:30)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Формат даты -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Формат даты</h3>
+                        <p>Способ отображения дат</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="date-format">
+                            <option value="dd.mm.yyyy" selected>ДД.ММ.ГГГГ (05.09.2025)</option>
+                            <option value="mm/dd/yyyy">ММ/ДД/ГГГГ (09/05/2025)</option>
+                            <option value="yyyy-mm-dd">ГГГГ-ММ-ДД (2025-09-05)</option>
+                            <option value="dd mmm yyyy">ДД МММ ГГГГ (05 сен 2025)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Первый день недели -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Первый день недели</h3>
+                        <p>С какого дня начинается неделя в календаре</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="week-start" value="monday" checked>
+                                <span class="radio-custom"></span>
+                                Понедельник
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="week-start" value="sunday">
+                                <span class="radio-custom"></span>
+                                Воскресенье
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Уведомления и алерты -->
+        <div class="tab-content" id="notifications-tab">
+            <div class="settings-section">
+            <div class="section-header">
+                <h2><i class="bi bi-bell-fill"></i> Уведомления и алерты</h2>
+                <p class="section-description">Управляйте способами получения уведомлений</p>
+            </div>
+            
+            <div class="settings-grid">
+                <!-- Email уведомления -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Email уведомления</h3>
+                        <p>Получать уведомления на электронную почту</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="notification-options">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="email-new-shifts" checked>
+                                <span class="checkbox-custom"></span>
+                                Новые смены
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="email-changes" checked>
+                                <span class="checkbox-custom"></span>
+                                Изменения в расписании
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="email-reminders">
+                                <span class="checkbox-custom"></span>
+                                Напоминания
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Browser push -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Push-уведомления</h3>
+                        <p>Уведомления в браузере</p>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="browser-push">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Звуковые сигналы -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Звуковые сигналы</h3>
+                        <p>Звуковое сопровождение уведомлений</p>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="sound-alerts" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Время напоминаний -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Время напоминаний</h3>
+                        <p>За сколько времени напоминать о смене</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="checkbox-group">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="remind-1h" checked>
+                                <span class="checkbox-custom"></span>
+                                За 1 час
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="remind-2h">
+                                <span class="checkbox-custom"></span>
+                                За 2 часа
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="remind-1d">
+                                <span class="checkbox-custom"></span>
+                                За день
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Уведомления о друзьях -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Уведомления о коллегах</h3>
+                        <p>Активность друзей и запросы</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="notification-options">
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="friend-requests" checked>
+                                <span class="checkbox-custom"></span>
+                                Новые запросы в друзья
+                            </label>
+                            <label class="checkbox-option">
+                                <input type="checkbox" name="friend-activity">
+                                <span class="checkbox-custom"></span>
+                                Активность коллег
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Тихие часы -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Тихие часы</h3>
+                        <p>Отключение уведомлений в определенное время</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="time-range">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="quiet-hours">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div class="time-inputs">
+                                <input type="time" name="quiet-start" value="22:00">
+                                <span>до</span>
+                                <input type="time" name="quiet-end" value="08:00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Безопасность и приватность -->
+        <div class="tab-content" id="security-tab">
+            <div class="settings-section">
+            <div class="section-header">
+                <h2><i class="bi bi-shield-lock-fill"></i> Безопасность и приватность</h2>
+                <p class="section-description">Управление безопасностью аккаунта и конфиденциальностью</p>
+            </div>
+            
+            <div class="settings-grid">
+                <!-- Двухфакторная аутентификация -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Двухфакторная аутентификация</h3>
+                        <p>Дополнительная защита аккаунта</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="security-status">
+                            <span class="status-badge disabled">Отключена</span>
+                            <button class="setup-btn">Настроить</button>
+                        </div>
+                        <div class="auth-methods" style="display: none;">
+                            <label class="radio-option">
+                                <input type="radio" name="2fa-method" value="sms">
+                                <span class="radio-custom"></span>
+                                SMS
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="2fa-method" value="email">
+                                <span class="radio-custom"></span>
+                                Email
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="2fa-method" value="app">
+                                <span class="radio-custom"></span>
+                                Приложение-аутентификатор
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Резервные коды -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Резервные коды</h3>
+                        <p>Коды для восстановления доступа</p>
+                    </div>
+                    <div class="setting-control">
+                        <button class="action-btn secondary" disabled>Сгенерировать коды</button>
+                    </div>
+                </div>
+
+                <!-- История входов -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>История входов</h3>
+                        <p>Последние сессии и устройства</p>
+                    </div>
+                    <div class="setting-control">
+                        <button class="action-btn secondary">Посмотреть историю</button>
+                    </div>
+                </div>
+
+                <!-- Активные сессии -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Активные сессии</h3>
+                        <p>Управление подключенными устройствами</p>
+                    </div>
+                    <div class="setting-control">
+                        <div class="session-info">
+                            <span class="session-count">1 активная сессия</span>
+                            <button class="action-btn secondary">Управлять</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Автовыход -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Автоматический выход</h3>
+                        <p>Выход при неактивности</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="auto-logout">
+                            <option value="never" selected>Никогда</option>
+                            <option value="1h">Через 1 час</option>
+                            <option value="4h">Через 4 часа</option>
+                            <option value="8h">Через 8 часов</option>
+                            <option value="24h">Через 24 часа</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Видимость профиля -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Видимость профиля</h3>
+                        <p>Кто может видеть ваш профиль</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="profile-visibility">
+                            <option value="public">Публичный</option>
+                            <option value="friends" selected>Только коллеги</option>
+                            <option value="private">Приватный</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Видимость статистики -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Видимость статистики</h3>
+                        <p>Кто может видеть вашу статистику работы</p>
+                    </div>
+                    <div class="setting-control">
+                        <select class="setting-select" name="stats-visibility">
+                            <option value="public">Всем</option>
+                            <option value="friends" selected>Только коллегам</option>
+                            <option value="private">Только мне</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Блокировка пользователей -->
+                <div class="setting-item">
+                    <div class="setting-label">
+                        <h3>Заблокированные пользователи</h3>
+                        <p>Управление черным списком</p>
+                    </div>
+                    <div class="setting-control">
+                        <button class="action-btn secondary">Управлять списком</button>
+                    </div>
+                </div>
+
+                <!-- Удаление аккаунта -->
+                <div class="setting-item danger-zone">
+                    <div class="setting-label">
+                        <h3>Удаление аккаунта</h3>
+                        <p>Полное удаление аккаунта и всех данных</p>
+                    </div>
+                    <div class="setting-control">
+                        <button class="action-btn danger">Удалить аккаунт</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопки действий -->
+    <div class="settings-actions">
+        <button class="save-btn" id="saveSettings">
+            <i class="bi bi-check-lg"></i> Сохранить изменения
+        </button>
+        <button class="reset-btn" id="resetSettings">
+            <i class="bi bi-arrow-clockwise"></i> Сбросить
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings/settings.js') }}"></script>
+{% endblock %}

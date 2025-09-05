@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     searchResults.innerHTML = '<div class="no-results">Пользователи не найдены</div>';
                 } else {
                     searchResults.innerHTML = users.map(user => `
-                            <div class="search-result-item" data-user-id="${user.id}" data-username="${user.username}">
+                            <div class="search-result-item" data-user-id="${user.id}" data-username="${user.username}" style="cursor: pointer;">
                                 <div style="display: flex; align-items: center; flex: 1; min-width: 0;">
                                     <img src="/static/images/${user.avatar}" 
                                          class="search-result-avatar" 
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="search-result-username">@${user.username}</div>
                                     </div>
                                 </div>
-                                <div class="search-result-actions">
+                                <div class="search-result-actions" onclick="event.stopPropagation();">
                                     ${renderActionHTML(user.username, user.is_friend ? 'friends' : (user.request_status || 'none'))}
                                 </div>
                             </div>
@@ -91,6 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
             performSearch(q);
         }
     };
+
+    // Обработчик клика на элементы результатов поиска
+    searchResults.addEventListener('click', (e) => {
+        const searchItem = e.target.closest('.search-result-item');
+        if (!searchItem) return;
+
+        const username = searchItem.getAttribute('data-username');
+        if (!username) return;
+
+        // Всегда переходим в профиль независимо от статуса дружбы
+        window.location.href = `/profile/${username}`;
+    });
+
 });
 
 // Вспомогательная функция генерации HTML для действий по статусу

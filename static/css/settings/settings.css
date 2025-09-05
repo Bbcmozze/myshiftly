@@ -1,0 +1,715 @@
+/* Основные стили для страницы настроек */
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Навигация по разделам настроек */
+.settings-navigation {
+    margin-bottom: 30px;
+}
+
+.nav-tabs {
+    display: flex;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    gap: 0;
+}
+
+.nav-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 20px 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: #7f8c8d;
+    font-weight: 500;
+    position: relative;
+}
+
+.nav-tab:hover {
+    background: #f8f9fa;
+    color: #2c3e50;
+}
+
+.nav-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.nav-tab i {
+    font-size: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.nav-tab:hover i {
+    transform: scale(1.1);
+}
+
+.nav-tab span {
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Контент табов */
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.settings-header h1 {
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.settings-header h1 i {
+    margin-right: 15px;
+    color: #3498db;
+}
+
+.settings-subtitle {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.settings-content {
+    position: relative;
+}
+
+/* Секции настроек */
+.settings-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.section-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.section-header h2 i {
+    margin-right: 12px;
+}
+
+.section-description {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 0.95rem;
+}
+
+/* Сетка настроек */
+.settings-grid {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Элементы настроек */
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.setting-item:hover {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.setting-item.danger-zone {
+    border-color: #e74c3c;
+    background: #fdf2f2;
+}
+
+.setting-item.danger-zone:hover {
+    border-color: #c0392b;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1);
+}
+
+.setting-label {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.setting-label h3 {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.setting-label p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.setting-control {
+    flex-shrink: 0;
+    min-width: 200px;
+}
+
+/* Селекторы тем */
+.theme-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.theme-option {
+    cursor: pointer;
+}
+
+.theme-option input[type="radio"] {
+    display: none;
+}
+
+.theme-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 16px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+    font-weight: 500;
+    min-width: 70px;
+}
+
+.theme-preview i {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+.theme-option input[type="radio"]:checked + .theme-preview {
+    border-color: #3498db;
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.light-theme {
+    background: #ffffff;
+    color: #2c3e50;
+}
+
+.dark-theme {
+    background: #2c3e50;
+    color: #ffffff;
+}
+
+.auto-theme {
+    background: linear-gradient(90deg, #ffffff 50%, #2c3e50 50%);
+    color: #2c3e50;
+}
+
+/* Селекторы цветов */
+.color-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.color-option input[type="radio"] {
+    display: none;
+}
+
+.color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.color-option input[type="radio"]:checked + .color-preview {
+    border-color: #2c3e50;
+    transform: scale(1.1);
+}
+
+.blue-color { background: #3498db; }
+.green-color { background: #27ae60; }
+.purple-color { background: #9b59b6; }
+.orange-color { background: #e67e22; }
+
+.color-option span:not(.color-preview) {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+/* Селекты */
+.setting-select {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9rem;
+    transition: border-color 0.3s ease;
+}
+
+.setting-select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Toggle переключатели */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 26px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #3498db;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+/* Радио кнопки */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.radio-option input[type="radio"] {
+    display: none;
+}
+
+.radio-custom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #dee2e6;
+    border-radius: 50%;
+    margin-right: 10px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.radio-option input[type="radio"]:checked + .radio-custom {
+    border-color: #3498db;
+}
+
+.radio-option input[type="radio"]:checked + .radio-custom::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #3498db;
+    border-radius: 50%;
+}
+
+/* Чекбоксы */
+.checkbox-group,
+.notification-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.checkbox-option input[type="checkbox"] {
+    display: none;
+}
+
+.checkbox-custom {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #dee2e6;
+    border-radius: 3px;
+    margin-right: 10px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.checkbox-option input[type="checkbox"]:checked + .checkbox-custom {
+    border-color: #3498db;
+    background: #3498db;
+}
+
+.checkbox-option input[type="checkbox"]:checked + .checkbox-custom::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Временные диапазоны */
+.time-range {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.time-inputs input[type="time"] {
+    padding: 8px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.time-inputs span {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Статусы безопасности */
+.security-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-badge.disabled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.enabled {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Кнопки */
+.action-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.action-btn.secondary:hover {
+    background: #5a6268;
+}
+
+.action-btn.danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.action-btn.danger:hover {
+    background: #c0392b;
+}
+
+.setup-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s ease;
+}
+
+.setup-btn:hover {
+    background: #2980b9;
+}
+
+/* Информация о сессиях */
+.session-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.session-count {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+/* Методы аутентификации */
+.auth-methods {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Кнопки действий */
+.settings-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 30px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+.save-btn {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.reset-btn {
+    background: #95a5a6;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reset-btn:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .settings-container {
+        padding: 15px;
+    }
+    
+    .settings-header {
+        padding: 20px 15px;
+    }
+    
+    .settings-header h1 {
+        font-size: 2rem;
+    }
+    
+    .nav-tabs {
+        flex-direction: column;
+    }
+    
+    .nav-tab {
+        flex-direction: row;
+        justify-content: flex-start;
+        padding: 15px 20px;
+        text-align: left;
+    }
+    
+    .nav-tab i {
+        font-size: 1.2rem;
+        margin-right: 10px;
+    }
+    
+    .nav-tab span {
+        font-size: 1rem;
+    }
+    
+    .settings-grid {
+        padding: 20px;
+    }
+    
+    .setting-item {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .setting-label {
+        margin-right: 0;
+    }
+    
+    .setting-control {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .theme-selector,
+    .color-selector {
+        justify-content: center;
+    }
+    
+    .settings-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .save-btn,
+    .reset-btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-tabs {
+        border-radius: 8px;
+    }
+    
+    .nav-tab {
+        padding: 12px 15px;
+    }
+    
+    .theme-selector {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .color-selector {
+        gap: 15px;
+    }
+    
+    .section-header {
+        padding: 20px;
+    }
+    
+    .section-header h2 {
+        font-size: 1.3rem;
+    }
+}

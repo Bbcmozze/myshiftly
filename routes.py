@@ -1576,18 +1576,23 @@ def register_routes(app):
         # Подсчет статистики пользователя
         user_shifts = Shift.query.filter_by(user_id=current_user.id).all()
         
-        # Подсчитываем только смены с указанным временем
-        shifts_with_time = 0
+        # Подсчет общего времени работы
         total_hours = 0
+        shifts_with_time = 0
+        
         for shift in user_shifts:
-            if shift.show_time:
+            if shift.start_time and shift.end_time and shift.show_time:
                 shifts_with_time += 1
-                start_time = datetime.combine(shift.date, shift.start_time)
-                end_time = datetime.combine(shift.date, shift.end_time)
-                if end_time < start_time:
-                    end_time += timedelta(days=1)
-                duration = (end_time - start_time).total_seconds() / 3600
-                total_hours += duration
+                # Вычисляем разность времени
+                start_datetime = datetime.combine(shift.date, shift.start_time)
+                end_datetime = datetime.combine(shift.date, shift.end_time)
+                
+                # Если смена переходит на следующий день
+                if shift.end_time < shift.start_time:
+                    end_datetime += timedelta(days=1)
+                
+                duration = end_datetime - start_datetime
+                total_hours += duration.total_seconds() / 3600
         
         total_calendars = Calendar.query.filter_by(owner_id=current_user.id).count()
         total_friends = current_user.friends.count()
@@ -1597,6 +1602,47 @@ def register_routes(app):
                              total_calendars=total_calendars, 
                              total_friends=total_friends,
                              total_hours=round(total_hours, 1))
+
+    @app.route('/profile/<username>')
+    @login_required
+    def view_user_profile(username):
+        # Находим пользователя по username
+        user = User.query.filter_by(username=username).first_or_404()
+        
+        # Подсчет статистики пользователя
+        user_shifts = Shift.query.filter_by(user_id=user.id).all()
+        
+        # Подсчет общего времени работы
+        total_hours = 0
+        shifts_with_time = 0
+        
+        for shift in user_shifts:
+            if shift.start_time and shift.end_time and shift.show_time:
+                shifts_with_time += 1
+                # Вычисляем разность времени
+                start_datetime = datetime.combine(shift.date, shift.start_time)
+                end_datetime = datetime.combine(shift.date, shift.end_time)
+                
+                # Если смена переходит на следующий день
+                if shift.end_time < shift.start_time:
+                    end_datetime += timedelta(days=1)
+                
+                duration = end_datetime - start_datetime
+                total_hours += duration.total_seconds() / 3600
+        
+        total_calendars = Calendar.query.filter_by(owner_id=user.id).count()
+        total_friends = user.friends.count()
+        
+        # Проверяем, является ли пользователь другом текущего пользователя
+        is_friend = user in current_user.friends.all()
+        
+        return render_template('profile/user_profile.html', 
+                             user=user,
+                             total_shifts=shifts_with_time,
+                             total_calendars=total_calendars, 
+                             total_friends=total_friends,
+                             total_hours=round(total_hours, 1),
+                             is_friend=is_friend)
 
     @app.route('/profile/update', methods=['POST'])
     @login_required
@@ -1682,6 +1728,13 @@ def register_routes(app):
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'message': f'Ошибка удаления аватара: {str(e)}'}), 500
+
+    # Settings routes
+    @app.route('/settings')
+    @login_required
+    def settings():
+        """Страница настроек пользователя"""
+        return render_template('settings/settings.html')
 
 def apply_filters(query, filters):
     """Apply filters to shift query"""
