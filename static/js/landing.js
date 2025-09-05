@@ -291,6 +291,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
 
+    // Screenshot modal functionality
+    const createScreenshotModal = () => {
+        // Create modal HTML
+        const modalHTML = `
+            <div id="screenshot-modal" class="screenshot-modal">
+                <div class="modal-content">
+                    <span class="modal-close">&times;</span>
+                    <img id="modal-image" src="" alt="Screenshot">
+                    <div class="modal-caption"></div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        const modal = document.getElementById('screenshot-modal');
+        const modalImg = document.getElementById('modal-image');
+        const modalCaption = document.querySelector('.modal-caption');
+        const closeBtn = document.querySelector('.modal-close');
+        
+        // Add click handlers to all screenshot images
+        const screenshots = document.querySelectorAll('.screenshot-image');
+        screenshots.forEach(img => {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', function() {
+                modal.style.display = 'block';
+                modalImg.src = this.src;
+                modalCaption.textContent = this.alt;
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            });
+        });
+        
+        // Close modal handlers
+        const closeModal = () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        };
+        
+        closeBtn.addEventListener('click', closeModal);
+        
+        // Close when clicking outside the image
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        // Close with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'block') {
+                closeModal();
+            }
+        });
+    };
+    
+    // Initialize screenshot modal
+    createScreenshotModal();
+
     // Console welcome message
     console.log(`
     🚀 My Shiftly Landing Page
