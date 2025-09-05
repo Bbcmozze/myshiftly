@@ -5,6 +5,7 @@
     background: white;
     border-radius: var(--radius);
     box-shadow: var(--shadow-md);
+    width: 90%;
 }
 
 .auth-header {
@@ -94,4 +95,179 @@
     padding: 0;
     line-height: 1;
     margin-left: 0.5rem;
+}
+
+/* Адаптивные стили для navbar на страницах авторизации */
+
+/* Экраны 425px и меньше */
+@media (max-width: 425px) {
+    /* Навигация для 425px */
+    .navbar {
+        padding: 0.5rem 0;
+    }
+    
+    .nav-links {
+        gap: 0.8rem;
+        padding-right: 0.8rem;
+    }
+    
+    .brand {
+        padding-left: 0.8rem;
+    }
+    
+    .page-title {
+        font-size: 1.15rem;
+    }
+    
+    /* Кнопки в навигации для 425px */
+    .nav-links .btn {
+        padding: 7px 12px;
+        font-size: 12px;
+        min-height: 34px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-height: 32px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 7px 12px;
+        font-size: 12px;
+        min-height: 34px;
+    }
+    
+    /* Оптимизация формы авторизации */
+    .auth-container {
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        max-width: 380px;
+    }
+}
+
+/* Экраны 375px и меньше */
+@media (max-width: 375px) {
+    /* Навигация для 375px */
+    .navbar {
+        padding: 0.45rem 0;
+    }
+    
+    .nav-links {
+        gap: 0.6rem;
+        padding-right: 0.6rem;
+    }
+    
+    .brand {
+        padding-left: 0.6rem;
+    }
+    
+    .page-title {
+        font-size: 1.05rem;
+    }
+    
+    /* Кнопки в навигации для 375px */
+    .nav-links .btn {
+        padding: 6px 11px;
+        font-size: 11px;
+        min-height: 33px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 31px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 6px 11px;
+        font-size: 11px;
+        min-height: 33px;
+    }
+    
+    /* Оптимизация формы авторизации */
+    .auth-container {
+        margin: 1.2rem auto;
+        padding: 1.2rem;
+        max-width: 350px;
+    }
+    
+    .auth-header h2 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Экраны 325px и меньше */
+@media (max-width: 325px) {
+    /* Навигация для 325px */
+    .navbar {
+        padding: 0.4rem 0;
+    }
+    
+    .nav-links {
+        gap: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .brand {
+        padding-left: 0.5rem;
+    }
+    
+    .page-title {
+        font-size: 1rem;
+    }
+    
+    /* Кнопки в навигации для 325px - самые компактные */
+    .nav-links .btn {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 30px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 4px 7px;
+        font-size: 9px;
+        min-height: 28px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 30px;
+    }
+    
+    /* Оптимизация формы авторизации */
+    .auth-container {
+        margin: 1rem auto;
+        padding: 1rem;
+        max-width: 300px;
+    }
+    
+    .auth-header h2 {
+        font-size: 1.2rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .auth-header p {
+        font-size: 0.85rem;
+    }
+    
+    .auth-form input {
+        padding: 0.4rem;
+        font-size: 0.9rem;
+    }
+    
+    .auth-form label {
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .auth-footer {
+        font-size: 0.8rem;
+        margin-top: 1.2rem;
+    }
+    
+    .password-requirements {
+        font-size: 0.8rem;
+    }
 }
