@@ -1063,3 +1063,466 @@ main {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Адаптивные стили для navbar авторизованных пользователей */
+
+/* Экраны 426px и меньше */
+@media (max-width: 426px) {
+    /* Навигация для авторизованных пользователей 426px - на всю ширину */
+    .navbar {
+        padding: 0.5rem 1rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .nav-links {
+        gap: 0.8rem;
+        padding-right: 0;
+    }
+    
+    .brand {
+        padding-left: 0;
+    }
+    
+    .page-title {
+        font-size: 1.15rem;
+    }
+    
+    /* Кнопки в навигации для 425px */
+    .nav-links .btn {
+        padding: 7px 12px;
+        font-size: 12px;
+        min-height: 34px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-height: 32px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 7px 12px;
+        font-size: 12px;
+        min-height: 34px;
+    }
+    
+    /* Скрыть поиск друзей на мобильных для авторизованных пользователей */
+    .search-container {
+        display: none !important;
+    }
+    
+    /* Дополнительное скрытие поиска для авторизованных пользователей */
+    .nav-links .search-container {
+        display: none !important;
+    }
+
+    /* Скрыть поле поиска друзей */
+    .search-friends {
+        display: none !important;
+    }
+
+    /* Скрыть результаты поиска */
+    .search-results {
+        display: none !important;
+    }
+    
+    /* Оптимизация колокольчика */
+    .dropdown-bell-btn {
+        padding: 0.4rem;
+    }
+    
+    .dropdown-bell-content {
+        width: 280px;
+        right: -50px;
+    }
+}
+
+/* Экраны 375px и меньше */
+@media (max-width: 375px) {
+    /* Навигация для авторизованных пользователей 375px - на всю ширину */
+    .navbar {
+        padding: 0.45rem 1rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .nav-links {
+        gap: 0.6rem;
+        padding-right: 0;
+    }
+    
+    .brand {
+        padding-left: 0;
+    }
+    
+    .page-title {
+        font-size: 1.05rem;
+    }
+    
+    /* Кнопки в навигации для 375px */
+    .nav-links .btn {
+        padding: 6px 11px;
+        font-size: 11px;
+        min-height: 33px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 31px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 6px 11px;
+        font-size: 11px;
+        min-height: 33px;
+    }
+    
+    /* Скрыть поиск друзей на мобильных */
+    .search-container {
+        display: none;
+    }
+    
+    /* Оптимизация колокольчика */
+    .dropdown-bell-btn {
+        padding: 0.35rem;
+    }
+    
+    .dropdown-bell-content {
+        width: 260px;
+        right: -60px;
+    }
+}
+
+/* Экраны 325px и меньше */
+@media (max-width: 325px) {
+    /* Навигация для авторизованных пользователей 325px - на всю ширину */
+    .navbar {
+        padding: 0.4rem 1rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .nav-links {
+        gap: 0.5rem;
+        padding-right: 0;
+    }
+    
+    .brand {
+        padding-left: 0;
+    }
+    
+    .page-title {
+        font-size: 1rem;
+    }
+    
+    /* Кнопки в навигации для 325px - самые компактные */
+    .nav-links .btn {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 30px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 4px 7px;
+        font-size: 9px;
+        min-height: 28px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 30px;
+    }
+    
+    /* Скрыть поиск друзей на мобильных */
+    .search-container {
+        display: none;
+    }
+    
+    /* Оптимизация колокольчика */
+    .dropdown-bell-btn {
+        padding: 0.3rem;
+    }
+    
+    .dropdown-bell-content {
+        width: 240px;
+        right: -70px;
+    }
+    
+    /* Компактные уведомления */
+    .notification-item {
+        padding: 0.8rem;
+    }
+    
+    .notification-avatar {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .notification-name {
+        font-size: 0.85rem;
+    }
+    
+    .notification-username {
+        font-size: 0.8rem;
+    }
+    
+    .notification-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+    }
+    
+    .notification-actions .notification-btn {
+        width: 90px;
+        height: 28px;
+    }
+}
+
+/* Адаптивные стили для toast уведомлений */
+
+/* Экраны 426px и меньше */
+@media (max-width: 426px) {
+    .toast-container {
+        bottom: 15px;
+        right: 15px;
+        left: 15px;
+        max-width: none;
+        width: auto;
+    }
+    
+    .toast {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .toast-close {
+        font-size: 1.1rem;
+        margin-left: 0.75rem;
+        padding: 0 0 0 0.75rem;
+    }
+}
+
+/* Экраны 375px и меньше */
+@media (max-width: 375px) {
+    .toast-container {
+        bottom: 12px;
+        right: 12px;
+        left: 12px;
+    }
+    
+    .toast {
+        padding: 0.65rem;
+        font-size: 0.75rem;
+        margin-bottom: 0.65rem;
+        border-radius: 6px;
+    }
+    
+    .toast-close {
+        font-size: 1rem;
+        margin-left: 0.6rem;
+        padding: 0 0 0 0.6rem;
+    }
+}
+
+/* Экраны 325px и меньше */
+@media (max-width: 325px) {
+    .toast-container {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .toast {
+        padding: 0.5rem;
+        font-size: 0.7rem;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .toast-close {
+        font-size: 0.9rem;
+        margin-left: 0.5rem;
+        padding: 0 0 0 0.5rem;
+    }
+}
+
+/* Адаптивные стили для sidebar меню */
+
+/* Экраны 426px и меньше */
+@media (max-width: 426px) {
+    :root {
+        --sidebar-width: 220px;
+    }
+    
+    .sidebar {
+        width: 220px;
+    }
+    
+    .user-profile {
+        padding: 1.2rem 0.6rem;
+        margin-top: 3rem;
+    }
+    
+    .user-profile h3 {
+        font-size: 0.9rem;
+        margin-bottom: 0.6rem;
+    }
+    
+    .user-username {
+        font-size: 0.8rem;
+    }
+    
+    .avatar {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .avatar-upload-overlay {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .sidebar-nav {
+        padding: 0.6rem;
+    }
+    
+    .sidebar-nav a {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+        margin: 0 0.3rem;
+    }
+    
+    .sidebar-nav i {
+        margin-right: 0.5rem;
+        width: 14px;
+        font-size: 0.8rem;
+    }
+    
+    .sidebar-separator {
+        margin: 0.6rem 0;
+    }
+}
+
+/* Экраны 375px и меньше */
+@media (max-width: 375px) {
+    :root {
+        --sidebar-width: 200px;
+    }
+    
+    .sidebar {
+        width: 200px;
+    }
+    
+    .user-profile {
+        padding: 1rem 0.5rem;
+        margin-top: 2.8rem;
+    }
+    
+    .user-profile h3 {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-username {
+        font-size: 0.75rem;
+    }
+    
+    .avatar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .avatar-upload-overlay {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .sidebar-nav {
+        padding: 0.5rem;
+    }
+    
+    .sidebar-nav a {
+        padding: 0.5rem 0.7rem;
+        font-size: 0.75rem;
+        margin: 0 0.2rem;
+        border-radius: 6px;
+    }
+    
+    .sidebar-nav i {
+        margin-right: 0.4rem;
+        width: 12px;
+        font-size: 0.75rem;
+    }
+    
+    .sidebar-separator {
+        margin: 0.5rem 0;
+    }
+}
+
+/* Экраны 325px и меньше */
+@media (max-width: 325px) {
+    :root {
+        --sidebar-width: 180px;
+    }
+    
+    .sidebar {
+        width: 180px;
+    }
+    
+    .user-profile {
+        padding: 0.8rem 0.4rem;
+        margin-top: 2.5rem;
+    }
+    
+    .user-profile h3 {
+        font-size: 0.8rem;
+        margin-bottom: 0.4rem;
+    }
+    
+    .user-username {
+        font-size: 0.7rem;
+    }
+    
+    .avatar {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .avatar-upload-overlay {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .avatar-upload-icon {
+        font-size: 1rem;
+    }
+    
+    .sidebar-nav {
+        padding: 0.4rem;
+    }
+    
+    .sidebar-nav li {
+        margin-bottom: 0.3rem;
+    }
+    
+    .sidebar-nav a {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.7rem;
+        margin: 0 0.1rem;
+        border-radius: 4px;
+    }
+    
+    .sidebar-nav i {
+        margin-right: 0.3rem;
+        width: 10px;
+        font-size: 0.7rem;
+    }
+    
+    .sidebar-separator {
+        margin: 0.4rem 0;
+    }
+}

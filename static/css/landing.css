@@ -147,7 +147,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 0.5rem 1rem;
     border: none;
     border-radius: 8px;
     font-size: 0.8rem;
@@ -691,23 +691,23 @@ body {
         max-width: 95%;
         padding: 0 20px;
     }
-    
+
     .hero-section {
         padding: 80px 0;
     }
-    
+
     .features-section,
     .benefits-section,
     .how-it-works-section,
     .cta-section {
         padding: 80px 0;
     }
-    
+
     .features-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
     }
-    
+
     .benefits-content {
         gap: 3rem;
     }
@@ -718,29 +718,29 @@ body {
     .container {
         padding: 0 15px;
     }
-    
+
     .hero-section {
         min-height: 90vh;
         padding: 60px 0;
     }
-    
+
     .hero-title {
         font-size: clamp(2rem, 6vw, 3rem);
         margin-bottom: 1rem;
     }
-    
+
     .hero-subtitle {
         font-size: 1.1rem;
         margin-bottom: 1.5rem;
     }
-    
+
     .hero-buttons {
         flex-direction: column;
         align-items: center;
         gap: 0.8rem;
         margin-bottom: 2rem;
     }
-    
+
     .btn-large {
         padding: 14px 28px;
         font-size: 16px;
@@ -748,74 +748,74 @@ body {
         max-width: 280px;
         justify-content: center;
     }
-    
+
     .hero-stats {
         gap: 1.5rem;
         flex-wrap: wrap;
     }
-    
+
     .stat-number {
         font-size: 1.5rem;
     }
-    
+
     .stat-label {
         font-size: 0.8rem;
     }
-    
+
     .features-section,
     .benefits-section,
     .how-it-works-section,
     .cta-section {
         padding: 60px 0;
     }
-    
+
     .section-title {
         font-size: 2rem;
         margin-bottom: 0.8rem;
     }
-    
+
     .section-subtitle {
         font-size: 1rem;
     }
-    
+
     .features-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
-    
+
     .feature-card {
         padding: 1.5rem;
     }
-    
+
     .benefits-content {
         grid-template-columns: 1fr;
         gap: 2rem;
         text-align: center;
     }
-    
+
     .benefits-text h2 {
         font-size: 2rem;
         margin-bottom: 1.5rem;
     }
-    
+
     .benefit-item {
         justify-content: center;
         text-align: left;
         max-width: 400px;
         margin: 0 auto;
     }
-    
+
     .steps-container {
         flex-direction: column;
         gap: 1.5rem;
     }
-    
+
     .step-connector {
         width: 2px;
         height: 40px;
         transform: rotate(90deg);
     }
-    
+
     .step-connector::after {
         right: -3px;
         top: 35px;
@@ -824,50 +824,52 @@ body {
         border-top: 8px solid var(--primary-color);
         border-bottom: none;
     }
-    
+
     .step-item {
         max-width: 100%;
     }
-    
+
     .cta-content h2 {
         font-size: 2rem;
     }
-    
+
     .cta-content p {
         font-size: 1.1rem;
     }
-    
+
     .dashboard-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
-    
+
     .welcome-header h1 {
         font-size: 2rem;
     }
 }
 
-/* Экраны 425px и меньше */
-@media (max-width: 425px) {
-    /* Навигация для 425px */
+/* Экраны 426px и меньше */
+@media (max-width: 426px) {
+    /* Навигация для 426px */
     .navbar {
-        padding: 0.5rem 0;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        max-width: 100%;
     }
     
     .nav-links {
         gap: 0.8rem;
-        padding-right: 0.8rem;
+        padding-right: 0;
     }
     
     .brand {
-        padding-left: 0.8rem;
+        padding-left: 0;
     }
     
     .page-title {
         font-size: 1.15rem;
     }
     
-    /* Кнопки в навигации для 425px */
+    /* Кнопки в навигации для 426px */
     .nav-links .btn {
         padding: 7px 12px;
         font-size: 12px;
@@ -891,16 +893,18 @@ body {
 @media (max-width: 375px) {
     /* Навигация для 375px */
     .navbar {
-        padding: 0.45rem 0;
+        padding: 0.45rem 1rem;
+        width: 100%;
+        max-width: 100%;
     }
     
     .nav-links {
         gap: 0.6rem;
-        padding-right: 0.6rem;
+        padding-right: 0;
     }
     
     .brand {
-        padding-left: 0.6rem;
+        padding-left: 0;
     }
     
     .page-title {
@@ -924,6 +928,48 @@ body {
         padding: 6px 11px;
         font-size: 11px;
         min-height: 33px;
+    }
+}
+
+/* Экраны 325px и меньше */
+@media (max-width: 325px) {
+    /* Навигация для 325px */
+    .navbar {
+        padding: 0.4rem 1rem;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .nav-links {
+        gap: 0.5rem;
+        padding-right: 0;
+    }
+    
+    .brand {
+        padding-left: 0;
+    }
+    
+    .page-title {
+        font-size: 1rem;
+    }
+    
+    /* Кнопки в навигации для 325px - самые компактные */
+    .nav-links .btn {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 30px;
+    }
+    
+    .nav-links .btn-outline {
+        padding: 4px 7px;
+        font-size: 9px;
+        min-height: 28px;
+    }
+    
+    .nav-links .btn-primary {
+        padding: 5px 9px;
+        font-size: 10px;
+        min-height: 30px;
     }
 }
 
@@ -1404,110 +1450,140 @@ body {
         font-size: 0.9rem;
         line-height: 1.3;
     }
-    
-    .dashboard-card {
-        padding: 1rem;
-        border-radius: 12px;
+}
+
+/* Адаптивные стили для welcome-header и анимаций на мобильных */
+
+/* Экраны 426px и меньше */
+@media (max-width: 426px) {
+    .welcome-header {
+        text-align: center;
+        margin: 0 auto 2.5rem;
+        padding: 0 1rem;
+        max-width: 100%;
     }
     
-    .card-header h3 {
-        font-size: 1rem;
+    .welcome-header h1 {
+        font-size: 1.6rem;
+        line-height: 1.2;
+        margin-bottom: 0.8rem;
+        text-align: center;
     }
     
-    .card-content p {
+    .welcome-header p {
+        font-size: 0.95rem;
+        line-height: 1.4;
+        text-align: center;
+        margin: 0 auto;
+        max-width: 90%;
+    }
+    
+    /* Оптимизированная анимация для мобильных */
+    .fade-in-up {
+        animation: fadeInUpMobile 0.6s ease-out forwards;
+    }
+    
+    @keyframes fadeInUpMobile {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Экраны 375px и меньше */
+@media (max-width: 375px) {
+    .welcome-header {
+        margin: 0 auto 2rem;
+        padding: 0 0.8rem;
+    }
+    
+    .welcome-header h1 {
+        font-size: 1.4rem;
+        line-height: 1.2;
+        margin-bottom: 0.7rem;
+    }
+    
+    .welcome-header p {
+        font-size: 0.9rem;
+        line-height: 1.3;
+        max-width: 95%;
+    }
+    
+    /* Более быстрая анимация для маленьких экранов */
+    .fade-in-up {
+        animation: fadeInUpSmall 0.5s ease-out forwards;
+    }
+    
+    @keyframes fadeInUpSmall {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Экраны 325px и меньше */
+@media (max-width: 325px) {
+    .welcome-header {
+        margin: 0 auto 1.5rem;
+        padding: 0 0.5rem;
+    }
+    
+    .welcome-header h1 {
+        font-size: 1.2rem;
+        line-height: 1.1;
+        margin-bottom: 0.6rem;
+        word-wrap: break-word;
+    }
+    
+    .welcome-header p {
         font-size: 0.8rem;
         line-height: 1.3;
-        margin-bottom: 0.8rem;
+        max-width: 100%;
     }
     
-    /* Навигация */
-    .navbar {
-        padding: 0.4rem 0;
+    /* Минимальная анимация для очень маленьких экранов */
+    .fade-in-up {
+        animation: fadeInUpTiny 0.4s ease-out forwards;
     }
     
-    .nav-links {
-        gap: 0.5rem;
-        padding-right: 0.5rem;
+    @keyframes fadeInUpTiny {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
-    .page-title {
-        font-size: 1rem;
-    }
-    
-    .brand {
-        padding-left: 0.5rem;
-    }
-    
-    /* Кнопки в навигации */
-    /* Кнопки в навигации для 320px - самые компактные */
-    .nav-links .btn {
-        padding: 5px 9px;
-        font-size: 10px;
-        min-height: 30px;
-    }
-    
-    .nav-links .btn-outline {
-        padding: 4px 7px;
-        font-size: 9px;
-        min-height: 28px;
-    }
-    
-    .nav-links .btn-primary {
-        padding: 5px 9px;
-        font-size: 10px;
-        min-height: 30px;
-    }
-    
-    .btn-small {
-        padding: 4px 8px;
-        font-size: 10px;
-        min-height: 32px;
-    }
-    
-    /* Обычные кнопки тоже уменьшаем */
-    .btn {
-        padding: 8px 12px;
-        font-size: 11px;
-        min-height: 36px;
-    }
-    
-    /* Улучшенная читаемость */
-    body {
-        font-size: 14px;
-        line-height: 1.4;
-    }
-    
-    /* Оптимизация для очень узких экранов */
-    .hero-content {
-        text-align: center;
-        padding: 0 5px;
-    }
-    
-    /* Убираем лишние отступы */
-    .floating-shapes {
-        display: none; /* Убираем анимированные фигуры для экономии места */
+    /* Отключение анимаций при настройке пользователя */
+    @media (prefers-reduced-motion: reduce) {
+        .fade-in-up {
+            animation: none;
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 }
 
 /* Оптимизация для сенсорных экранов */
 @media (hover: none) and (pointer: coarse) {
     /* Увеличиваем размеры кликабельных элементов для сенсорных экранов */
-    .btn {
-        min-height: 44px;
-        padding: 12px 16px;
-        font-size: 16px;
-    }
-    
     .btn-large {
         min-height: 48px;
         padding: 16px 32px;
         font-size: 18px;
-    }
-    
-    .btn-small {
-        min-height: 40px;
-        padding: 10px 16px;
-        font-size: 14px;
     }
     
     /* Убираем hover эффекты на сенсорных устройствах */
